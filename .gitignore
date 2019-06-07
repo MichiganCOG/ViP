@@ -1,2 +1,3 @@
+pytorchenv/*
 *.swp
 *.pyc
