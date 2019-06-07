@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from torch import Dataset
+from torch.utils.data import Dataset
 
 class VideoDataset(Dataset):
     __metaclass__ = ABCMeta
@@ -20,11 +20,9 @@ class VideoDataset(Dataset):
 
         self.samples = self.getClips()
 
-    @abstractmethod
     def __getitem__(self, idx):
         raise NotImplementedError("Dataset must contain __getitem__ method which loads videos from memory.")
 
-    @abstractmethod
     def getClips(self):
         raise NotImplementedError("Dataset must contain getClips method which loads and processes the dataset's JSON file.") 
         
@@ -45,7 +43,7 @@ class RecognitionDataset(VideoDataset):
 class DetectionDataset(VideoDataset):
     __metaclass__ = ABCMeta
     def __init__(self, *args, **kwargs):
-        super(RecognitionDataset, self).__init__(*args, **kwargs)
+        super(DetectionDataset, self).__init__(*args, **kwargs)
 
     def getClips(self):
         # TODO Implement JSON reader
