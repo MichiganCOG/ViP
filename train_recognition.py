@@ -46,7 +46,19 @@ def train(args):
         writer = SummaryWriter()
 
         # Load Data
-        trainloader, testloader = data_loader(args['Dataset'], args['Batch_size'])
+        loader = data_loader(args['Dataset'], args['Batch_size'], args['Type'])
+
+        if args['Type'] == 'train':
+            trainloader = loader['train']
+
+        elif args['Type'] == 'train_val':
+            trainloader = loader['train']
+            testloader  = loader['valid'] 
+
+        else:
+            print('Invalid environment selection for training, exiting')
+
+        # END IF
     
         # Check if GPU is available (CUDA)
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
