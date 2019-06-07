@@ -3,7 +3,7 @@ from abstract_datasets import DetectionDataset
 from PIL import Image
 import os
 import numpy as np
-import cv2
+#import cv2
 
 
 class ImageNetVID(DetectionDataset):
@@ -36,9 +36,9 @@ class ImageNetVID(DetectionDataset):
 
         # Load each frame image and annotation
         for frame_id in frames:
-            img = cv2.imread(os.path.join(base_data_path, frame_id))
+            img = Image.open(os.path.join(base_data_path, frame_id))
             img_shape = img.shape
-            img = cv2.resize(img, (self.resize_shape[0], self.resize_shape[1]))
+            img = Image.resize(img, (self.resize_shape[0], self.resize_shape[1]))
 
             # Image values range from 0 to 1
             img = img/255.
@@ -180,3 +180,6 @@ class ImageNetVID(DetectionDataset):
         ymax_new = int(ymax * frac_h)
 
         return xmin_new, xmax_new, ymin_new, ymax_new 
+
+dataset = ImageNetVID(16, 128, 128)
+import pdb; pdb.set_trace()
