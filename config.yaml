@@ -1,0 +1,15 @@
+Rerun:           5
+Dataset:         JHMDB
+Batch_size:      128
+Model:           3DResNet
+Labels:          21
+Sample_size:     224
+Sample_duration: 16
+Opt:             sgd
+Lr:              0.001
+Momentum:        0.9
+Weight_decay:    0.0005
+Milestones:      [100, 150, 200]
+Gamma:           0.2
+Epoch:           10
+Save_dir:        '.'
