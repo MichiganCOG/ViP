@@ -1,2 +1,2 @@
-# ViP
-Pytorch-based Video Platform
+# Pytorch Video Platorm for Recognition and Detection
+
