@@ -1,15 +1,16 @@
-Rerun:           5
-Dataset:         JHMDB
-Batch_size:      128
-Model:           3DResNet
-Labels:          21
-Sample_size:     224
-Sample_duration: 16
-Opt:             sgd
-Lr:              0.001
-Momentum:        0.9
-Weight_decay:    0.0005
-Milestones:      [100, 150, 200]
-Gamma:           0.2
-Epoch:           10
-Save_dir:        '.'
+Rerun:           5                     # Number of trials to repeat an experiment
+Dataset:         JHMDB                 # Name of dataset 
+Batch_size:      128                   # Numbers of videos in a mini-batch 
+Type:            train                 # Environment selection, to include only training/training and validation/testing dataset
+Model:           3DResNet              # Name of model to be loaded  
+Labels:          21                    # Number of total classes in the dataset
+Sample_size:     224                   # Height of frame to be provided as input to the model
+Sample_duration: 16                    # Temporal size of video to be provided as input to the model 
+Opt:             sgd                   # Name of optimizer
+Lr:              0.001                 # Learning rate
+Momentum:        0.9                   # Momentum value in optimizer
+Weight_decay:    0.0005                # Weight decay
+Milestones:      [100, 150, 200]       # Epoch values to change learning rate     
+Gamma:           0.2                   # Multiplier with which to change learning rate
+Epoch:           10                    # Total number of epochs 
+Save_dir:        '.'                   # Path to results directory
