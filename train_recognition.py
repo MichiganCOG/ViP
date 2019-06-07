@@ -17,7 +17,6 @@ import numpy             as np
 import torch.nn          as nn
 import torch.optim       as optim
 import torch.utils.data  as Data
-import matplotlib.pyplot as plt
 
 #from utils                     import save_checkpoint, load_checkpoint, accuracy, accuracy_action
 #from torchvision               import datasets, transforms
