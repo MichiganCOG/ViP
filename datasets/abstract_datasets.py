@@ -1,5 +1,8 @@
 from abc import ABCMeta
 from torch.utils.data import Dataset
+import json
+import numpy as np
+import os
 
 class VideoDataset(Dataset):
     __metaclass__ = ABCMeta
@@ -18,7 +21,7 @@ class VideoDataset(Dataset):
         self.crop_type      = crop_type 
         self.strides        = strides 
 
-        self.samples = self.getClips()
+        self.getClips()
 
     def __getitem__(self, idx):
         raise NotImplementedError("Dataset must contain __getitem__ method which loads videos from memory.")
@@ -91,5 +94,55 @@ class DetectionDataset(VideoDataset):
         super(DetectionDataset, self).__init__(*args, **kwargs)
 
     def getClips(self):
-        # TODO Implement JSON reader
-        return []
+        #json_train_path = '/z/home/natlouis/pytorch_goturn/data/ILSVRC2015_VID/ilsvrc_train.json'
+        #json_train_file = open(json_train_path,'r')
+        #json_train_data = json.load(json_train_file) 
+        #json_train_file.close()
+
+        #json_val_path = '/z/home/natlouis/pytorch_goturn/data/ILSVRC2015_VID/ilsvrc_val.json'
+        #json_val_file = open(json_val_path,'r')
+        #json_val_data = json.load(json_val_file) 
+        #json_val_file.close()
+        #
+        #json_snippet_train_path = '/z/home/natlouis/pytorch_goturn/data/ILSVRC2015_VID/ilsvrc_train_snippet.json'
+        #json_snippet_train_file = open(json_snippet_train_path,'r')
+        #json_snippet_train_data = json.load(json_snippet_train_file) 
+        #json_snippet_train_file.close()
+
+        #json_snippet_val_path = '/z/home/natlouis/pytorch_goturn/data/ILSVRC2015_VID/ilsvrc_val_snippet.json'
+        #json_snippet_val_file = open(json_snippet_val_path,'r')
+        #json_snippet_val_data = json.load(json_snippet_val_file) 
+        #json_snippet_val_file.close()
+
+        #self.train_samples = []
+        #self.train_labels  = []
+        #for vid in json_snippet_train_data:
+        #    self.train_samples.append(
+
+        #self.labels_dict = np.load('/z/home/erichof/datasets/ILSVRC2015/labels_number_keys.npy').tolist()
+        #self.label_values = self.labels_dict.values()
+        #self.label_values.sort()
+
+
+
+        # Load all video paths into the samples array to be loaded by __getitem__ 
+
+        self.samples = []
+        self.dataset_dir = '/z/home/natlouis/data/ILSVRC2015/'
+        self.train_or_val = 'train'
+        
+        annot_path = os.path.join(self.dataset_dir, 'Annotations/VID/')
+        #data_path = os.path.join(self.dataset_dir, 'Data/VID/')
+
+        
+        if self.train_or_val == 'val':
+            self.samples = os.listdir(os.path.join(annot_path, self.train_or_val))
+            self.samples.sort()
+
+        else:
+            self.samples = []
+            for vid_dir in os.listdir(os.path.join(annot_path, self.train_or_val)):
+                self.samples = self.samples + [ vid_dir + '/' + s for s in os.listdir(os.path.join(annot_path, self.train_or_val, vid_dir))]
+
+
+
