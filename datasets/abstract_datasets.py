@@ -58,14 +58,13 @@ class VideoDataset(Dataset):
 
         Additional Parameters:
             self.clip_length: Number of frames extracted from each clip
-            self.num_clips:   Number of clips to extract from each video (-1 uses the entire video)
+            self.num_clips:   Number of clips to extract from each video (-1 uses the entire video, 0 paritions the entire video in clip_length clips)
             self.clip_offset: Number of frames from beginning of video to start extracting clips 
             self.clip_stride: Number of frames between clips when extracting them from videos 
         """
         if self.num_clips < 0:
             if len(video) >= self.clip_length:
                 final_video = [video[_idx] for _idx in np.linspace(0, len(video)-1, self.clip_length, dtype='int32')]
-                return [final_video]
 
             else:
                 # Loop if insufficient elements
@@ -73,15 +72,40 @@ class VideoDataset(Dataset):
                 indices = indices.astype('int32')
                 indices = np.tile(np.arange(0, len(video), 1, dtype='int32'), indices)
                 indices = indices[np.linspace(0, len(indices)-1, self.clip_length, dtype='int32')]
+
                 final_video = [video[_idx] for _idx in indices]
-                return final_video 
+
 
             # END IF
 
+        elif self.num_clips == 0:
+            if len(video) >= self.clip_length:
+                indices     = np.arange(start=0, stop=len(video), step=self.clip_length)
+                final_video = []
+
+                for _idx in indices:
+                    if _idx + self.clip_length <= len(video):
+                        final_video.append([video[true_idx] for true_idx in range(_idx, _idx+self.clip_length)])
+
+                # END FOR
+
+            else:
+                # Loop if insufficient elements
+                indices = np.ceil(self.clip_length/float(len(video)))
+                indices = indices.astype('int32')
+                indices = np.tile(np.arange(0, len(video), 1, dtype='int32'), indices)
+                indices = indices[:self.clip_length]
+
+                final_video = [video[_idx] for _idx in indices]
+
+            # END IF                               
+    
         else:
-            return [video[:self.clip_length]]
+            final_video = [video[:self.clip_length]]
 
         # END IF
+
+        return final_video
 
     def _preprocFrame(self, frame_path, bbox_data=[]):
         """
@@ -154,9 +178,9 @@ class RecognitionDataset(VideoDataset):
             # Each clip is a list of dictionaries per frame containing information
             # Example info: object bbox annotations, object classes, frame img path
             for clip in clips:    
+                import pdb; pdb.set_trace()
                 self.samples.append(dict(frames=clip, base_path=video_info['base_path']))
 
-        import pdb; pdb.set_trace()
 
 
 
