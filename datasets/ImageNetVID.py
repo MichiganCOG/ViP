@@ -4,6 +4,7 @@ from PIL import Image
 import os
 import numpy as np
 import json
+import preprocessing_functions as pf
 
 class ImageNetVID(DetectionDataset):
     def __init__(self, *args, **kwargs):
@@ -20,12 +21,20 @@ class ImageNetVID(DetectionDataset):
         # Dictates the return size of annotations in __getitem__
         self.max_objects = 22
 
+
+        if self.dataset_type=='train':
+            self.transforms = PreprocessTrain(100)
+
+        else:
+            self.transforms = PreprocessEval(100)
+
     def __getitem__(self, idx):
         vid_info = self.samples[idx]
         
         base_path = vid_info['base_path']
         vid_size  = vid_info['frame_size']
 
+        input_data = []
         vid_data   = np.zeros((self.clip_length, self.final_shape[0], self.final_shape[1], 3))-1
         bbox_data  = np.zeros((self.clip_length, self.max_objects, 4))-1
         labels     = np.zeros((self.clip_length, self.max_objects))-1
@@ -55,8 +64,11 @@ class ImageNetVID(DetectionDataset):
 
             # Load frame image data, preprocess image, and augment bounding boxes accordingly
             # TODO: Augment bounding boxes according to frame augmentations 
-            vid_data[frame_ind], bbox_data[frame_ind] = self._preprocFrame(os.path.join(base_path, frame_path), bbox_data[frame_ind])
+            # vid_data[frame_ind], bbox_data[frame_ind] = self._preprocFrame(os.path.join(base_path, frame_path), bbox_data[frame_ind])
+            input_data.append(Image.open(os.path.join(base_path, frame_path)))
 
+
+        vid_data, bbox_data = self.transforms(input_data, bbox_data)
 
         bbox_data = bbox_data.astype(int)
 
@@ -83,26 +95,58 @@ class ImageNetVID(DetectionDataset):
 
         return ret_dict
 
-    # TODO Move to VideoDataset._preprocFrame
-    def resize_bbox(self, xmin, xmax, ymin, ymax, img_shape, resize_shape):
-        # Resize a bounding box within a frame relative to the amount that the frame was resized
 
-        img_h = img_shape[0]
-        img_w = img_shape[1]
 
-        res_h = resize_shape[0]
-        res_w = resize_shape[1]
+class PreprocessTrain(object):
+    """
+    Container for all transforms used to preprocess clips for training in this dataset.
+    """
+    def __init__(self, size):
+        self.size = size
+        self.crop = pf.randomCropClip(128, 128)
+        self.resize = pf.resizeClip(128,128)
 
-        frac_h = res_h/float(img_h)
-        frac_w = res_w/float(img_w)
 
-        xmin_new = int(xmin * frac_w)
-        xmax_new = int(xmax * frac_w)
+    def __call__(self, input_data, bbox_data):
+        """
+        Preprocess the clip and the bbox data accordingly
+        Args:
+            input_data: List of PIL images containing clip frames 
+            bbox_data:  Numpy array containing bbox coordinates per object per frame 
 
-        ymin_new = int(ymin * frac_h)
-        ymax_new = int(ymax * frac_h)
+        Return:
+            input_data: Pytorch tensor containing the processed clip data 
+            bbox_data:  Numpy tensor containing the augmented bbox coordinates
+        """
+        input_data, bbox_data = self.resize(input_data, bbox_data)
+        return input_data, bbox_data
 
-        return xmin_new, xmax_new, ymin_new, ymax_new 
+
+class PreprocessEval(object):
+    """
+    Container for all transforms used to preprocess clips for evaluation in this dataset.
+    """
+    def __init__(self, size):
+        self.size = size
+        self.crop = pf.centerCropClip(128, 128)
+        self.resize = pf.resizeClip(128,128)
+
+
+    def __call__(self, input_data, bbox_data):
+        """
+        Preprocess the clip and the bbox data accordingly
+        Args:
+            input_data: List of PIL images containing clip frames 
+            bbox_data:  Numpy array containing bbox coordinates per object per frame 
+
+        Return:
+            input_data: Pytorch tensor containing the processed clip data 
+            bbox_data:  Numpy tensor containing the augmented bbox coordinates
+        """
+        input_data, bbox_data = self.resize(input_data, bbox_data)
+        return input_data, bbox_data
+
+
 
 
 dataset = ImageNetVID(json_path='/z/home/erichof/datasets/ILSVRC2015', dataset_type='train')
