@@ -168,24 +168,24 @@ class DetectionDataset(VideoDataset):
         Required format for all detection datset JSON files:
         
         List(Vidnumber: Dict{
-                   List(Frames: Dict{
-                                     Frame Size,
-                                     Frame Path,
-                                     List(Objects: Dict{
-                                                        Track ID
-                                                        Object Class
-                                                        Occluded
-                                                        List(Bounding box coordinates: [xmin, ymin, xmax, ymax])
+                   List(Frames 'frame': Dict{
+                                     Frame Size 'frame_size',
+                                     Frame Path 'img_path',
+                                     List(Objects 'objs': Dict{
+                                                        Track ID 'trackid'
+                                                        Object Class 'c'
+                                                        Occluded 'occ'
+                                                        List(Bounding box coordinates 'bbox': [xmin, ymin, xmax, ymax])
         
                                      }) End Object List in Frame
         
                    }) End Frame List in Video
         
-                   Str(Base Vid Path)
+                   Str(Base Vid Path) 'base_path
         
              }) End Video List in Dataset
         
-        Ex: coordinates = dataset[vid_index]['frames'][frame_index]['objects'][obj_index]['bbox']
+        Ex: coordinates = dataset[vid_index]['frame'][frame_index]['objs'][obj_index]['bbox']
         """
 
         # Load all video paths into the samples array to be loaded by __getitem__ 
@@ -210,6 +210,6 @@ class DetectionDataset(VideoDataset):
             # Each clip is a list of dictionaries per frame containing information
             # Example info: object bbox annotations, object classes, frame img path
             for clip in clips:    
-                self.samples.append(dict(frames=clip, base_path=video_info['base_path']))
+                self.samples.append(dict(frames=clip, base_path=video_info['base_path'], frame_size=video_info['frame_size']))
 
 

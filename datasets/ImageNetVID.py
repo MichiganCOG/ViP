@@ -3,14 +3,17 @@ from abstract_datasets import DetectionDataset
 from PIL import Image
 import os
 import numpy as np
+import json
 
 class ImageNetVID(DetectionDataset):
     def __init__(self, *args, **kwargs):
         super(ImageNetVID, self).__init__(*args, **kwargs)
 
-        #self.labels_dict = np.load('/z/home/erichof/datasets/ILSVRC2015/labels_number_keys.npy').tolist()
-        #self.label_values = self.labels_dict.values()
-        #self.label_values.sort()
+        lab_file = open('/z/home/erichof/datasets/ILSVRC2015/labels_number_keys.json', 'r')
+        self.labels_dict = json.load(lab_file)
+        lab_file.close()
+        self.label_values = list(self.labels_dict.values())
+        self.label_values.sort()
 
 
         # Maximum number of annotated object present in a single frame in entire dataset
@@ -20,10 +23,8 @@ class ImageNetVID(DetectionDataset):
     def __getitem__(self, idx):
         vid_info = self.samples[idx]
         
-        # TODO Rename dictionary keys
         base_path = vid_info['base_path']
-        #vid_size  = vid_info['frame_size']
-        vid_size  = vid_info['frames'][0]['frame_sz']
+        vid_size  = vid_info['frame_size']
 
         vid_data   = np.zeros((self.clip_length, self.final_shape[0], self.final_shape[1], 3))-1
         bbox_data  = np.zeros((self.clip_length, self.max_objects, 4))-1
@@ -36,7 +37,6 @@ class ImageNetVID(DetectionDataset):
         for frame_ind in range(len(vid_info['frames'])):
             frame      = vid_info['frames'][frame_ind]
             frame_path = frame['img_path']
-            #frame_path = frame['frame_path']
             
             # Extract bbox and label data from video info
             for obj in frame['objs']:
@@ -45,8 +45,9 @@ class ImageNetVID(DetectionDataset):
                 occlusion = obj['occ']
                 obj_bbox  = obj['bbox'] # [xmin, ymin, xmax, ymax]
 
-                # TODO Generate label maps from ImageNet VID encoded label to 0-29 digit
-                label = 0 #self.label_values[label]
+                label_name = self.labels_dict[label]
+                label      = self.label_values.index(label_name)
+
 
                 bbox_data[frame_ind, trackid, :] = obj_bbox
                 labels[frame_ind, trackid]       = label 
@@ -104,5 +105,6 @@ class ImageNetVID(DetectionDataset):
         return xmin_new, xmax_new, ymin_new, ymax_new 
 
 
-dataset = ImageNetVID(json_path='/y/datasets/ILSVRC2015', dataset_type='train')
+dataset = ImageNetVID(json_path='/z/home/erichof/datasets/ILSVRC2015', dataset_type='train')
+dat = dataset.__getitem__(0)
 import pdb; pdb.set_trace()
