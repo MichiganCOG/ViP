@@ -1,7 +1,7 @@
 import torch
 from ImageNetVID import ImageNetVID
 
-
+# TODO: Update arguments
 def data_loader(dataset, batch_size, load_type, *args, **kwargs):
     """
     Args:

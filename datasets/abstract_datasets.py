@@ -50,7 +50,7 @@ class VideoDataset(Dataset):
         """
         raise NotImplementedError("Dataset must contain getClips method which loads and processes the dataset's JSON file.") 
 
-    def _processClips(self, video):
+    def _extractClips(self, video):
         """
         Processes a single video into uniform sized clips that will be loaded by __getitem__
         Args:
@@ -205,7 +205,7 @@ class DetectionDataset(VideoDataset):
 
         # Load the information for each video and process it into clips
         for video_info in json_data:
-            clips = self._processClips(video_info['frame'])
+            clips = self._extractClips(video_info['frame'])
 
             # Each clip is a list of dictionaries per frame containing information
             # Example info: object bbox annotations, object classes, frame img path
