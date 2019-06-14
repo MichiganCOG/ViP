@@ -14,3 +14,4 @@ Milestones:      [100, 150, 200]       # Epoch values to change learning rate
 Gamma:           0.2                   # Multiplier with which to change learning rate
 Epoch:           10                    # Total number of epochs 
 Save_dir:        '.'                   # Path to results directory
+Seed:            999                   # Seed for reproducibility  
