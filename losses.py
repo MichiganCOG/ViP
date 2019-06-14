@@ -18,13 +18,13 @@ class Losses():
             self.loss_object = HGC_MSE(*args, **kwargs)
 
 
-    def loss(self, predictions, targets):
+    def loss(self, predictions, targets, **kwargs):
         """
         Args:
             predictions: Tensor output by the network
             target: Target tensor used with predictions to compute the loss
         """ 
-        self.loss_object.loss(predictions, targets)
+        self.loss_object.loss(predictions, targets, **kwargs)
 
 
 class HGC_MSE():
