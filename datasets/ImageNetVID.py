@@ -1,5 +1,5 @@
 import torch
-from abstract_datasets import DetectionDataset 
+from .abstract_datasets import DetectionDataset 
 from PIL import Image
 import os
 import numpy as np
@@ -149,6 +149,6 @@ class PreprocessEval(object):
 
 
 
-dataset = ImageNetVID(json_path='/z/home/erichof/datasets/ILSVRC2015', dataset_type='train')
-dat = dataset.__getitem__(0)
-import pdb; pdb.set_trace()
+#dataset = ImageNetVID(json_path='/z/home/erichof/datasets/ILSVRC2015', dataset_type='train')
+#dat = dataset.__getitem__(0)
+#import pdb; pdb.set_trace()
