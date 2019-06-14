@@ -1,5 +1,5 @@
 import torch
-from abstract_datasets import DetectionDataset 
+from abstract_datasets import RecognitionDataset 
 from PIL import Image
 import os
 import numpy as np
@@ -7,6 +7,7 @@ import numpy as np
 class HMDB51(RecognitionDataset):
     def __init__(self, *args, **kwargs):
         super(HMDB51, self).__init__(*args, **kwargs)
+
 
     def __getitem__(self, idx):
         cat             = None 
@@ -97,3 +98,7 @@ class HMDB51(RecognitionDataset):
 
 
         return ret_data
+
+dataset = HMDB51(json_path='/z/dat/HMDB51', dataset_type='train', clip_length=100, num_clips=0)
+dat = dataset.__getitem__(0)
+import pdb; pdb.set_trace()

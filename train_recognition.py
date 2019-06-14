@@ -20,7 +20,7 @@ import torch.utils.data  as Data
 
 #from utils                     import save_checkpoint, load_checkpoint, accuracy, accuracy_action
 #from torchvision               import datasets, transforms
-#from data_handler              import data_loader
+from datasets                  import data_loader
 from tensorboardX              import SummaryWriter
 from torch.autograd            import Variable
 from torch.optim.lr_scheduler  import MultiStepLR
