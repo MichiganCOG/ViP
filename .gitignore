@@ -1,3 +1,4 @@
 pytorchenv/*
 *.swp
 *.pyc
+runs/*

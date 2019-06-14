@@ -1,7 +1,7 @@
 Rerun:           5                     # Number of trials to repeat an experiment
-Dataset:         JHMDB                 # Name of dataset 
+Dataset:         HMDB51                # Name of dataset 
 Batch_size:      128                   # Numbers of videos in a mini-batch 
-Type:            train                 # Environment selection, to include only training/training and validation/testing dataset
+Load_type:       train                 # Environment selection, to include only training/training and validation/testing dataset
 Model:           3DResNet              # Name of model to be loaded  
 Labels:          21                    # Number of total classes in the dataset
 Sample_size:     224                   # Height of frame to be provided as input to the model
@@ -14,3 +14,11 @@ Milestones:      [100, 150, 200]       # Epoch values to change learning rate
 Gamma:           0.2                   # Multiplier with which to change learning rate
 Epoch:           10                    # Total number of epochs 
 Save_dir:        '.'                   # Path to results directory
+Resize_shape:    [256,256]             # (Height, Width) to resize original data 
+Final_shape:     [224,224]             # (Height, Width) of input to be given to CNN
+Clip_length:     16                    # Number of frames within a clip 
+Clip_offset:     0                     # Frame offset between beginning of video and clip (1st clip only) 
+Clip_stride:     0                     # Frame offset between successive frames
+Crop_shape:      [224,224]             # (Height, Width) of frame  
+Crop_type:       Random                # Type of cropping operation (Random, Central and None)  
+Num_clips:       -1                     # Number clips to be generated from a video (<0: uniform sampling, 0: Divide entire video into clips, >0: Defines number of clips) 

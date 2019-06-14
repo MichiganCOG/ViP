@@ -1,5 +1,5 @@
 import torch
-from abstract_datasets import DetectionDataset 
+from .abstract_datasets import DetectionDataset 
 from PIL import Image
 import os
 import numpy as np
@@ -105,6 +105,6 @@ class ImageNetVID(DetectionDataset):
         return xmin_new, xmax_new, ymin_new, ymax_new 
 
 
-dataset = ImageNetVID(json_path='/z/home/erichof/datasets/ILSVRC2015', dataset_type='train')
-dat = dataset.__getitem__(0)
-import pdb; pdb.set_trace()
+#dataset = ImageNetVID(json_path='/z/home/erichof/datasets/ILSVRC2015', dataset_type='train')
+#dat = dataset.__getitem__(0)
+#import pdb; pdb.set_trace()

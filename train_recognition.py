@@ -38,7 +38,6 @@ def train(args):
     print("Experimental Setup: ", args)
 
     avg_acc = []
-    import pdb;pdb.set_trace()
 
     for total_iteration in range(args['Rerun']):
 
@@ -46,12 +45,12 @@ def train(args):
         writer = SummaryWriter()
 
         # Load Data
-        loader = data_loader(args['Dataset'], args['Batch_size'], args['Type'])
+        loader = data_loader(args)
 
-        if args['Type'] == 'train':
+        if args['Load_type'] == 'train':
             trainloader = loader['train']
 
-        elif args['Type'] == 'train_val':
+        elif args['Load_type'] == 'train_val':
             trainloader = loader['train']
             testloader  = loader['valid'] 
 

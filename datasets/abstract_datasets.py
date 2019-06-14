@@ -7,7 +7,8 @@ from PIL import Image
 
 class VideoDataset(Dataset):
     __metaclass__ = ABCMeta
-    def __init__(self, json_path, dataset_type, clip_length=16, clip_offset=0, clip_stride=1, num_clips=-1, resize_shape=[128, 128], crop_shape=[128, 128], crop_type='random', final_shape=[128,128]):
+    def __init__(self, *args, **kwargs):
+    #def __init__(self, json_path, dataset_type, clip_length=16, clip_offset=0, clip_stride=1, num_clips=-1, resize_shape=[128, 128], crop_shape=[128, 128], crop_type='random', final_shape=[128,128], *args, **kwargs):
         """
         Args: 
             json_path:    Path to the directory containing the dataset's JSON file (not including the file itself)
@@ -21,25 +22,29 @@ class VideoDataset(Dataset):
             crop_type:    The method used to crop (either random or center)
             final_shape:  Final shape [h, w] of each frame after all preprocessing, this is input to network
         """
+        args = args[0]
+
         # JSON loading arguments
-        self.json_path      = json_path 
-        self.dataset_type   = dataset_type
+        self.json_path      = kwargs['json_path']
+        self.dataset_type   = kwargs['dataset_type']
         
         # Clips processing arguments
-        self.clip_length    = clip_length 
-        self.clip_offset    = clip_offset
-        self.clip_stride    = clip_stride
-        self.num_clips      = num_clips
+        self.clip_length    = args['Clip_length']
+        self.clip_offset    = args['Clip_offset']
+        self.clip_stride    = args['Clip_stride']
+        self.num_clips      = args['Num_clips']
 
         # Frame-wise processing arguments
-        self.resize_shape   = resize_shape 
-        self.crop_shape     = crop_shape 
-        self.crop_type      = crop_type 
-        self.final_shape    = final_shape
+        self.resize_shape   = args['Resize_shape']
+        self.crop_shape     = args['Crop_shape'] 
+        self.crop_type      = args['Crop_type'] 
+        self.final_shape    = args['Final_shape']
 
         # Creates the self.samples list which will be indexed by each __getitem__ call
         self._getClips()
 
+    def __len__(self):
+        return len(self.samples)
 
     def __getitem__(self, idx):
         raise NotImplementedError("Dataset must contain __getitem__ method which loads videos from memory.")
@@ -101,11 +106,11 @@ class VideoDataset(Dataset):
             # END IF                               
     
         else:
-            final_video = [video[:self.clip_length]]
+            final_video = video[:self.clip_length]
 
         # END IF
 
-        return final_video
+        return [final_video]
 
     def _preprocFrame(self, frame_path, bbox_data=[]):
         """
@@ -178,9 +183,7 @@ class RecognitionDataset(VideoDataset):
             # Each clip is a list of dictionaries per frame containing information
             # Example info: object bbox annotations, object classes, frame img path
             for clip in clips:    
-                import pdb; pdb.set_trace()
                 self.samples.append(dict(frames=clip, base_path=video_info['base_path']))
-
 
 
 
@@ -232,7 +235,6 @@ class DetectionDataset(VideoDataset):
         # Load the information for each video and process it into clips
         for video_info in json_data:
             clips = self._extractClips(video_info['frame'])
-            import pdb; pdb.set_trace()
 
             # Each clip is a list of dictionaries per frame containing information
             # Example info: object bbox annotations, object classes, frame img path
