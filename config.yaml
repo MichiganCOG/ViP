@@ -21,4 +21,5 @@ Clip_offset:     0                     # Frame offset between beginning of video
 Clip_stride:     0                     # Frame offset between successive frames
 Crop_shape:      [224,224]             # (Height, Width) of frame  
 Crop_type:       Random                # Type of cropping operation (Random, Central and None)  
-Num_clips:       -1                     # Number clips to be generated from a video (<0: uniform sampling, 0: Divide entire video into clips, >0: Defines number of clips) 
+Num_clips:       -1                    # Number clips to be generated from a video (<0: uniform sampling, 0: Divide entire video into clips, >0: Defines number of clips) 
+Seed:            999                   # Seed for reproducibility  

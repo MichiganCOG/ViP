@@ -112,22 +112,7 @@ class VideoDataset(Dataset):
 
         return [final_video]
 
-    def _preprocFrame(self, frame_path, bbox_data=[]):
-        """
-        Preprocess a frame using data augmentation functions and return processed image 
-        Args:
-            frame_path: The global path to the frame image 
-            bbox_data:  For detection datasets, augment bbox coordinates according to frame augmentations (size = [# objects, 4 coordinates])
-        """
-        frame_data = Image.open(frame_path)
-        frame_data = frame_data.resize(self.final_shape)
-        # TODO @preetsg add calls to preproc_utils.py here
 
-        if bbox_data==[]:
-            return np.array(frame_data)
-
-        else:
-            return np.array(frame_data), bbox_data
         
 
 
