@@ -18,6 +18,9 @@ import torch.nn          as nn
 import torch.optim       as optim
 import torch.utils.data  as Data
 
+import models.models_import as models_import
+model = models_import.create_model_object(model_name='resnet_3d')
+import pdb; pdb.set_trace()
 #from utils                     import save_checkpoint, load_checkpoint, accuracy, accuracy_action
 #from torchvision               import datasets, transforms
 from datasets                  import data_loader
@@ -27,6 +30,8 @@ from torch.optim.lr_scheduler  import MultiStepLR
 
 # Import models 
 #from models                    import resnet18 as res
+
+
 
 def train(args):
 

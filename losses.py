@@ -1,4 +1,5 @@
 import torch 
+import torch.nn    as nn
 
 
 class Losses():
@@ -17,6 +18,12 @@ class Losses():
         if self.loss_type == 'HGC_MSE':
             self.loss_object = HGC_MSE(*args, **kwargs)
 
+        elif self.loss_type == 'M_XENTROPY':
+            self.loss_object = M_XENTROPY(*args, **kwargs)
+
+        else:
+            print('Invalid loss type selected. Quitting!')
+            exit(1)
 
     def loss(self, predictions, targets, **kwargs):
         """
@@ -33,3 +40,10 @@ class HGC_MSE():
 
     def loss(self, predictions, targets):
         return self.hgc_mse_loss(predictions, targets)
+
+class M_XENTROPY():
+    def __init__(self, *args, **kwargs):
+        self.logsoftmax = nn.LogSoftmax()
+
+    def loss(self, predictions, targets):
+        return torch.mean(torch.sum(-targets * self.logsoftmax(predictions), dim=1))
