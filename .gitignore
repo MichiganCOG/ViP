@@ -1,3 +1,7 @@
 pytorchenv/*
 *.swp
 *.pyc
+
+*.pth
+*.pth.tar
+*.pkl
