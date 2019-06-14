@@ -62,7 +62,26 @@ class VideoDataset(Dataset):
             self.clip_offset: Number of frames from beginning of video to start extracting clips 
             self.clip_stride: Number of frames between clips when extracting them from videos 
         """
-        return [video[:self.clip_length]]
+        if self.num_clips < 0:
+            if len(video) >= self.clip_length:
+                final_video = [video[_idx] for _idx in np.linspace(0, len(video)-1, self.clip_length, dtype='int32')]
+                return [final_video]
+
+            else:
+                # Loop if insufficient elements
+                indices = np.ceil(self.clip_length/float(len(video)))
+                indices = indices.astype('int32')
+                indices = np.tile(np.arange(0, len(video), 1, dtype='int32'), indices)
+                indices = indices[np.linspace(0, len(indices)-1, self.clip_length, dtype='int32')]
+                final_video = [video[_idx] for _idx in indices]
+                return final_video 
+
+            # END IF
+
+        else:
+            return [video[:self.clip_length]]
+
+        # END IF
 
     def _preprocFrame(self, frame_path, bbox_data=[]):
         """
@@ -110,51 +129,34 @@ class RecognitionDataset(VideoDataset):
         Eg: action_label = dataset[vid_index]['frames'][frame_index]['actoins'][action_index]['action_class']
         """
 
-        data_path  = os.path.join('/z/dat', self.dataset_dir)
-        label_dict = {'brush_hair': 0,      'cartwheel': 1,
-                      'catch': 2,           'chew': 3, 
-                      'clap': 4,            'climb_stairs': 5, 
-                      'climb': 6,           'dive': 7,
-                      'draw_sword': 8,      'dribble': 9,
-                      'drink': 10,          'eat': 11,
-                      'fall_floor': 12,     'fencing': 13,
-                      'flic_flac': 14,      'golf': 15,
-                      'handstand': 16,      'hit': 17,
-                      'hug': 18,            'jump': 19,
-                      'kick_ball': 20,      'kick': 21,
-                      'kiss': 22,           'laugh': 23,
-                      'pick': 24,           'pour': 25,
-                      'pullup': 26,         'punch': 27,
-                      'push': 28,           'pushup': 29,
-                      'ride_bike': 30,      'ride_horse': 31,
-                      'run': 32,            'shake_hands': 33,
-                      'shoot_ball': 34,     'shoot_bow': 35,
-                      'shoot_gun': 36,      'sit': 37, 
-                      'situp': 38,          'smile': 39,
-                      'smoke': 40,          'somersault': 41,
-                      'stand': 42,          'swing_baseball': 43,
-                      'sword_exercise': 44, 'sword': 45,
-                      'talk': 46,           'throw': 47,
-                      'turn': 48,           'walk': 49,
-                      'wave': 50}
+        self.samples      = []
+        self.dataset_type = 'train'
         
-   
-        base_path = os.path.join(data_path, self.dataset_type+'images')
-        actions   = os.listdir(base_path)
-        
-        for action in actions:
-            for video in os.listdir(os.path.join(base_path, action)):
-                if not '.DS' in video:
-                    video_images = sorted(os.listdir(os.path.join(base_path, action, video.replace('.avi',''))))
-                    self.samples.append([os.path.join(base_path, action, video.replace('.avi',''), video_image) for video_image in video_images])
-                    self.labels.append(label_dict[action])
-            
-                # END IF
+        if self.dataset_type == 'train':
+            full_json_path = os.path.join(self.json_path, 'train.json')
 
-            # END FOR
+        elif self.dataset_type == 'val':
+            full_json_path = os.path.join(self.json_path, 'val.json') 
 
-        # END FOR
+        else:
+            full_json_path = os.path.join(self.json_path, 'test.json')
 
+        # END IF 
+
+        json_file = open(full_json_path,'r')
+        json_data = json.load(json_file) 
+        json_file.close()
+
+        # Load the information for each video and process it into clips
+        for video_info in json_data:
+            clips = self._extractClips(video_info['frames'])
+
+            # Each clip is a list of dictionaries per frame containing information
+            # Example info: object bbox annotations, object classes, frame img path
+            for clip in clips:    
+                self.samples.append(dict(frames=clip, base_path=video_info['base_path']))
+
+        import pdb; pdb.set_trace()
 
 
 
@@ -206,6 +208,7 @@ class DetectionDataset(VideoDataset):
         # Load the information for each video and process it into clips
         for video_info in json_data:
             clips = self._extractClips(video_info['frame'])
+            import pdb; pdb.set_trace()
 
             # Each clip is a list of dictionaries per frame containing information
             # Example info: object bbox annotations, object classes, frame img path
