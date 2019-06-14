@@ -1,5 +1,6 @@
 import importlib
 import sys
+import glob
 
 def create_model_object(**kwargs):
     """
@@ -14,16 +15,22 @@ def create_model_object(**kwargs):
 
     model_name = kwargs['model_name']
     del kwargs['model_name']
-    model_file = 'models/'+model_name+'.py'
 
-    if not model_file:
-        sys.exit('Model not found. Ensure model is in models/, with a matching name')
+    model_files = glob.glob('models/*.py')
+    ignore_files = ['__init__.py', 'models_import.py']
 
-    module_name = model_file[0][:-3].replace('/','.')
-    module = importlib.import_module(module_name)
-    module_lower = list(map(lambda module_x: module_x.lower(), dir(module)))
+    for mf in model_files:
+        if mf in ignore_files:
+            continue
 
-    model_index = module_lower.index(model_name.lower())
-    model = getattr(module, dir(module)[model_index])(**kwargs)
+        module_name = mf[:-3].replace('/','.')
+        module = importlib.import_module(module_name)
+        module_lower = list(map(lambda module_x: module_x.lower(), dir(module)))
 
-    return model
+        if model_name.lower() in module_lower:
+            model_index = module_lower.index(model_name.lower())
+            model = getattr(module, dir(module)[model_index])(**kwargs)
+
+            return model
+
+    sys.exit('Model not found. Ensure model is in models/, with a matching class name')
