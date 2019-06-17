@@ -22,6 +22,7 @@ import torch.utils.data  as Data
 #model = models_import.create_model_object(model_name='resnet101', num_classes=21, sample_size=224, sample_duration=16)
 #import pdb; pdb.set_trace()
 #from utils                     import save_checkpoint, load_checkpoint, accuracy, accuracy_action
+from checkpoint                import save_checkpoint, load_checkpoint
 #from torchvision               import datasets, transforms
 from datasets                  import data_loader
 from tensorboardX              import SummaryWriter
