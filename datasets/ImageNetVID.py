@@ -4,7 +4,7 @@ from PIL import Image
 import os
 import numpy as np
 import json
-import preprocessing_functions as pf
+import preprocessing_transforms as pt
 
 class ImageNetVID(DetectionDataset):
     def __init__(self, *args, **kwargs):
@@ -23,10 +23,10 @@ class ImageNetVID(DetectionDataset):
 
 
         if self.dataset_type=='train':
-            self.transforms = PreprocessTrain(100)
+            self.transforms = PreprocessTrain()
 
         else:
-            self.transforms = PreprocessEval(100)
+            self.transforms = PreprocessEval()
 
     def __getitem__(self, idx):
         vid_info = self.samples[idx]
@@ -101,10 +101,9 @@ class PreprocessTrain(object):
     """
     Container for all transforms used to preprocess clips for training in this dataset.
     """
-    def __init__(self, size):
-        self.size = size
-        self.crop = pf.randomCropClip(128, 128)
-        self.resize = pf.resizeClip(128,128)
+    def __init__(self):
+        self.crop = pt.randomCropClip(128, 128)
+        self.resize = pt.resizeClip(128,128)
 
 
     def __call__(self, input_data, bbox_data):
@@ -126,10 +125,9 @@ class PreprocessEval(object):
     """
     Container for all transforms used to preprocess clips for evaluation in this dataset.
     """
-    def __init__(self, size):
-        self.size = size
-        self.crop = pf.centerCropClip(128, 128)
-        self.resize = pf.resizeClip(128,128)
+    def __init__(self):
+        self.crop = pt.centerCropClip(128, 128)
+        self.resize = pt.resizeClip(128,128)
 
 
     def __call__(self, input_data, bbox_data):
