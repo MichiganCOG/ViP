@@ -4,10 +4,10 @@ Additionally also processing all bounding boxes in a video according to the tran
 
 Usage:
     In a custom dataset class:
-    from preprocessing_functions import *
+    from preprocessing_transforms import *
 """
 
-import torchvision
+from torchvision.transforms import functional as F
 
 def resizeClip(clip, bbox):
     return clip, bbox
