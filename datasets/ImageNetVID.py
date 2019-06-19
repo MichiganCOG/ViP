@@ -102,8 +102,8 @@ class PreprocessTrain(object):
     Container for all transforms used to preprocess clips for training in this dataset.
     """
     def __init__(self):
-        self.crop = pt.randomCropClip(128, 128)
-        self.resize = pt.resizeClip(128,128)
+        self.crop = pt.RandomCropClip(128, 128)
+        self.resize = pt.ResizeClip(128,128)
 
 
     def __call__(self, input_data, bbox_data):
@@ -141,6 +141,7 @@ class PreprocessEval(object):
             input_data: Pytorch tensor containing the processed clip data 
             bbox_data:  Numpy tensor containing the augmented bbox coordinates
         """
+        input_data, bbox_data = self.crop(input_data, bbox_data)
         input_data, bbox_data = self.resize(input_data, bbox_data)
         return input_data, bbox_data
 
