@@ -1,10 +1,10 @@
 import torch
-from .abstract_datasets import DetectionDataset 
+from datasets.abstract_datasets import DetectionDataset 
 from PIL import Image
 import os
 import numpy as np
 import json
-import preprocessing_transforms as pt
+import datasets.preprocessing_transforms as pt
 
 class ImageNetVID(DetectionDataset):
     def __init__(self, *args, **kwargs):

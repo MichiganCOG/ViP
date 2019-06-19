@@ -30,9 +30,7 @@ from torch.autograd            import Variable
 from torch.optim.lr_scheduler  import MultiStepLR
 
 # Import models 
-#from models                    import resnet18 as res
-
-
+from models.models_import      import create_model_object
 
 def train(args):
 
@@ -64,7 +62,7 @@ def train(args):
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     
         # Load Network # EDIT
-        model = res(num_classes=args['Labels'], sample_size=args['Sample_size'], sample_duration=args['Sample_duration']).to(device)
+        model = create_model_object(model_name=args['Model'],num_classes=args['Labels'], sample_size=args['Sample_size'], sample_duration=args['Sample_duration']).to(device)
 
         # Training Setup
         params     = [p for p in model.parameters() if p.requires_grad]
@@ -90,9 +88,6 @@ def train(args):
             running_loss = 0.0
             print('Epoch: ', epoch)
 
-            # Save Current Model
-            save_checkpoint(epoch, 0, model, optimizer, args['Save_dir']+'/'+str(total_iteration)+'/model_'+str(epoch)+'.pkl')
-
             # Setup Model To Train 
             model.train()
 
@@ -108,7 +103,7 @@ def train(args):
                 outputs = model(x_input)
 
                 # EDIT
-                loss    = torch.mean(torch.sum(-y_label * logsoftmax(outputs), dim=1))
+                loss    = torch.mean(torch.sum(-y_label * nn.functional.log_softmax(outputs,dim=1), dim=1))
     
                 loss.backward()
                 optimizer.step()
@@ -122,10 +117,21 @@ def train(args):
                     import pdb; pdb.set_trace()
    
                 if step % 100 == 0:
-                    print('Epoch: ', epoch, '| train loss: %.4f' % (running_loss/100.))
+                    #print('Epoch: ', epoch, '| train loss: %.4f' % (running_loss/100.))
+                    print('Epoch: {}/{}, step: {}/{} | train loss: {:.4f}'.format(epoch, args['Epoch'], step, len(trainloader), running_loss/100.))
                     running_loss = 0.0
 
                 # END IF
+
+            # Save Current Model
+            save_path = os.path.join(args['Save_dir'],args['Model'])
+
+            if not os.path.isdir(args['Save_dir']):
+                os.mkdir(args['Save_dir'])
+            if not os.path.isdir(save_path):
+                os.mkdir(save_path)
+
+            save_checkpoint(epoch, 0, model, optimizer, os.path.join(save_path,args['Dataset']+'_epoch'+str(epoch)+'.pkl'))
    
             # END FOR: Epoch
 
