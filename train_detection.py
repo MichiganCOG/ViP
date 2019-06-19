@@ -1,6 +1,6 @@
 import os
 import io #needed?
-import cv2
+#import cv2 #needed?
 import yaml
 import torch
 import torchvision
@@ -9,8 +9,11 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data as Data
 
+import models.models_import as models_import
+model = models_import.create_model_object(model_name='HGC3D', num_classes=21, sample_size=224, sample_duration=16)
 from tensorboardX import SummaryWriter
 from torch.optim.lr_scheduler import MultiStepLR
+from datasets import data_loader 
 
 def train(args):
 
@@ -23,11 +26,11 @@ def train(args):
         writer = SummaryWriter()
 
         # Load Data
-        loader = data_loader(args['Dataset'], args['Batch_size'], args['Type'])
+        loader = data_loader(args)#['Dataset'], args['Batch_size'], args['Load_type'])
 
-        if args['Type'] == 'train':
+        if args['Load_type'] == 'train':
             trainloader = loader['train']
-        elif args['Type'] == 'train_val':
+        elif args['Load_type'] == 'train_val':
             trainloader = loader['train']
             testloader  = loader['valid'] 
 
@@ -38,7 +41,7 @@ def train(args):
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     
         # Load Network # EDIT
-        model = res(num_classes=args['Labels'], sample_size=args['Sample_size'], sample_duration=args['Sample_duration']).to(device)
+        #model = res(num_classes=args['Labels'], sample_size=args['Sample_size'], sample_duration=args['Sample_duration']).to(device)
 
         # Training Setup
         params     = [p for p in model.parameters() if p.requires_grad]
