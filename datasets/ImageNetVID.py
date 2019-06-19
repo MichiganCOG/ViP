@@ -1,5 +1,5 @@
 import torch
-from .abstract_datasets import DetectionDataset 
+from datasets.abstract_datasets import DetectionDataset 
 from PIL import Image
 import os
 import numpy as np

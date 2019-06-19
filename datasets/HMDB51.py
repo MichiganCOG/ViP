@@ -1,4 +1,5 @@
 import torch
+
 from .abstract_datasets import RecognitionDataset 
 from PIL import Image
 import os
@@ -23,10 +24,10 @@ class HMDB51(RecognitionDataset):
                 labels[frame_ind] = frame_labels['action_class']
 
             # Load frame image data and preprocess image accordingly
-            vid_data[frame_ind] = self._preprocFrame(frame_path)
+            #vid_data[frame_ind] = self._preprocFrame(frame_path)
 
-        vid_data   = torch.from_numpy(vid_data)
-        labels     = torch.from_numpy(labels)
+        vid_data   = torch.from_numpy(vid_data).float()
+        labels     = torch.from_numpy(labels).float()
 
         # Permute the PIL dimensions (Frame, Height, Width, Chan) to pytorch (Chan, frame, height, width) 
         vid_data = vid_data.permute(3, 0, 1, 2)
