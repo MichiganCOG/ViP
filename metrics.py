@@ -46,7 +46,13 @@ class Accuracy():
 
     """
     def get_accuracy(self, predictions, targets):
-        pass        
+        
+        assert (predictions.shape == targets.shape)
+
+        correct = torch.sum(predictions == targets).float()
+        total = predictions.nelement()
+
+        return correct/total
 
 class IOU():
     """
@@ -106,11 +112,11 @@ class IOU():
     def get_accuracy(self, predictions, targets):
         """
         Args:
-            predictions: shape [N,C,4], coordinate format [x1, y1, x2, y2]
-            targets: shape [N,C,4]
+            predictions: shape [N] or [N,C,4], coordinate format [x1, y1, x2, y2]
+            targets: shape [N,4] or [N,C,4]
 
         Return:
-            iou: shape [N,C]
+            iou: scalar or shape [N,C]
         """
 
         if len(predictions.shape) > 2:
@@ -121,8 +127,7 @@ class IOU():
             
             for cls in range(c):
                 iou_scores[:,cls] = self.iou(predictions[:,cls,:], targets[:,cls,:])
-
-        else: #Input shape of [N,4] is also acceptable
+        else:
             iou_scores = self.iou(predictions, targets)
 
         if self.average:
@@ -140,9 +145,10 @@ class Precision():
     def get_precision(self, scores, targets_mask):
         """
         Args:
-            scores: 
+            scores: confidence score (or iou) per prediction, shape [N] 
             targets_mask: binary mask, shape [N]
         """
+
         TP = torch.sum((scores * targets_mask) >= self.threshold).float()
         FP = torch.sum((scores * (1-targets_mask) >= self.threshold)).float()
 
@@ -153,13 +159,13 @@ class Precision():
         Args:
             predictions: shape [N,4], coordinate format [x1, y1, x2, y2]
             targets: shape [N,4]
-            targets_mask: binary mask, shape [N]
         """
-        n,d = targets.shape 
-        targets_mask = torch.ones(n)
-        scores = self.IOU.get_accuracy(predictions, targets) #TODO: decide a way to compute scores
 
-        return self.get_precision(scores, targets_mask) #[N,C]
+        n,_ = targets.shape 
+        targets_mask = torch.ones(n)
+        scores = self.IOU.get_accuracy(predictions, targets) #TODO: Find alternate way to compute scores 
+
+        return self.get_precision(scores, targets_mask)
 
 class AveragePrecision():
 
@@ -181,7 +187,7 @@ class AveragePrecision():
     def get_average_precision(self, scores, targets_mask):
         """
         Args:
-            scores:
+            scores: confidence score (or iou) per prediction, shape [N] 
             targets_mask: binary mask, shape [N,C]
         """
 
@@ -202,9 +208,8 @@ class AveragePrecision():
             pr[n] = running_tp/(n+1)
             rc[n] = running_tp/total_positives
 
-        #Calculate Average Precision
-        pr_inter = torch.zeros(self.num_points)#interpolated n-point precision curve
-        rc_values = torch.linspace(0,1,self.num_points)
+        pr_inter = torch.zeros(self.num_points) #interpolated n-point precision curve
+        rc_values = torch.linspace(0,1,self.num_points) #sampled recall points for precision-recall curve
 
         #The interpotaled P-R curve will take on the max precision value to the right at each recall
         for n in range(len(rc_values)):
@@ -222,14 +227,14 @@ class AveragePrecision():
         Args:
             predictions: shape [N,C,4], coordinate format [x1, y1, x2, y2]
             targets: shape [N,C,4]
-            targets_mask: binary mask, shape [N,C]
         """
+
         if len(targets.shape) > 2:
             n,c,_ = targets.shape 
-            targets_mask = torch.ones((n,c)) #TODO: Generalize to shape and data type of targets
+            targets_mask = 1 - (targets == torch.Tensor([-1,-1,-1,-1]))[:,0].float() #TODO: Find way to generate masks for multiple objects. None relevant entries should be coordinates of -1
         else: #single class case
             n,_ = targets.shape 
-            targets_mask = torch.ones(n)
+            targets_mask = 1 - (targets == torch.Tensor([-1,-1,-1,-1]))[:,0].float()
 
         scores = self.IOU.get_accuracy(predictions, targets) #[N,C] 
 
@@ -242,6 +247,8 @@ class MAP():
         Mean average precision
 
         Args:
+            threshold: Calculate AP at each of these threshold values
+            num_points: number of points to average for the interpolated AP calculation
         """
 
         self.threshold = threshold
@@ -250,6 +257,9 @@ class MAP():
 
     def get_mAP(self, predictions, targets):
         """
+        Args:
+            predictions: shape [N,C,4], coordinate format [x1, y1, x2, y2]
+            targets: shape [N,C,4]
         """
 
         AP_scores = torch.zeros(self.threshold.shape)
@@ -265,22 +275,20 @@ class MAP():
         Args:
             predictions: shape [N,C,4], coordinate format [x1, y1, x2, y2]
             targets: shape [N,C,4]
-            targets_mask: binary mask, shape [N,C]
         """
 
         return self.get_mAP(predictions, targets)
 
 class Recall():
-    #TODO: Incomplete
     def __init__(self, threshold=0.5):
 
         self.threshold = threshold
+        self.IOU = IOU(average=False)
 
-    def get_recall(scores, targets_mask):
+    def get_recall(self, scores, targets_mask):
         """
         Args:
-            predictions: shape [N,4], coordinate format [x1, y1, x2, y2]
-            targets: shape [N,4]
+            scores: confidence scores per prediction, shape [N]
             targets_mask: binary mask, shape [N]
         """
         TP = torch.sum((scores * targets_mask) >= self.threshold).float()
@@ -293,11 +301,10 @@ class Recall():
         Args:
             predictions: shape [N,4], coordinate format [x1, y1, x2, y2]
             targets: shape [N,4]
-            targets_mask: binary mask, shape [N]
         """
         n,c,_ = targets.shape 
         targets_mask = torch.ones((n,c))
-        scores = None
+        scores = self.IOU.get_accuracy(predictions, targets) #TODO: Add alternate way to compute scores
 
         return self.get_recall(scores, targets_mask)
 
