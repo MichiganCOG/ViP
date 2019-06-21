@@ -14,6 +14,7 @@ model = models_import.create_model_object(model_name='HGC3D', num_classes=21, sa
 from tensorboardX import SummaryWriter
 from torch.optim.lr_scheduler import MultiStepLR
 from datasets import data_loader 
+from checkpoint import save_checkpoint
 
 def train(args):
 
@@ -74,6 +75,7 @@ def train(args):
                 optimizer.zero_grad()
 
                 outputs = model(x_input)
+                import pdb; pdb.set_trace()
                 loss    = nn.functional.mse_loss(outputs, y_label) #TODO: Replace with Losses class
     
                 loss.backward()
@@ -109,7 +111,7 @@ def train(args):
 
 if __name__ == '__main__':
 
-    with open('config.yaml', 'r') as filestream:
+    with open('config_det.yaml', 'r') as filestream:
         args = yaml.load(filestream)
 
     # For reproducibility

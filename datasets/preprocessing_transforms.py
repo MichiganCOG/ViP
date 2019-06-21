@@ -21,21 +21,22 @@ class PreprocTransform(object):
     """
     __metaclass__ = ABCMeta
     def __init__(self):
-        self.image_type = type(Image.Image())
         self.numpy_type = type(np.array(0))
 
     def _format_clip(self, clip):
+
         assert((type(clip)==type(list())) or (type(clip)==self.numpy_type)), "Clips input to preprocessing transforms must be a list of PIL Images or numpy arrays"
         output_clip = []
-        if type(clip[0]) == self.image_type:
-            output_clip = clip
-
-        else:
+        
+        if type(clip[0]) == self.numpy_type:
             for frame in clip:
-                if len(frame.shape)==3:
+                if len(frame.size)==3:
                     output_clip.append(Image.fromarray(frame, mode='RGB'))
                 else:
+                    import pdb; pdb.set_trace()
                     output_clip.append(Image.fromarray(frame))
+        else:
+            output_clip = clip
 
 
         return output_clip
@@ -57,26 +58,29 @@ class PreprocTransform(object):
 
 
 class ResizeClip(PreprocTransform):
-    def __init__(self, output_size, *args, **kwargs):
+    def __init__(self, size_h, size_w, *args, **kwargs):
         super(ResizeClip, self).__init__(*args, **kwargs)
 
-        self.size_h, self.size_w = output_size
+        self.size_h = size_h
+        self.size_w = size_w
         
     def __call__(self, clip, bbox=[]):
+
         clip = self._format_clip(clip)
         out_clip = []
         out_bbox = []
         for frame_ind in range(len(clip)):
             frame = clip[frame_ind]
-            if type(frame) != self.image_type:
-                frame = Image.fromarray(frame)
 
             proc_frame = frame.resize((self.size_w, self.size_h))
             out_clip.append(proc_frame)
             if bbox!=[]:
-                xmin, ymin, xmax, ymax = bbox[frame_ind]
-                proc_bbox = resize_bbox(xmin, ymin, xmax, ymax, frame.size, (self.size_w, self.size_h))
-                out_bbox.append(proc_bbox)
+                temp_bbox = np.zeros(bbox[frame_ind].shape) 
+                for class_ind in range(len(bbox)):
+                    xmin, ymin, xmax, ymax = bbox[frame_ind, class_ind]
+                    proc_bbox = resize_bbox(xmin, ymin, xmax, ymax, frame.size, (self.size_w, self.size_h))
+                    temp_bbox[class_ind,:] = proc_bbox
+                out_bbox.append(temp_bbox)
 
         if bbox!=[]:
             return out_clip, out_bbox
@@ -92,7 +96,6 @@ class CropClip(PreprocTransform):
         self.bbox_ymin = ymin
         self.bbox_ymax = ymax
 
-        self.image_type = type(Image.Image())
 
     def _update_bbox(self, xmin, xmax, ymin, ymax):
         self.bbox_xmin = xmin
@@ -249,7 +252,7 @@ class ToTensorClip(PreprocTransform):
 
     def __call__(self, clip, bbox=[]):
         clip = self._format_clip_numpy(clip)
-        clip = torch.from_numpy(clip)
+        clip = torch.from_numpy(clip).float()
         if bbox!=[]:
             bbox = torch.from_numpy(np.array(bbox))
             return clip, bbox

@@ -36,7 +36,7 @@ class DilatedConv3d(nn.Module):
 
         for frame in range(kernel_depth):
             current_dilation = dilations[frame] 
-            current_padding  = padding + (((kernel_size-1)/2) * (current_dilation-1))
+            current_padding  = int(padding + (((kernel_size-1)/2) * (current_dilation-1)))
             curr_conv = nn.Conv2d(in_chan, out_chan, kernel_size, stride=stride, padding=current_padding, dilation=current_dilation, bias=None)
 
             if init_zero:
@@ -88,6 +88,9 @@ class DilatedConv3d(nn.Module):
         out = [] 
         for frame_id in range(x.shape[2]):
             frame = x[:,:,frame_id,:,:] # batch, in channel, depth, height, width
+            #if self.convs[frame_id].weight.type() != x.type():
+            #    self.convs[frame_id] = self.convs[frame_id].type(x.type())
+
             out.append(self.convs[frame_id](frame))
 
         out = torch.sum(torch.stack(out), dim=0)
@@ -116,20 +119,33 @@ class HGC3D(nn.Module):
         self.inplanes = 64
         super(HGC3D, self).__init__()
 
-        self.conv1 = DilatedConv3d(  3,  32, kernel_size=3, kernel_depth=3,  max_dilation=1, min_dilation=1, stride=1, padding=1, bias=True, stride_depth=1, depth_padding=1)
-        self.conv1_bn = nn.BatchNorm3d(32)
-        self.conv2 = DilatedConv3d( 32,  64, kernel_size=3, kernel_depth=5,  max_dilation=2, min_dilation=1, stride=1, padding=1, bias=True, stride_depth=1, depth_padding=2)
-        self.conv2_bn = nn.BatchNorm3d(64)
-        self.conv3 = DilatedConv3d( 64, 128, kernel_size=3, kernel_depth=5,  max_dilation=4, min_dilation=1, stride=1, padding=1, bias=True, stride_depth=1, depth_padding=0)
-        self.conv3_bn = nn.BatchNorm3d(128)
-        self.conv4 = DilatedConv3d(128, 256, kernel_size=5, kernel_depth=12, max_dilation=4, min_dilation=1, stride=1, padding=2, bias=True, stride_depth=1, depth_padding=0)
-        self.conv4_bn = nn.BatchNorm3d(256)
-        self.final = nn.Conv2d(256, num_classes*1+1, kernel_size=1, stride=1, padding=0, bias=None)
+        self.conv1 = DilatedConv3d(  3,  16, kernel_size=3, kernel_depth=3,  max_dilation=1, min_dilation=1, stride=1, padding=1, bias=True, stride_depth=1, depth_padding=1)
+        self.conv1_bn = nn.BatchNorm3d(16)
+        self.conv2 = DilatedConv3d( 16,  32, kernel_size=3, kernel_depth=5,  max_dilation=2, min_dilation=1, stride=1, padding=1, bias=True, stride_depth=1, depth_padding=2)
+        self.conv2_bn = nn.BatchNorm3d(32)
+        self.conv3 = DilatedConv3d( 32, 64, kernel_size=3, kernel_depth=5,  max_dilation=4, min_dilation=1, stride=1, padding=1, bias=True, stride_depth=1, depth_padding=0)
+        self.conv3_bn = nn.BatchNorm3d(64)
+        self.conv4 = DilatedConv3d(64, 128, kernel_size=5, kernel_depth=12, max_dilation=4, min_dilation=1, stride=1, padding=2, bias=True, stride_depth=1, depth_padding=0)
+        self.conv4_bn = nn.BatchNorm3d(128)
+        self.final = nn.Conv2d(128, num_classes*1+1, kernel_size=1, stride=1, padding=0, bias=None)
         #self.final = nn.Conv2d(256, num_classes*3+1, kernel_size=1, stride=1, padding=0, bias=None)
+
+        self.idxtensor = torch.tensor([0])
 
         self.final_act = nn.Sigmoid()
 
     def forward(self, x):
+        if x.is_cuda:
+            self.conv1     = self.conv1.cuda()
+            self.conv1_bn  = self.conv1_bn.cuda()
+            self.conv2     = self.conv2.cuda()
+            self.conv2_bn  = self.conv2_bn.cuda()
+            self.conv3     = self.conv3.cuda()
+            self.conv3_bn  = self.conv3_bn.cuda()
+            self.conv4     = self.conv4.cuda()
+            self.conv4_bn  = self.conv4_bn.cuda()
+            self.final     = self.final.cuda()
+            self.idxtensor = self.idxtensor.cuda()
 
         x = F.relu(self.conv1_bn(self.conv1(x)))
     
@@ -139,7 +155,7 @@ class HGC3D(nn.Module):
       
         x = F.relu(self.conv4_bn(self.conv4(x)))
        
-        x = torch.index_select(x, 2, torch.tensor([0]).cuda()).squeeze(2)
+        x = torch.index_select(x, 2, self.idxtensor).squeeze(2)
         x = self.final(x)
         x = self.final_act(x)
 

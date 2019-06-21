@@ -13,9 +13,9 @@ def data_loader(*args, **kwargs):#dataset, batch_size, load_type, *args, **kwarg
     """
 
     if args[0]['Dataset'] == 'ImageNetVID':
-        train_data = ImageNetVID(json_path='/z/home/natlouis/data/ILSVRC2015/', dataset_type='train', *args, **kwargs)
-        val_data   = ImageNetVID(json_path='/z/home/natlouis/data/ILSVRC2015/', dataset_type='val',   *args, **kwargs)
-        test_data  = ImageNetVID(json_path='/z/home/natlouis/data/ILSVRC2015/', dataset_type='test',  *args, **kwargs)
+        train_data = ImageNetVID(json_path='/z/home/erichof/datasets/ILSVRC2015/', dataset_type='train', *args, **kwargs)
+        val_data   = ImageNetVID(json_path='/z/home/erichof/datasets/ILSVRC2015/', dataset_type='val',   *args, **kwargs)
+        test_data  = ImageNetVID(json_path='/z/home/erichof/datasets/ILSVRC2015/', dataset_type='test',  *args, **kwargs)
 
         trainloader = torch.utils.data.DataLoader(dataset = train_data, batch_size=args[0]['Batch_size'], shuffle=True,  num_workers=2)
         valloader   = torch.utils.data.DataLoader(dataset = val_data,   batch_size=args[0]['Batch_size'], shuffle=False, num_workers=2)
