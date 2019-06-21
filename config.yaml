@@ -1,6 +1,6 @@
 rerun:           5                     # Number of trials to repeat an experiment
 dataset:         HMDB51                # Name of dataset 
-batch_size:      4                   # Numbers of videos in a mini-batch 
+batch_size:      4                     # Numbers of videos in a mini-batch 
 load_type:       train                 # Environment selection, to include only training/training and validation/testing dataset
 model:           resnet101             # Name of model to be loaded  
 labels:          16                    # Number of total classes in the dataset

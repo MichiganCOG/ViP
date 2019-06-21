@@ -29,16 +29,16 @@ class VideoDataset(Dataset):
         self.dataset_type   = kwargs['dataset_type']
         
         # Clips processing arguments
-        self.clip_length    = args['Clip_length']
-        self.clip_offset    = args['Clip_offset']
-        self.clip_stride    = args['Clip_stride']
-        self.num_clips      = args['Num_clips']
+        self.clip_length    = args['clip_length']
+        self.clip_offset    = args['clip_offset']
+        self.clip_stride    = args['clip_stride']
+        self.num_clips      = args['num_clips']
 
         # Frame-wise processing arguments
-        self.resize_shape   = args['Resize_shape']
-        self.crop_shape     = args['Crop_shape'] 
-        self.crop_type      = args['Crop_type'] 
-        self.final_shape    = args['Final_shape']
+        self.resize_shape   = args['resize_shape']
+        self.crop_shape     = args['crop_shape'] 
+        self.crop_type      = args['crop_type'] 
+        self.final_shape    = args['final_shape']
 
         # Creates the self.samples list which will be indexed by each __getitem__ call
         self._getClips()

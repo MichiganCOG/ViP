@@ -22,16 +22,16 @@ def train(args):
 
     avg_acc = []
 
-    for total_iteration in range(args['Rerun']):
+    for total_iteration in range(args['rerun']):
         # Tensorboard Element
         writer = SummaryWriter()
 
         # Load Data
-        loader = data_loader(args)#['Dataset'], args['Batch_size'], args['Load_type'])
+        loader = data_loader(args)#['dataset'], args['batch_size'], args['load_type'])
 
-        if args['Load_type'] == 'train':
+        if args['load_type'] == 'train':
             trainloader = loader['train']
-        elif args['Load_type'] == 'train_val':
+        elif args['load_type'] == 'train_val':
             trainloader = loader['train']
             testloader  = loader['valid'] 
 
@@ -42,27 +42,27 @@ def train(args):
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     
         # Load Network # EDIT
-        #model = res(num_classes=args['Labels'], sample_size=args['Sample_size'], sample_duration=args['Sample_duration']).to(device)
+        #model = res(num_classes=args['labels'], sample_size=args['sample_size'], sample_duration=args['sample_duration']).to(device)
 
         # Training Setup
         params     = [p for p in model.parameters() if p.requires_grad]
 
-        if args['Opt'] == 'sgd':
-            optimizer  = optim.SGD(params, lr=args['Lr'], momentum=args['Momentum'], weight_decay=args['Weight_decay'])
-        elif args['Opt'] == 'adam':
-            optimizer  = optim.Adam(params, lr=args['Lr'], weight_decay=args['Weight_decay'])
+        if args['opt'] == 'sgd':
+            optimizer  = optim.SGD(params, lr=args['lr'], momentum=args['momentum'], weight_decay=args['weight_decay'])
+        elif args['opt'] == 'adam':
+            optimizer  = optim.Adam(params, lr=args['lr'], weight_decay=args['weight_decay'])
         else:
             print('Unsupported optimizer selected. Exiting')
             exit(1)
             
-        scheduler  = MultiStepLR(optimizer, milestones=args['Milestones'], gamma=args['Gamma'])    
+        scheduler  = MultiStepLR(optimizer, milestones=args['milestones'], gamma=args['gamma'])    
 
-        for epoch in range(args['Epoch']):
+        for epoch in range(args['epoch']):
             running_loss = 0.0
             print('Epoch: ', epoch)
 
             # Save Current Model
-            save_checkpoint(epoch, 0, model, optimizer, args['Save_dir']+'/'+str(total_iteration)+'/model_'+str(epoch)+'.pkl')
+            save_checkpoint(epoch, 0, model, optimizer, args['save_dir']+'/'+str(total_iteration)+'/model_'+str(epoch)+'.pkl')
 
             # Setup Model To Train 
             model.train()
@@ -84,7 +84,7 @@ def train(args):
                 running_loss += loss.item()
 
                 # Add Loss Element
-                writer.add_scalar(args['Dataset']+'/'+args['Model']+'/loss', loss.item(), epoch*len(trainloader) + step)
+                writer.add_scalar(args['dataset']+'/'+args['model']+'/loss', loss.item(), epoch*len(trainloader) + step)
 
                 if np.isnan(running_loss):
                     import pdb; pdb.set_trace()
@@ -96,7 +96,7 @@ def train(args):
             scheduler.step()
 
             acc = 100*accuracy_action(model, testloader, device)
-            writer.add_scalar(args['Dataset']+'/'+args['Model']+'/train_accuracy', acc, epoch)
+            writer.add_scalar(args['dataset']+'/'+args['model']+'/train_accuracy', acc, epoch)
  
             print('Accuracy of the network on the training set: %d %%\n' % (acc))
     
@@ -104,10 +104,10 @@ def train(args):
         writer.close()
 
         # Save Final Model
-        save_checkpoint(epoch + 1, 0, model, optimizer, args['Save_dir']+'/'+str(total_iteration)+'/final_model.pkl')
+        save_checkpoint(epoch + 1, 0, model, optimizer, args['save_dir']+'/'+str(total_iteration)+'/final_model.pkl')
         avg_acc.append(100.*accuracy(model, testloader, device))
     
-    print("Average training accuracy across %d runs is %f" %(args['Rerun'], np.mean(avg_acc)))
+    print("Average training accuracy across %d runs is %f" %(args['rerun'], np.mean(avg_acc)))
 
 if __name__ == '__main__':
 
@@ -116,7 +116,7 @@ if __name__ == '__main__':
 
     # For reproducibility
     torch.backends.cudnn.deterministic = True
-    torch.manual_seed(args['Seed'])
-    np.random.seed(args['Seed'])
+    torch.manual_seed(args['seed'])
+    np.random.seed(args['seed'])
 
     train(args)
