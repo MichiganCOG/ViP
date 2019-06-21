@@ -10,7 +10,6 @@ LEGACY:
 import os
 import io
 import cv2
-import yaml
 import torch
 import torchvision
 import numpy             as np
@@ -22,6 +21,7 @@ import torch.utils.data  as Data
 #model = models_import.create_model_object(model_name='resnet101', num_classes=21, sample_size=224, sample_duration=16)
 #import pdb; pdb.set_trace()
 #from utils                     import save_checkpoint, load_checkpoint, accuracy, accuracy_action
+from parse_args                import Parse
 from checkpoint                import save_checkpoint, load_checkpoint
 #from torchvision               import datasets, transforms
 from datasets                  import data_loader
@@ -156,11 +156,12 @@ def train(args):
     print("Average training accuracy across %d runs is %f" %(args['Rerun'], np.mean(avg_acc)))
 
 
+
 if __name__ == "__main__":
 
-    with open('config.yaml', 'r') as filestream:
-        args =  yaml.load(filestream)
-    
+    parse = Parse()
+    args = parse.get_args()
+
     # For reproducibility
     torch.backends.cudnn.deterministic = True
     torch.manual_seed(args['Seed'])
