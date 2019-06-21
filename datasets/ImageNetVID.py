@@ -1,5 +1,5 @@
 import torch
-from datasets.abstract_datasets import DetectionDataset 
+from .abstract_datasets import DetectionDataset 
 from PIL import Image
 import os
 import numpy as np
@@ -70,19 +70,24 @@ class ImageNetVID(DetectionDataset):
 
         vid_data, bbox_data = self.transforms(input_data, bbox_data)
 
-        bbox_data = bbox_data.astype(int)
+        bbox_data = bbox_data.type(torch.LongTensor)
+        #bbox_data = bbox_data.astype(int)
 
-        xmin_data  = torch.from_numpy(bbox_data[:,:,0])
-        ymin_data  = torch.from_numpy(bbox_data[:,:,1])
-        xmax_data  = torch.from_numpy(bbox_data[:,:,2])
-        ymax_data  = torch.from_numpy(bbox_data[:,:,3])
-        vid_data   = torch.from_numpy(vid_data)
+        #import pdb; pdb.set_trace()
+        #xmin_data  = torch.from_numpy(bbox_data[:,:,0])
+        #ymin_data  = torch.from_numpy(bbox_data[:,:,1])
+        #xmax_data  = torch.from_numpy(bbox_data[:,:,2])
+        #ymax_data  = torch.from_numpy(bbox_data[:,:,3])
+        xmin_data  = bbox_data[:,:,0]
+        ymin_data  = bbox_data[:,:,1]
+        xmax_data  = bbox_data[:,:,2]
+        ymax_data  = bbox_data[:,:,3]
+        #vid_data   = torch.from_numpy(vid_data)
         labels     = torch.from_numpy(labels)
         occlusions = torch.from_numpy(occlusions)
 
         # Permute the PIL dimensions (Frame, Height, Width, Chan) to pytorch (Chan, frame, height, width) 
         vid_data = vid_data.permute(3, 0, 1, 2)
-
 
         ret_dict = dict() 
         ret_dict['data']       = vid_data 
@@ -104,6 +109,7 @@ class PreprocessTrain(object):
     def __init__(self):
         self.crop = pt.RandomCropClip(128, 128)
         self.resize = pt.ResizeClip(128,128)
+        self.toTensor = pt.ToTensorClip()
 
 
     def __call__(self, input_data, bbox_data):
@@ -118,6 +124,7 @@ class PreprocessTrain(object):
             bbox_data:  Numpy tensor containing the augmented bbox coordinates
         """
         input_data, bbox_data = self.resize(input_data, bbox_data)
+        input_data, bbox_data = self.toTensor(input_data, bbox_data)
         return input_data, bbox_data
 
 
@@ -142,6 +149,7 @@ class PreprocessEval(object):
             bbox_data:  Numpy tensor containing the augmented bbox coordinates
         """
         input_data, bbox_data = self.crop(input_data, bbox_data)
+
         input_data, bbox_data = self.resize(input_data, bbox_data)
         return input_data, bbox_data
 
