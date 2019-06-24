@@ -8,6 +8,7 @@ LEGACY:
     numpy
 """
 import os
+import datetime
 import io
 import cv2
 import torch
@@ -40,8 +41,17 @@ def train(args):
 
     for total_iteration in range(args['rerun']):
 
+        d = datetime.datetime.today()
+        date = d.strftime('%Y-%m-%d')
+        result_dir = os.path.join(args['save_dir'], args['model'], '_'.join((args['dataset'],'[exp]',date)))
+        log_dir    = os.path.join(result_dir, 'logs')
+        save_dir   = os.path.join(result_dir, 'checkpoints')
+
+        os.makedirs(log_dir, exist_ok=True) 
+        os.makedirs(save_dir, exist_ok=True) 
+
         # Tensorboard Element
-        writer = SummaryWriter()
+        writer = SummaryWriter(log_dir)
 
         # Load Data
         loader = data_loader(args)
@@ -124,14 +134,8 @@ def train(args):
                 # END IF
 
             # Save Current Model
-            save_path = os.path.join(args['save_dir'],args['model'])
-
-            if not os.path.isdir(args['save_dir']):
-                os.mkdir(args['save_dir'])
-            if not os.path.isdir(save_path):
-                os.mkdir(save_path)
-
-            save_checkpoint(epoch, 0, model, optimizer, os.path.join(save_path,args['dataset']+'_epoch'+str(epoch)+'.pkl'))
+            save_path = os.path.join(save_dir, args['dataset']+'_epoch'+str(epoch)+'.pkl')
+            save_checkpoint(epoch, 0, model, optimizer, save_path)
    
             # END FOR: Epoch
 
