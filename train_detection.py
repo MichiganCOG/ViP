@@ -15,6 +15,7 @@ from tensorboardX import SummaryWriter
 from torch.optim.lr_scheduler import MultiStepLR
 from datasets import data_loader 
 from checkpoint import save_checkpoint
+from losses import Losses
 
 def train(args):
 
@@ -57,6 +58,8 @@ def train(args):
             
         scheduler  = MultiStepLR(optimizer, milestones=args['Milestones'], gamma=args['Gamma'])    
 
+        model_loss = Losses(args)
+
         for epoch in range(args['Epoch']):
             running_loss = 0.0
             print('Epoch: ', epoch)
@@ -69,14 +72,15 @@ def train(args):
 
             for step, data in enumerate(trainloader):
                 # (True Batch, Augmented Batch, Sequence Length)
-                x_input       = data['data'].to(device) 
-                y_label       = data['labels'].to(device) 
+                data = dict((k, v.to(device)) for k,v in data.items())
+                x_input       = data['data']
+                y_label       = data['labels'] 
 
                 optimizer.zero_grad()
 
                 outputs = model(x_input)
-                import pdb; pdb.set_trace()
-                loss    = nn.functional.mse_loss(outputs, y_label) #TODO: Replace with Losses class
+                #loss    = nn.functional.mse_loss(outputs, y_label) #TODO: Replace with Losses class
+                loss = model_loss.loss(outputs, data)
     
                 loss.backward()
                 optimizer.step()
