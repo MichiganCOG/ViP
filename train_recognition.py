@@ -10,7 +10,6 @@ LEGACY:
 import os
 import io
 import cv2
-import yaml
 import torch
 import torchvision
 import numpy             as np
@@ -22,6 +21,7 @@ import torch.utils.data  as Data
 #model = models_import.create_model_object(model_name='resnet101', num_classes=21, sample_size=224, sample_duration=16)
 #import pdb; pdb.set_trace()
 #from utils                     import save_checkpoint, load_checkpoint, accuracy, accuracy_action
+from parse_args                import Parse
 from checkpoint                import save_checkpoint, load_checkpoint
 #from torchvision               import datasets, transforms
 from datasets                  import data_loader
@@ -38,7 +38,7 @@ def train(args):
 
     avg_acc = []
 
-    for total_iteration in range(args['Rerun']):
+    for total_iteration in range(args['rerun']):
 
         # Tensorboard Element
         writer = SummaryWriter()
@@ -46,10 +46,10 @@ def train(args):
         # Load Data
         loader = data_loader(args)
 
-        if args['Load_type'] == 'train':
+        if args['load_type'] == 'train':
             trainloader = loader['train']
 
-        elif args['Load_type'] == 'train_val':
+        elif args['load_type'] == 'train_val':
             trainloader = loader['train']
             testloader  = loader['valid'] 
 
@@ -62,16 +62,16 @@ def train(args):
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     
         # Load Network # EDIT
-        model = create_model_object(model_name=args['Model'],num_classes=args['Labels'], sample_size=args['Sample_size'], sample_duration=args['Sample_duration']).to(device)
+        model = create_model_object(model_name=args['model'],num_classes=args['labels'], sample_size=args['sample_size'], sample_duration=args['sample_duration']).to(device)
 
         # Training Setup
         params     = [p for p in model.parameters() if p.requires_grad]
 
-        if args['Opt'] == 'sgd':
-            optimizer  = optim.SGD(params, lr=args['Lr'], momentum=args['Momentum'], weight_decay=args['Weight_decay'])
+        if args['opt'] == 'sgd':
+            optimizer  = optim.SGD(params, lr=args['lr'], momentum=args['momentum'], weight_decay=args['weight_decay'])
 
-        elif args['Opt'] == 'adam':
-            optimizer  = optim.Adam(params, lr=args['Lr'], weight_decay=args['Weight_decay'])
+        elif args['opt'] == 'adam':
+            optimizer  = optim.Adam(params, lr=args['lr'], weight_decay=args['weight_decay'])
         
         else:
             print('Unsupported optimizer selected. Exiting')
@@ -79,12 +79,12 @@ def train(args):
 
         # END IF
             
-        scheduler  = MultiStepLR(optimizer, milestones=args['Milestones'], gamma=args['Gamma'])    
+        scheduler  = MultiStepLR(optimizer, milestones=args['milestones'], gamma=args['gamma'])    
 
     ############################################################################################################################################################################
 
         # Start: Training Loop
-        for epoch in range(args['Epoch']):
+        for epoch in range(args['epoch']):
             running_loss = 0.0
             print('Epoch: ', epoch)
 
@@ -111,34 +111,34 @@ def train(args):
                 running_loss += loss.item()
 
                 # Add Loss Element
-                writer.add_scalar(args['Dataset']+'/'+args['Model']+'/loss', loss.item(), epoch*len(trainloader) + step)
+                writer.add_scalar(args['dataset']+'/'+args['model']+'/loss', loss.item(), epoch*len(trainloader) + step)
 
                 if np.isnan(running_loss):
                     import pdb; pdb.set_trace()
    
                 if step % 100 == 0:
                     #print('Epoch: ', epoch, '| train loss: %.4f' % (running_loss/100.))
-                    print('Epoch: {}/{}, step: {}/{} | train loss: {:.4f}'.format(epoch, args['Epoch'], step, len(trainloader), running_loss/100.))
+                    print('Epoch: {}/{}, step: {}/{} | train loss: {:.4f}'.format(epoch, args['epoch'], step, len(trainloader), running_loss/100.))
                     running_loss = 0.0
 
                 # END IF
 
             # Save Current Model
-            save_path = os.path.join(args['Save_dir'],args['Model'])
+            save_path = os.path.join(args['save_dir'],args['model'])
 
-            if not os.path.isdir(args['Save_dir']):
-                os.mkdir(args['Save_dir'])
+            if not os.path.isdir(args['save_dir']):
+                os.mkdir(args['save_dir'])
             if not os.path.isdir(save_path):
                 os.mkdir(save_path)
 
-            save_checkpoint(epoch, 0, model, optimizer, os.path.join(save_path,args['Dataset']+'_epoch'+str(epoch)+'.pkl'))
+            save_checkpoint(epoch, 0, model, optimizer, os.path.join(save_path,args['dataset']+'_epoch'+str(epoch)+'.pkl'))
    
             # END FOR: Epoch
 
             scheduler.step()
 
             acc = 100*accuracy_action(model, testloader, device)
-            writer.add_scalar(args['Dataset']+'/'+args['Model']+'/train_accuracy', acc, epoch)
+            writer.add_scalar(args['dataset']+'/'+args['model']+'/train_accuracy', acc, epoch)
  
             print('Accuracy of the network on the training set: %d %%\n' % (acc))
     
@@ -150,20 +150,21 @@ def train(args):
         writer.close()
 
         # Save Final Model
-        save_checkpoint(epoch + 1, 0, model, optimizer, args['Save_dir']+'/'+str(total_iteration)+'/final_model.pkl')
+        save_checkpoint(epoch + 1, 0, model, optimizer, args['save_dir']+'/'+str(total_iteration)+'/final_model.pkl')
         avg_acc.append(100.*accuracy(model, testloader, device))
     
-    print("Average training accuracy across %d runs is %f" %(args['Rerun'], np.mean(avg_acc)))
+    print("Average training accuracy across %d runs is %f" %(args['rerun'], np.mean(avg_acc)))
+
 
 
 if __name__ == "__main__":
 
-    with open('config.yaml', 'r') as filestream:
-        args =  yaml.load(filestream)
-    
+    parse = Parse()
+    args = parse.get_args()
+
     # For reproducibility
     torch.backends.cudnn.deterministic = True
-    torch.manual_seed(args['Seed'])
-    np.random.seed(args['Seed'])
+    torch.manual_seed(args['seed'])
+    np.random.seed(args['seed'])
 
     train(args)

@@ -9,7 +9,7 @@ class Losses():
             loss_type: String indicating which custom loss function is to be loaded.
         """
 
-        self.loss_type = args[0]['Loss_type']
+        self.loss_type = args[0]['loss_type']
         #self.loss_type = loss_type
         #self.size_average=size_average 
         #self.reduce=reduce

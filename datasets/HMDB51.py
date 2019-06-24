@@ -24,7 +24,7 @@ class HMDB51(RecognitionDataset):
                 labels[frame_ind] = frame_labels['action_class']
 
             # Load frame image data and preprocess image accordingly
-            #vid_data[frame_ind] = self._preprocFrame(frame_path)
+            vid_data[frame_ind] = self._preprocFrame(frame_path)
 
         vid_data   = torch.from_numpy(vid_data).float()
         labels     = torch.from_numpy(labels).float()
