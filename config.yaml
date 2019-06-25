@@ -6,6 +6,8 @@ model:           resnet101             # Name of model to be loaded
 labels:          16                    # Number of total classes in the dataset
 sample_size:     224                   # Height of frame to be provided as input to the model
 sample_duration: 16                    # Temporal size of video to be provided as input to the model 
+loss:            todo                  # Loss function #TODO: Default needs to be specified
+acc_metric:          Accuracy              # Accuracy metric 
 opt:             sgd                   # Name of optimizer
 lr:              0.001                 # Learning rate
 momentum:        0.9                   # Momentum value in optimizer

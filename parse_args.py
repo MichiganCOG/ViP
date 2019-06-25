@@ -22,6 +22,8 @@ class Parse():
         parser.add_argument('--sample_size', type=int, help='Height of frame to be provided as input to the model')
         parser.add_argument('--sample_duration', type=int, help='Temporal size of video to be provided as input to the model')
 
+        parser.add_argument('--loss', type=str, help='Loss function')
+        parser.add_argument('--acc_metric', type=str, help='Accuracy metric')
         parser.add_argument('--opt', type=str, help='Name of optimizer')
         parser.add_argument('--lr', type=float, help='Learning rate')
         parser.add_argument('--momentum', type=float, help='Momentum value in optimizer')
