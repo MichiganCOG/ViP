@@ -23,3 +23,4 @@ crop_shape:      [224,224]             # (Height, Width) of frame
 crop_type:       Random                # Type of cropping operation (Random, Central and None)  
 num_clips:       -1                    # Number clips to be generated from a video (<0: uniform sampling, 0: Divide entire video into clips, >0: Defines number of clips) 
 seed:            999                   # Seed for reproducibility  
+loss_type:       HGC_MSE               # Loss class to be loaded

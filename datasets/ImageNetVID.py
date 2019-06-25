@@ -95,6 +95,7 @@ class ImageNetVID(DetectionDataset):
         ret_dict['ymin']       = ymin_data
         ret_dict['xmax']       = xmax_data
         ret_dict['ymax']       = ymax_data
+        ret_dict['bbox_data']  = bbox_data
         ret_dict['labels']     = labels
         ret_dict['occlusions'] = occlusions
 
