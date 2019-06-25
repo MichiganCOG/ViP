@@ -38,12 +38,12 @@ def train(args):
     print("Experimental Setup: ", args)
 
     avg_acc = []
-    acc_metric = Metrics(args['acc_metric']) #TODO: Replace with selected accuracy metric
+    acc_metric = Metrics(args['acc_metric'])
 
     for total_iteration in range(args['rerun']):
 
         d = datetime.datetime.today()
-        date = d.strftime('%Y-%m-%d')
+        date = d.strftime('%Y%m%d-%H%M%S')
         result_dir = os.path.join(args['save_dir'], args['model'], '_'.join((args['dataset'],'[exp]',date)))
         log_dir    = os.path.join(result_dir, 'logs')
         save_dir   = os.path.join(result_dir, 'checkpoints')
