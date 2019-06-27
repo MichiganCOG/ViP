@@ -1,26 +1,28 @@
-rerun:           5                                      # Number of trials to repeat an experiment
-dataset:         HMDB51                                 # Name of dataset 
-json_path:       /z/dat/HMDB51/                         # Path to the json file for the given dataset
-batch_size:      4                                      # Numbers of videos in a mini-batch 
-load_type:       train                                  # Environment selection, to include only training/training and validation/testing dataset
-model:           resnet101                              # Name of model to be loaded  
-labels:          16                                     # Number of total classes in the dataset
-sample_size:     224                                    # Height of frame to be provided as input to the model
-sample_duration: 16                                     # Temporal size of video to be provided as input to the model 
-opt:             sgd                                    # Name of optimizer
-lr:              0.001                                  # Learning rate
-momentum:        0.9                                    # Momentum value in optimizer
-weight_decay:    0.0005                                 # Weight decay
-milestones:      [100, 150, 200]                        # Epoch values to change learning rate     
-gamma:           0.2                                    # Multiplier with which to change learning rate
-epoch:           10                                     # Total number of epochs 
-save_dir:        './results'                            # Path to results directory
-resize_shape:    [256,256]                              # (Height, Width) to resize original data 
-final_shape:     [224,224]                              # (Height, Width) of input to be given to CNN
-clip_length:     16                                     # Number of frames within a clip 
-clip_offset:     0                                      # Frame offset between beginning of video and clip (1st clip only) 
-clip_stride:     0                                      # Frame offset between successive frames
-crop_shape:      [224,224]                              # (Height, Width) of frame  
-crop_type:       Random                                 # Type of cropping operation (Random, Central and None)  
-num_clips:       -1                                     # Number clips to be generated from a video (<0: uniform sampling, 0: Divide entire video into clips, >0: Defines number of clips) 
-seed:            999                                    # Seed for reproducibility  
+rerun:           5                     # Number of trials to repeat an experiment
+dataset:         HMDB51                # Name of dataset 
+json_path:       /z/dat/HMDB51/        # Path to the json file for the given dataset
+batch_size:      4                     # Numbers of videos in a mini-batch 
+load_type:       train                 # Environment selection, to include only training/training and validation/testing dataset
+model:           resnet101             # Name of model to be loaded  
+labels:          16                    # Number of total classes in the dataset
+sample_size:     224                   # Height of frame to be provided as input to the model
+sample_duration: 16                    # Temporal size of video to be provided as input to the model 
+loss:            todo                  # Loss function #TODO: Default needs to be specified
+acc_metric:      Accuracy              # Accuracy metric 
+opt:             sgd                   # Name of optimizer
+lr:              0.001                 # Learning rate
+momentum:        0.9                   # Momentum value in optimizer
+weight_decay:    0.0005                # Weight decay
+milestones:      [100, 150, 200]       # Epoch values to change learning rate     
+gamma:           0.2                   # Multiplier with which to change learning rate
+epoch:           10                    # Total number of epochs 
+save_dir:        './results'           # Path to results directory
+resize_shape:    [256,256]             # (Height, Width) to resize original data 
+final_shape:     [224,224]             # (Height, Width) of input to be given to CNN
+clip_length:     16                    # Number of frames within a clip 
+clip_offset:     0                     # Frame offset between beginning of video and clip (1st clip only) 
+clip_stride:     0                     # Frame offset between successive frames
+crop_shape:      [224,224]             # (Height, Width) of frame  
+crop_type:       Random                # Type of cropping operation (Random, Central and None)  
+num_clips:       -1                    # Number clips to be generated from a video (<0: uniform sampling, 0: Divide entire video into clips, >0: Defines number of clips) 
+seed:            999                   # Seed for reproducibility  
