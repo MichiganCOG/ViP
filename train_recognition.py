@@ -35,7 +35,9 @@ from models.models_import      import create_model_object
 
 def train(args):
 
+    print("\n############################################################################\n")
     print("Experimental Setup: ", args)
+    print("\n############################################################################\n")
 
     avg_acc = []
     acc_metric = Metrics(args['acc_metric'])
@@ -122,14 +124,17 @@ def train(args):
     
                 running_loss += loss.item()
 
+                # Add Learning Rate Element
+                for param_group in optimizer.param_groups:
+                    writer.add_scalar(args['dataset']+'/'+args['model']+'/learningrate', param_group['lr'], epoch*len(train_loader) + step)
+
                 # Add Loss Element
-                writer.add_scalar(args['dataset']+'/'+args['model']+'/loss', loss.item(), epoch*len(train_loader) + step)
+                writer.add_scalar(args['dataset']+'/'+args['model']+'/minibatchloss', loss.item(), epoch*len(train_loader) + step)
 
                 if np.isnan(running_loss):
                     import pdb; pdb.set_trace()
    
-                if step % 100 == 0:
-                    #print('Epoch: ', epoch, '| train loss: %.4f' % (running_loss/100.))
+                if (epoch*len(train_loader) + step) % 100 == 0:
                     print('Epoch: {}/{}, step: {}/{} | train loss: {:.4f}'.format(epoch, args['epoch'], step, len(train_loader), running_loss/100.))
                     running_loss = 0.0
 
@@ -143,8 +148,9 @@ def train(args):
 
             scheduler.step()
 
+            # Add Validation Accuracy 
             acc = 100.*valid(model, valid_loader, acc_metric, device)
-            writer.add_scalar(args['dataset']+'/'+args['model']+'/train_accuracy', acc, epoch)
+            writer.add_scalar(args['dataset']+'/'+args['model']+'/validation_accuracy', acc, epoch)
  
             print('Accuracy of the network on the validation set: %d %%\n' % (acc))
     
