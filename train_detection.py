@@ -17,7 +17,7 @@ from datasets import data_loader
 from checkpoint import save_checkpoint
 from losses import Losses
 
-def train(args):
+def train(**args):
 
     print('Experimental Setup: ',args)
 
@@ -28,7 +28,7 @@ def train(args):
         writer = SummaryWriter()
 
         # Load Data
-        loader = data_loader(args)#['dataset'], args['batch_size'], args['load_type'])
+        loader = data_loader(**args)#['dataset'], args['batch_size'], args['load_type'])
 
         if args['load_type'] == 'train':
             trainloader = loader['train']
@@ -123,4 +123,4 @@ if __name__ == '__main__':
     torch.manual_seed(args['seed'])
     np.random.seed(args['seed'])
 
-    train(args)
+    train(**args)

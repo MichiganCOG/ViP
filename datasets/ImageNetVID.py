@@ -5,12 +5,15 @@ import os
 import numpy as np
 import json
 import datasets.preprocessing_transforms as pt
+import matplotlib.pyplot as plt
 
 class ImageNetVID(DetectionDataset):
     def __init__(self, *args, **kwargs):
         super(ImageNetVID, self).__init__(*args, **kwargs)
 
-        lab_file = open('/z/home/erichof/datasets/ILSVRC2015/labels_number_keys.json', 'r')
+        self.load_type = kwargs['load_type']
+        self.json_path = kwargs['json_path']
+        lab_file = open(os.path.join(self.json_path, 'labels_number_keys.json'), 'r')
         self.labels_dict = json.load(lab_file)
         lab_file.close()
         self.label_values = list(self.labels_dict.values())
@@ -22,11 +25,13 @@ class ImageNetVID(DetectionDataset):
         self.max_objects = 22
 
 
-        if self.dataset_type=='train':
-            self.transforms = PreprocessTrain()
+        if self.load_type=='train':
+            self.transforms = PreprocessTrain(**kwargs)
 
         else:
-            self.transforms = PreprocessEval()
+            self.transforms = PreprocessEval(**kwargs)
+
+        self.__getitem__(0)
 
     def __getitem__(self, idx):
         vid_info = self.samples[idx]
@@ -67,8 +72,10 @@ class ImageNetVID(DetectionDataset):
             # vid_data[frame_ind], bbox_data[frame_ind] = self._preprocFrame(os.path.join(base_path, frame_path), bbox_data[frame_ind])
             input_data.append(Image.open(os.path.join(base_path, frame_path)))
 
-
         vid_data, bbox_data = self.transforms(input_data, bbox_data)
+        def plotim(ind):
+            plt.imshow(np.array(input_data[ind])); plt.show()
+            plt.imshow(np.array(vid_data[ind])/255.); plt.show()
 
         bbox_data = bbox_data.type(torch.LongTensor)
         #bbox_data = bbox_data.astype(int)
@@ -107,10 +114,22 @@ class PreprocessTrain(object):
     """
     Container for all transforms used to preprocess clips for training in this dataset.
     """
-    def __init__(self):
-        self.crop = pt.RandomCropClip(128, 128)
-        self.resize = pt.ResizeClip(128,128)
-        self.toTensor = pt.ToTensorClip()
+    def __init__(self, **kwargs):
+        crop_shape = kwargs['crop_shape']
+        crop_type = kwargs['crop_type']
+        resize_shape = kwargs['resize_shape']
+        self.transforms = []
+
+        if crop_type == 'Random':
+            self.transforms.append(pt.RandomCropClip(*crop_shape))
+        else:
+            self.transforms.append(pt.CenterCropClip(*crop_shape))
+
+        self.transforms.append(pt.ResizeClip(*resize_shape))
+        self.transforms.append(pt.RandomFlipClip(direction='h', p=1.0))
+        self.transforms.append(pt.RandomRotateClip())
+        self.transforms.append(pt.ToTensorClip())
+
 
 
     def __call__(self, input_data, bbox_data):
@@ -124,8 +143,11 @@ class PreprocessTrain(object):
             input_data: Pytorch tensor containing the processed clip data 
             bbox_data:  Numpy tensor containing the augmented bbox coordinates
         """
-        input_data, bbox_data = self.resize(input_data, bbox_data)
-        input_data, bbox_data = self.toTensor(input_data, bbox_data)
+        for transform in self.transforms:
+            input_data, bbox_data = transform(input_data, bbox_data)
+            
+        
+
         return input_data, bbox_data
 
 
@@ -133,9 +155,20 @@ class PreprocessEval(object):
     """
     Container for all transforms used to preprocess clips for evaluation in this dataset.
     """
-    def __init__(self):
-        self.crop = pt.centerCropClip(128, 128)
-        self.resize = pt.resizeClip(128,128)
+    def __init__(self, **kwargs):
+        crop_shape = kwargs['crop_shape']
+        crop_type = kwargs['crop_type']
+        resize_shape = kwargs['resize_shape']
+        self.transforms = []
+
+        if crop_type == 'Random':
+            self.transforms.append(pt.RandomCropClip(*crop_shape))
+        else:
+            self.transforms.append(pt.CenterCropClip(*crop_shape))
+
+        self.transforms.append(pt.ResizeClip(*resize_shape))
+        self.transforms.append(pt.ToTensorClip())
+
 
 
     def __call__(self, input_data, bbox_data):
@@ -149,9 +182,9 @@ class PreprocessEval(object):
             input_data: Pytorch tensor containing the processed clip data 
             bbox_data:  Numpy tensor containing the augmented bbox coordinates
         """
-        input_data, bbox_data = self.crop(input_data, bbox_data)
+        for transform in self.transforms:
+            input_data, bbox_data = transform(input_data, bbox_data)
 
-        input_data, bbox_data = self.resize(input_data, bbox_data)
         return input_data, bbox_data
 
 

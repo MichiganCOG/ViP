@@ -1,10 +1,42 @@
 import torch
+import importlib
+import sys
+import glob
 
-from .HMDB51      import HMDB51
-from .ImageNetVID import ImageNetVID
+def create_dataset_object(**kwargs):
+    """
+    Use dataset_name to find a matching dataset class
 
-# TODO: Update arguments
-def data_loader(*args, **kwargs):#dataset, batch_size, load_type, *args, **kwargs):
+    Args:
+        kwargs: arguments specifying dataset and dataset parameters
+
+    Returns:
+        dataset: initialized dataset object 
+    """
+
+    dataset_name = kwargs['dataset']
+
+    dataset_files = glob.glob('datasets/*.py')
+    ignore_files = ['__init__.py', 'loading_function.py', 'abstract_datasets.py', 'preprocessing_transforms.py']
+
+    for df in dataset_files:
+        if df in ignore_files:
+            continue
+
+        module_name = df[:-3].replace('/','.')
+        module = importlib.import_module(module_name)
+        module_lower = list(map(lambda module_x: module_x.lower(), dir(module)))
+
+        if dataset_name.lower() in module_lower:
+            dataset_index = module_lower.index(dataset_name.lower())
+            dataset = getattr(module, dir(module)[dataset_index])(**kwargs)
+
+            return dataset 
+
+    sys.exit('Dataset not found. Ensure dataset is in datasets/, with a matching class name')
+
+
+def data_loader(**kwargs):
     """
     Args:
         dataset:    The name of the dataset to be loaded
@@ -12,38 +44,29 @@ def data_loader(*args, **kwargs):#dataset, batch_size, load_type, *args, **kwarg
         train_type: (test, train, or train_val) indicating whether to load clips to only train or train and validate or to test
     """
 
-    if args[0]['dataset'] == 'ImageNetVID':
-        train_data = ImageNetVID(json_path='/z/home/erichof/datasets/ILSVRC2015/', dataset_type='train', *args, **kwargs)
-        val_data   = ImageNetVID(json_path='/z/home/erichof/datasets/ILSVRC2015/', dataset_type='val',   *args, **kwargs)
-        test_data  = ImageNetVID(json_path='/z/home/erichof/datasets/ILSVRC2015/', dataset_type='test',  *args, **kwargs)
+    load_type = kwargs['load_type']
+    if load_type == 'train_val':
+        train_data = create_dataset_object(load_type='train', **kwargs) 
+        val_data   = create_dataset_object(load_type='val', **kwargs) 
 
-        trainloader = torch.utils.data.DataLoader(dataset = train_data, batch_size=args[0]['batch_size'], shuffle=True,  num_workers=2)
-        valloader   = torch.utils.data.DataLoader(dataset = val_data,   batch_size=args[0]['batch_size'], shuffle=False, num_workers=2)
-        testloader  = torch.utils.data.DataLoader(dataset = test_data,  batch_size=args[0]['batch_size'], shuffle=False, num_workers=2)
+        trainloader = torch.utils.data.DataLoader(dataset=train_data, batch_size=kwargs['batch_size'], shuffle=True, num_workers=2)
+        valloader   = torch.utils.data.DataLoader(dataset=val_data,   batch_size=kwargs['batch_size'], shuffle=False, num_workers=2)
+        ret_dict = dict(train=trainloader, valid=valloader)
 
-    elif args[0]['dataset'] == 'HMDB51':
-        train_data = HMDB51(json_path='/z/dat/HMDB51/', dataset_type='train', *args, **kwargs)
-        test_data  = HMDB51(json_path='/z/dat/HMDB51/', dataset_type='test',  *args, **kwargs)
+    elif load_type == 'train':
+        data = create_dataset_object(**kwargs)
 
-        trainloader = torch.utils.data.DataLoader(dataset = train_data, batch_size=args[0]['batch_size'], shuffle=True,  num_workers=2)
-        testloader  = torch.utils.data.DataLoader(dataset = test_data,  batch_size=args[0]['batch_size'], shuffle=False, num_workers=2)
-        valloader   = None
+        loader = torch.utils.data.DataLoader(dataset=data, batch_size=kwargs['batch_size'], shuffle=True, num_workers=2)
+        ret_dict = dict(train=loader)
 
     else:
-        print('Error: The selected dataset ('+args['dataset']+') is not supported.')
-        exit(0)
+        data = create_dataset_object(**kwargs)
 
-    if args[0]['load_type'] == 'train':
-        return dict(train=trainloader)
+        loader = torch.utils.data.DataLoader(dataset=data, batch_size=kwargs['batch_size'], shuffle=False, num_workers=2)
+        ret_dict = dict(test=loader)
 
-    elif args[0]['load_type'] == 'train_val' and not(valloader is None):
-        return dict(train=trainloader, valid=valloader)
-
-    elif args[0]['load_type'] == 'test':
-        return dict(test=testloader)
-
-    else:
-        print('Error: The selected data loader type is not supported.')
 
     # END IF
+
+    return ret_dict
 

@@ -8,11 +8,11 @@ from PIL import Image
 class VideoDataset(Dataset):
     __metaclass__ = ABCMeta
     def __init__(self, *args, **kwargs):
-    #def __init__(self, json_path, dataset_type, clip_length=16, clip_offset=0, clip_stride=1, num_clips=-1, resize_shape=[128, 128], crop_shape=[128, 128], crop_type='random', final_shape=[128,128], *args, **kwargs):
+    #def __init__(self, json_path, load_type, clip_length=16, clip_offset=0, clip_stride=1, num_clips=-1, resize_shape=[128, 128], crop_shape=[128, 128], crop_type='random', final_shape=[128,128], *args, **kwargs):
         """
         Args: 
             json_path:    Path to the directory containing the dataset's JSON file (not including the file itself)
-            dataset_type: String indicating whether to load training or validation data ('train' or 'val') 
+            load_type:    String indicating whether to load training or validation data ('train' or 'val') 
             clip_length:  Number of frames in each clip that will be input into the network
             clip_offset:  Number of frames from beginning of video to start extracting clips 
             clip_stride:  The temporal stride between clips
@@ -22,23 +22,22 @@ class VideoDataset(Dataset):
             crop_type:    The method used to crop (either random or center)
             final_shape:  Final shape [h, w] of each frame after all preprocessing, this is input to network
         """
-        args = args[0]
 
         # JSON loading arguments
         self.json_path      = kwargs['json_path']
-        self.dataset_type   = kwargs['dataset_type']
+        self.load_type      = kwargs['load_type']
         
         # Clips processing arguments
-        self.clip_length    = args['clip_length']
-        self.clip_offset    = args['clip_offset']
-        self.clip_stride    = args['clip_stride']
-        self.num_clips      = args['num_clips']
+        self.clip_length    = kwargs['clip_length']
+        self.clip_offset    = kwargs['clip_offset']
+        self.clip_stride    = kwargs['clip_stride']
+        self.num_clips      = kwargs['num_clips']
 
         # Frame-wise processing arguments
-        self.resize_shape   = args['resize_shape']
-        self.crop_shape     = args['crop_shape'] 
-        self.crop_type      = args['crop_type'] 
-        self.final_shape    = args['final_shape']
+        self.resize_shape   = kwargs['resize_shape']
+        self.crop_shape     = kwargs['crop_shape'] 
+        self.crop_type      = kwargs['crop_type'] 
+        self.final_shape    = kwargs['final_shape']
 
         # Creates the self.samples list which will be indexed by each __getitem__ call
         self._getClips()
@@ -143,13 +142,13 @@ class RecognitionDataset(VideoDataset):
         Eg: action_label = dataset[vid_index]['frames'][frame_index]['actoins'][action_index]['action_class']
         """
 
-        self.samples      = []
-        self.dataset_type = 'train'
+        self.samples   = []
+        self.load_type = 'train'
         
-        if self.dataset_type == 'train':
+        if self.load_type == 'train':
             full_json_path = os.path.join(self.json_path, 'train.json')
 
-        elif self.dataset_type == 'val':
+        elif self.load_type == 'val':
             full_json_path = os.path.join(self.json_path, 'val.json') 
 
         else:
@@ -204,10 +203,10 @@ class DetectionDataset(VideoDataset):
 
         # Load all video paths into the samples array to be loaded by __getitem__ 
 
-        self.samples = []
-        self.dataset_type = 'train'
+        self.samples   = []
+        self.load_type = 'train'
         
-        if self.dataset_type == 'train':
+        if self.load_type == 'train':
             full_json_path = os.path.join(self.json_path, 'train.json')
 
         else:

@@ -9,7 +9,6 @@ LEGACY:
 """
 import os
 import io
-import cv2
 import torch
 import torchvision
 import numpy             as np
@@ -32,7 +31,7 @@ from torch.optim.lr_scheduler  import MultiStepLR
 # Import models 
 from models.models_import      import create_model_object
 
-def train(args):
+def train(**args):
 
     print("Experimental Setup: ", args)
 
@@ -44,7 +43,7 @@ def train(args):
         writer = SummaryWriter()
 
         # Load Data
-        loader = data_loader(args)
+        loader = data_loader(**args)
 
         if args['load_type'] == 'train':
             trainloader = loader['train']
@@ -167,4 +166,4 @@ if __name__ == "__main__":
     torch.manual_seed(args['seed'])
     np.random.seed(args['seed'])
 
-    train(args)
+    train(**args)
