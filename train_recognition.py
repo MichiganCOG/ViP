@@ -11,6 +11,7 @@ import os
 import datetime
 import io
 import cv2
+import yaml 
 import torch
 import torchvision
 import numpy             as np
@@ -49,6 +50,9 @@ def train(args):
         result_dir = os.path.join(args['save_dir'], args['model'], '_'.join((args['dataset'],'[exp]',date)))
         log_dir    = os.path.join(result_dir, 'logs')
         save_dir   = os.path.join(result_dir, 'checkpoints')
+
+        with open(os.path.join(result_dir, 'config.yaml'),'w') as outfile:
+            yaml.dump(args, outfile, default_flow_style=False)
 
         os.makedirs(log_dir, exist_ok=True) 
         os.makedirs(save_dir, exist_ok=True) 
