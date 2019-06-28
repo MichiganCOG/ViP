@@ -50,6 +50,10 @@ def train(**args):
         log_dir    = os.path.join(result_dir, 'logs')
         save_dir   = os.path.join(result_dir, 'checkpoints')
 
+        os.makedirs(result_dir, exist_ok=True)
+        os.makedirs(log_dir, exist_ok=True) 
+        os.makedirs(save_dir, exist_ok=True) 
+
         with open(os.path.join(result_dir, 'config.yaml'),'w') as outfile:
             yaml.dump(args, outfile, default_flow_style=False)
 
