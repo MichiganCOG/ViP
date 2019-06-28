@@ -1,5 +1,6 @@
 rerun:           5                     # Number of trials to repeat an experiment
 dataset:         HMDB51                # Name of dataset 
+json_path:       /z/dat/HMDB51/        # Path to the json file for the given dataset
 batch_size:      4                     # Numbers of videos in a mini-batch 
 load_type:       train                 # Environment selection, to include only training/training and validation/testing dataset
 model:           C3D                   # Name of model to be loaded  

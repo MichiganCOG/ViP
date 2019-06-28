@@ -83,7 +83,7 @@ class ResizeClip(PreprocTransform):
                 out_bbox.append(temp_bbox)
 
         if bbox!=[]:
-            return out_clip, out_bbox
+            return out_clip, np.array(out_bbox)
         else:
             return out_clip
 
@@ -115,12 +115,15 @@ class CropClip(PreprocTransform):
             out_clip.append(proc_frame)
 
             if bbox!=[]:
-                xmin, ymin, xmax, ymax = bbox[frame_ind]
-                proc_bbox = crop_bbox(xmin, ymin, xmax, ymax, self.bbox_xmin, self.bbox_xmax, self.bbox_ymin, self.bbox_ymax)
-                out_bbox.append(proc_bbox)
+                temp_bbox = np.zeros(bbox[frame_ind].shape) 
+                for class_ind in range(len(bbox)):
+                    xmin, ymin, xmax, ymax = bbox[frame_ind, class_ind]
+                    proc_bbox = crop_bbox(xmin, ymin, xmax, ymax, self.bbox_xmin, self.bbox_xmax, self.bbox_ymin, self.bbox_ymax)
+                    temp_bbox[class_ind,:] = proc_bbox
+                out_bbox.append(temp_bbox)
 
         if bbox!=[]:
-            return out_clip, out_bbox
+            return out_clip, np.array(out_bbox)
         else:
             return out_clip
 
@@ -139,7 +142,7 @@ class RandomCropClip(PreprocTransform):
         self.ymax = None
 
 
-    def _update_random_sample(self, frame_h, frame_w):
+    def _update_random_sample(self, frame_w, frame_h):
         self.xmin = np.random.randint(0, frame_w-self.crop_w)
         self.xmax = self.xmin + self.crop_w
         self.ymin = np.random.randint(0, frame_h-self.crop_h)
@@ -164,7 +167,7 @@ class CenterCropClip(PreprocTransform):
 
         self.crop_transform = CropClip(0, 0, self.crop_w, self.crop_h)
 
-    def _calculate_center(self, frame_h, frame_w):
+    def _calculate_center(self, frame_w, frame_h):
         xmin = int(frame_w/2 - self.crop_w/2)
         xmax = int(frame_w/2 + self.crop_w/2)
         ymin = int(frame_h/2 - self.crop_h/2)
@@ -198,18 +201,26 @@ class RandomFlipClip(PreprocTransform):
             return 1
 
     def _h_flip(self, bbox, frame_size):
-        xmin, ymin, xmax, ymax = bbox 
-        width = frame_size[1]
-        xmax_new = width - xmin 
-        xmin_new = width - xmax
-        return [xmin_new, ymin, xmax_new, ymax]
+        bbox_shape = bbox.shape
+        output_bbox = np.zeros(bbox_shape)
+        for bbox_ind in range(bbox_shape[0]):
+            xmin, ymin, xmax, ymax = bbox[bbox_ind] 
+            width = frame_size[1]
+            xmax_new = width - xmin 
+            xmin_new = width - xmax
+            output_bbox[bbox_ind] = xmin_new, ymin, xmax_new, ymax
+        return output_bbox 
 
     def _v_flip(self, bbox, frame_size):
-        xmin, ymin, xmax, ymax = bbox 
-        height = frame_size[0]
-        ymax_new = height - ymin 
-        ymin_new = height - ymax
-        return [xmin, ymin_new, xmax, ymax_new]
+        bbox_shape = bbox.shape
+        output_bbox = np.zeros(bbox_shape)
+        for bbox_ind in range(bbox_shape[0]):
+            xmin, ymin, xmax, ymax = bbox[bbox_ind] 
+            height = frame_size[0]
+            ymax_new = height - ymin 
+            ymin_new = height - ymax
+            output_bbox[bbox_ind] = xmin_new, ymin, xmax_new, ymax
+        return output_bbox 
 
 
     def _flip_data(self, clip, bbox=[]):
@@ -259,6 +270,93 @@ class ToTensorClip(PreprocTransform):
         else:
             return clip
         
+
+class RandomRotateClip(PreprocTransform):
+    """
+    Randomly rotate a clip from a fixed set of angles.
+    """
+    def __init__(self,  angles=[0,90,180,270], *args, **kwargs):
+        super(RandomRotateClip, self).__init__(*args, **kwargs)
+        self.angles = angles
+
+    ######
+    # Code from: https://stackoverflow.com/questions/20924085/python-conversion-between-coordinates
+    def _cart2pol(self, point):
+        x,y = point
+        rho = np.sqrt(x**2 + y**2)
+        phi = np.arctan2(y, x)
+        return(rho, phi)
+    
+    def _pol2cart(self, point):
+        rho, phi = point
+        x = rho * np.cos(phi)
+        y = rho * np.sin(phi)
+        return(x, y)
+    #####
+
+
+    def _rotate_bbox(self, bboxes, frame_shape, angle):
+        angle = np.deg2rad(angle)
+        bboxes_shape = bboxes.shape
+        output_bboxes = np.zeros(bboxes_shape)
+        frame_h, frame_w = frame_shape 
+        half_h = frame_h/2. 
+        half_w = frame_w/2. 
+
+        for bbox_ind in range(bboxes_shape[0]):
+            xmin, ymin, xmax, ymax = bboxes[bbox_ind]
+            tl = (xmin-half_w, ymax-half_h)
+            tr = (xmax-half_w, ymax-half_h)
+            bl = (xmin-half_w, ymin-half_h)
+            br = (xmax-half_w, ymin-half_h)
+
+            tl = self._cart2pol(tl) 
+            tr = self._cart2pol(tr)    
+            bl = self._cart2pol(bl)
+            br = self._cart2pol(br)
+
+            tl = (tl[0], tl[1] + angle)
+            tr = (tr[0], tr[1] + angle)
+            bl = (bl[0], bl[1] + angle)
+            br = (br[0], br[1] + angle)
+
+            tl = self._pol2cart(tl) 
+            tr = self._pol2cart(tr)    
+            bl = self._pol2cart(bl)
+            br = self._pol2cart(br)
+
+            tl = (tl[0]+half_w, tl[1]+half_h)
+            tr = (tr[0]+half_w, tr[1]+half_h)
+            bl = (bl[0]+half_w, bl[1]+half_h)
+            br = (br[0]+half_w, br[1]+half_h)
+
+            xmin_new = int(min(tl[0], tr[0], bl[0], br[0]))
+            xmax_new = int(max(tl[0], tr[0], bl[0], br[0]))
+            ymin_new = int(min(tl[1], tr[1], bl[1], br[1]))
+            ymax_new = int(max(tl[1], tr[1], bl[1], br[1]))
+
+            output_bboxes[bbox_ind] = [xmin_new, ymin_new, xmax_new, ymax_new]
+
+        return output_bboxes
+
+
+
+    def __call__(self, clip, bbox=[]):
+        angle = np.random.choice(self.angles)
+        output_clip = []
+        for frame in clip:
+            output_clip.append(frame.rotate(angle))
+
+        if bbox!=[]:
+            bbox = np.array(bbox)
+            output_bboxes = np.zeros(bbox.shape)
+            for bbox_ind in range(bbox.shape[0]):
+                output_bboxes[bbox_ind] = self._rotate_bbox(bbox[bbox_ind], clip[0].size, angle)
+
+            return output_clip, output_bboxes 
+
+        return output_clip
+
 
 
 #class oversample(object):
