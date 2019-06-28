@@ -1,0 +1,37 @@
+acc_metric: Accuracy
+batch_size: 4
+cfg_file: config.yaml
+clip_length: 16
+clip_offset: 0
+clip_stride: 0
+crop_shape:
+- 224
+- 224
+crop_type: Random
+dataset: HMDB51
+epoch: 10
+final_shape:
+- 224
+- 224
+gamma: 0.2
+labels: 16
+load_type: train
+loss: todo
+lr: 0.001
+milestones:
+- 100
+- 150
+- 200
+model: C3D
+momentum: 0.9
+num_clips: -1
+opt: sgd
+rerun: 5
+resize_shape:
+- 256
+- 256
+sample_duration: 16
+sample_size: 224
+save_dir: ./results
+seed: 999
+weight_decay: 0.0005

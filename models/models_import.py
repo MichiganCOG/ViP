@@ -2,7 +2,7 @@ import importlib
 import sys
 import glob
 
-def create_model_object(**kwargs):
+def create_model_object(*args, **kwargs):
     """
     Use model_name to find a matching model class
 
@@ -12,9 +12,8 @@ def create_model_object(**kwargs):
     Returns:
         model: initialized model object 
     """
-
-    model_name = kwargs['model_name']
-    del kwargs['model_name']
+    args       = args[0]
+    model_name = args['model']
 
     model_files = glob.glob('models/*.py')
     ignore_files = ['__init__.py', 'models_import.py']
@@ -29,7 +28,7 @@ def create_model_object(**kwargs):
 
         if model_name.lower() in module_lower:
             model_index = module_lower.index(model_name.lower())
-            model = getattr(module, dir(module)[model_index])(**kwargs)
+            model = getattr(module, dir(module)[model_index])(args)
 
             return model
 

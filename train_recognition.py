@@ -51,11 +51,11 @@ def train(args):
         log_dir    = os.path.join(result_dir, 'logs')
         save_dir   = os.path.join(result_dir, 'checkpoints')
 
-        with open(os.path.join(result_dir, 'config.yaml'),'w') as outfile:
-            yaml.dump(args, outfile, default_flow_style=False)
-
         os.makedirs(log_dir, exist_ok=True) 
         os.makedirs(save_dir, exist_ok=True) 
+
+        with open(os.path.join(result_dir, 'config.yaml'),'w') as outfile:
+            yaml.dump(args, outfile, default_flow_style=False)
 
         # Tensorboard Element
         writer = SummaryWriter(log_dir)
@@ -65,7 +65,7 @@ def train(args):
 
         if args['load_type'] == 'train':
             train_loader = loader['train']
-            valid_loader = loader['train'] #Run accuracy on train data if only `train` selected
+            valid_loader = loader['train'] # Run accuracy on train data if only `train` selected
 
         elif args['load_type'] == 'train_val':
             train_loader = loader['train']
@@ -80,7 +80,8 @@ def train(args):
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     
         # Load Network # EDIT
-        model = create_model_object(model_name=args['model'],num_classes=args['labels'], sample_size=args['sample_size'], sample_duration=args['sample_duration']).to(device)
+        #model = create_model_object(model_name=args['model'],num_classes=args['labels'], sample_size=args['sample_size'], sample_duration=args['sample_duration']).to(device)
+        model = create_model_object(args).to(device)
 
         # Training Setup
         params     = [p for p in model.parameters() if p.requires_grad]
@@ -109,9 +110,9 @@ def train(args):
             # Setup Model To Train 
             model.train()
 
+            import pdb; pdb.set_trace() 
             # Start: Epoch
             for step, data in enumerate(train_loader):
-    
                 # (True Batch, Augmented Batch, Sequence Length)
                 x_input       = data['data'].to(device) 
                 y_label       = data['labels'].to(device) 
