@@ -12,6 +12,7 @@ clip: Input to __call__ of each transform is a list of PIL images
 import torch
 from torchvision.transforms import functional as F
 from PIL import Image
+from PIL import ImageChops
 import numpy as np
 from abc import ABCMeta
 
@@ -20,7 +21,7 @@ class PreprocTransform(object):
     Abstract class for preprocessing transforms that contains methods to convert clips to PIL images.
     """
     __metaclass__ = ABCMeta
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.numpy_type = type(np.array(0))
 
     def _format_clip(self, clip):
@@ -367,12 +368,21 @@ class RandomRotateClip(PreprocTransform):
 #        return clip, bbox
 
 
-#class subtractMean(object):
-#    def __init__(self, output_size):
-#        self.size_h, self.size_w = output_size
-#        
-#    def __call__(self, clip, bbox):
-#        return clip, bbox
+class SubtractMeanClip(PreprocTransform):
+    def __init__(self, **kwargs):
+        super(SubtractMeanClip, self).__init__(**kwargs)
+        self.clip_mean_args = kwargs['clip_mean']
+        self.clip_mean      = []
+
+        for frame in self.clip_mean_args:
+            self.clip_mean.append(Image.fromarray(frame))
+
+        
+    def __call__(self, clip, **kwargs):
+        for clip_ind in range(len(clip)):
+            clip[clip_ind] = ImageChops.subtract(clip[clip_ind], self.clip_mean[clip_ind])
+
+        return clip
 
 
 def resize_bbox(xmin, xmax, ymin, ymax, img_shape, resize_shape):

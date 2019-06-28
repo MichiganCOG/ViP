@@ -4,10 +4,7 @@ from PIL import Image
 import os
 import numpy as np
 import datasets.preprocessing_transforms as pt
-<<<<<<< HEAD
 from torchvision import transforms
-=======
->>>>>>> 68e8ea281bce5b069c452866b86d1eb38d68d68a
 
 class HMDB51(RecognitionDataset):
     def __init__(self, *args, **kwargs):
@@ -26,6 +23,12 @@ class HMDB51(RecognitionDataset):
         self.crop_shape   = kwargs['crop_shape']
         self.final_shape  = kwargs['final_shape']
         
+        if self.load_type=='train':
+            self.transforms = PreprocessTrainC3D(**kwargs)
+
+        else:
+            self.transforms = PreprocessEval(**kwargs)
+
 
     def __getitem__(self, idx):
         vid_info  = self.samples[idx]
@@ -59,6 +62,80 @@ class HMDB51(RecognitionDataset):
 
         return ret_dict
 
+
+class PreprocessTrainC3D(object):
+    """
+    Container for all transforms used to preprocess clips for training in this dataset.
+    """
+    def __init__(self, **kwargs):
+        crop_shape = kwargs['crop_shape']
+        crop_type = kwargs['crop_type']
+        resize_shape = kwargs['resize_shape']
+        self.transforms = []
+
+        self.clip_mean = np.zeros((16,224,224,3), dtype='uint8')
+
+        if crop_type == 'Random':
+            self.transforms.append(pt.RandomCropClip(*crop_shape))
+        else:
+            self.transforms.append(pt.CenterCropClip(*crop_shape))
+        
+        self.transforms.append(pt.SubtractMeanClip(clip_mean=self.clip_mean))
+        
+        self.transforms.append(pt.ResizeClip(*resize_shape))
+        self.transforms.append(pt.RandomFlipClip(direction='h', p=1.0))
+        self.transforms.append(pt.RandomRotateClip())
+        self.transforms.append(pt.ToTensorClip())
+
+
+    def __call__(self, input_data):
+        """
+        Preprocess the clip accordingly
+        Args:
+            input_data: List of PIL images containing clip frames 
+
+        Return:
+            input_data: Pytorch tensor containing the processed clip data 
+        """
+        for transform in self.transforms:
+            input_data = transform(input_data)
+
+        return input_data
+
+class PreprocessTrain(object):
+    """
+    Container for all transforms used to preprocess clips for training in this dataset.
+    """
+    def __init__(self, **kwargs):
+        crop_shape = kwargs['crop_shape']
+        crop_type = kwargs['crop_type']
+        resize_shape = kwargs['resize_shape']
+        self.transforms = []
+
+        if crop_type == 'Random':
+            self.transforms.append(pt.RandomCropClip(*crop_shape))
+        else:
+            self.transforms.append(pt.CenterCropClip(*crop_shape))
+
+        self.transforms.append(pt.ResizeClip(*resize_shape))
+        self.transforms.append(pt.RandomFlipClip(direction='h', p=1.0))
+        self.transforms.append(pt.RandomRotateClip())
+        self.transforms.append(pt.ToTensorClip())
+
+
+    def __call__(self, input_data):
+        """
+        Preprocess the clip accordingly
+        Args:
+            input_data: List of PIL images containing clip frames 
+
+        Return:
+            input_data: Pytorch tensor containing the processed clip data 
+        """
+        for transform in self.transforms:
+            input_data = transform(input_data)
+
+        return input_data
 
 
 class PreprocessEval(object):
