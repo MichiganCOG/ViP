@@ -7,3 +7,4 @@ runs/*
 *.pth
 *.pth.tar
 *.pkl
+*.npy
