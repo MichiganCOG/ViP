@@ -378,11 +378,35 @@ class SubtractMeanClip(PreprocTransform):
             self.clip_mean.append(Image.fromarray(frame))
 
         
-    def __call__(self, clip, **kwargs):
+    def __call__(self, clip, bbox=[]):
         for clip_ind in range(len(clip)):
             clip[clip_ind] = ImageChops.subtract(clip[clip_ind], self.clip_mean[clip_ind])
 
-        return clip
+        
+        if bbox!=[]:
+            return clip, bbox
+
+        else:
+            return clip
+
+
+class ApplyToClip(PreprocTransform):
+    def __init__(self, **kwargs):
+        super(ApplyToClip, self).__init__(**kwargs)
+        self.transform = kwargs['transform']
+
+    def __call__(self, clip, bbox=[]):
+        output_clip = []
+        for frame in clip:
+            output_clip.append(self.transform(frame))
+
+        if bbox!=[]:
+            return output_clip, bbox
+
+        else:
+            return output_clip
+
+
 
 
 def resize_bbox(xmin, xmax, ymin, ymax, img_shape, resize_shape):

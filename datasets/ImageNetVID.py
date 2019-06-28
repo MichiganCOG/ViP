@@ -1,4 +1,5 @@
 import torch
+import torchvision
 from .abstract_datasets import DetectionDataset 
 from PIL import Image
 import os
@@ -30,8 +31,6 @@ class ImageNetVID(DetectionDataset):
 
         else:
             self.transforms = PreprocessEval(**kwargs)
-
-        self.__getitem__(0)
 
     def __getitem__(self, idx):
         vid_info = self.samples[idx]
@@ -122,6 +121,9 @@ class PreprocessTrain(object):
 
         if crop_type == 'Random':
             self.transforms.append(pt.RandomCropClip(*crop_shape))
+
+        elif crop_type=='RandomFrame':
+            self.transforms.append(pt.ApplyToClip(transform=torchvision.transforms.RandomCrop(crop_shape)))
         else:
             self.transforms.append(pt.CenterCropClip(*crop_shape))
 

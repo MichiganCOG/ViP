@@ -10,7 +10,6 @@ import torch.optim as optim
 import torch.utils.data as Data
 
 import models.models_import as models_import
-model = models_import.create_model_object(model_name='HGC3D', num_classes=21, sample_size=224, sample_duration=16)
 from tensorboardX import SummaryWriter
 from torch.optim.lr_scheduler import MultiStepLR
 from datasets import data_loader 
@@ -44,6 +43,7 @@ def train(**args):
     
         # Load Network # EDIT
         #model = res(num_classes=args['labels'], sample_size=args['sample_size'], sample_duration=args['sample_duration']).to(device)
+        model = models_import.create_model_object(**args)
 
         # Training Setup
         params     = [p for p in model.parameters() if p.requires_grad]

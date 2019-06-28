@@ -115,7 +115,8 @@ class HGC3D(nn.Module):
     def __init__(self,
                  sample_size,
                  sample_duration,
-                 num_classes=400):
+                 num_classes=400,
+                 **kwargs):
         self.inplanes = 64
         super(HGC3D, self).__init__()
 

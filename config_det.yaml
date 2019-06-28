@@ -4,7 +4,7 @@ json_path:       /z/home/erichof/datasets/ILSVRC2015/   # Path to the json file 
 batch_size:      2                                      # Numbers of videos in a mini-batch 
 load_type:       train                                  # Environment selection, to include only training/training and validation/testing dataset
 model:           HGC3D                                  # Name of model to be loaded  
-labels:          51                                     # Number of total classes in the dataset
+labels:          21                                     # Number of total classes in the dataset
 sample_size:     224                                    # Height of frame to be provided as input to the model
 sample_duration: 16                                     # Temporal size of video to be provided as input to the model 
 opt:             sgd                                    # Name of optimizer
