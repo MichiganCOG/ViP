@@ -76,8 +76,10 @@ class ResizeClip(PreprocTransform):
             proc_frame = frame.resize((self.size_w, self.size_h))
             out_clip.append(proc_frame)
             if bbox!=[]:
-                temp_bbox = np.zeros(bbox[frame_ind].shape) 
-                for class_ind in range(len(bbox)):
+                temp_bbox = np.zeros(bbox[frame_ind].shape)-1 
+                for class_ind in range(len(bbox[frame_ind])):
+                    if np.array_equal(bbox[frame_ind,class_ind],-1*np.ones(4)): #only annotated objects
+                        continue
                     xmin, ymin, xmax, ymax = bbox[frame_ind, class_ind]
                     proc_bbox = resize_bbox(xmin, ymin, xmax, ymax, frame.size, (self.size_w, self.size_h))
                     temp_bbox[class_ind,:] = proc_bbox
@@ -116,8 +118,10 @@ class CropClip(PreprocTransform):
             out_clip.append(proc_frame)
 
             if bbox!=[]:
-                temp_bbox = np.zeros(bbox[frame_ind].shape) 
+                temp_bbox = np.zeros(bbox[frame_ind].shape)-1 
                 for class_ind in range(len(bbox)):
+                    if np.array_equal(bbox[frame_ind,class_ind],-1*np.ones(4)): #only annotated objects
+                        continue
                     xmin, ymin, xmax, ymax = bbox[frame_ind, class_ind]
                     proc_bbox = crop_bbox(xmin, ymin, xmax, ymax, self.bbox_xmin, self.bbox_xmax, self.bbox_ymin, self.bbox_ymax)
                     temp_bbox[class_ind,:] = proc_bbox
@@ -203,7 +207,7 @@ class RandomFlipClip(PreprocTransform):
 
     def _h_flip(self, bbox, frame_size):
         bbox_shape = bbox.shape
-        output_bbox = np.zeros(bbox_shape)
+        output_bbox = np.zeros(bbox_shape)-1
         for bbox_ind in range(bbox_shape[0]):
             xmin, ymin, xmax, ymax = bbox[bbox_ind] 
             width = frame_size[1]
@@ -214,7 +218,7 @@ class RandomFlipClip(PreprocTransform):
 
     def _v_flip(self, bbox, frame_size):
         bbox_shape = bbox.shape
-        output_bbox = np.zeros(bbox_shape)
+        output_bbox = np.zeros(bbox_shape)-1
         for bbox_ind in range(bbox_shape[0]):
             xmin, ymin, xmax, ymax = bbox[bbox_ind] 
             height = frame_size[0]
@@ -299,7 +303,7 @@ class RandomRotateClip(PreprocTransform):
     def _rotate_bbox(self, bboxes, frame_shape, angle):
         angle = np.deg2rad(angle)
         bboxes_shape = bboxes.shape
-        output_bboxes = np.zeros(bboxes_shape)
+        output_bboxes = np.zeros(bboxes_shape)-1
         frame_h, frame_w = frame_shape 
         half_h = frame_h/2. 
         half_w = frame_w/2. 
@@ -350,7 +354,7 @@ class RandomRotateClip(PreprocTransform):
 
         if bbox!=[]:
             bbox = np.array(bbox)
-            output_bboxes = np.zeros(bbox.shape)
+            output_bboxes = np.zeros(bbox.shape)-1
             for bbox_ind in range(bbox.shape[0]):
                 output_bboxes[bbox_ind] = self._rotate_bbox(bbox[bbox_ind], clip[0].size, angle)
 

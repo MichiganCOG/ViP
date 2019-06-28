@@ -40,7 +40,7 @@ class Parse():
         parser.add_argument('--clip_offset',  type=int, help='Frame offset between beginning of video and clip (1st clip only)')
         parser.add_argument('--clip_stride',  type=int, help='Frame offset between successive frames')
         parser.add_argument('--crop_shape',   nargs=2,  help='(Height, Width) of frame') 
-        parser.add_argument('--crop_type',    type=str, help='Type of cropping operation (Random, Central and None)')
+        parser.add_argument('--crop_type',    type=str, help='Type of cropping operation (Random, Center and None)')
         parser.add_argument('--num_clips',    type=int, help='Number clips to be generated from a video (<0: uniform sampling, 0: Divide entire video into clips, >0: Defines number of clips)')
 
         parser.add_argument('--seed', type=int, help='Seed for reproducibility')
