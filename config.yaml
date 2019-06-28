@@ -1,7 +1,8 @@
 rerun:           5                     # Number of trials to repeat an experiment
-dataset:         HMDB51                # Name of dataset 
-json_path:       /z/dat/HMDB51/        # Path to the json file for the given dataset
-batch_size:      4                     # Numbers of videos in a mini-batch 
+dataset:         VOC2007                # Name of dataset 
+json_path:       /z/home/natlouis/data/VOC_2007        # Path to the json file for the given dataset
+batch_size:      1                     # Numbers of videos in a mini-batch 
+num_workers:     2                     # Number of subprocesses for dataloading 
 load_type:       train                 # Environment selection, to include only training/training and validation/testing dataset
 model:           C3D                   # Name of model to be loaded  
 labels:          51                    # Number of total classes in the dataset
@@ -17,13 +18,13 @@ milestones:      [100, 150, 200]       # Epoch values to change learning rate
 gamma:           0.2                   # Multiplier with which to change learning rate
 epoch:           10                    # Total number of epochs 
 save_dir:        './results'           # Path to results directory
-resize_shape:    [128,171]             # (Height, Width) to resize original data 
-final_shape:     [112,112]             # (Height, Width) of input to be given to CNN
-clip_length:     16                    # Number of frames within a clip 
+resize_shape:    [353,500]             # (Height, Width) to resize original data 
+final_shape:     [300,300]             # (Height, Width) of input to be given to CNN
+clip_length:     1                    # Number of frames within a clip 
 clip_offset:     0                     # Frame offset between beginning of video and clip (1st clip only) 
 clip_stride:     0                     # Frame offset between successive frames
 crop_shape:      [112,112]             # (Height, Width) of frame  
-crop_type:       Random                # Type of cropping operation (Random, Central and None)  
+crop_type:       None                # Type of cropping operation (Random, Central and None)  
 num_clips:       -1                    # Number clips to be generated from a video (<0: uniform sampling, 0: Divide entire video into clips, >0: Defines number of clips) 
 seed:            999                   # Seed for reproducibility 
 pretrained:      0                     # Load pretrained network 

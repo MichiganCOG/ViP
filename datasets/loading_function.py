@@ -49,20 +49,20 @@ def data_loader(**kwargs):
         train_data = create_dataset_object(load_type='train', **kwargs) 
         val_data   = create_dataset_object(load_type='val', **kwargs) 
 
-        trainloader = torch.utils.data.DataLoader(dataset=train_data, batch_size=kwargs['batch_size'], shuffle=True, num_workers=2)
-        valloader   = torch.utils.data.DataLoader(dataset=val_data,   batch_size=kwargs['batch_size'], shuffle=False, num_workers=2)
+        trainloader = torch.utils.data.DataLoader(dataset=train_data, batch_size=kwargs['batch_size'], shuffle=True, num_workers=kwargs['num_workers'])
+        valloader   = torch.utils.data.DataLoader(dataset=val_data,   batch_size=kwargs['batch_size'], shuffle=False, num_workers=kwargs['num_workers'])
         ret_dict = dict(train=trainloader, valid=valloader)
 
     elif load_type == 'train':
         data = create_dataset_object(**kwargs)
 
-        loader = torch.utils.data.DataLoader(dataset=data, batch_size=kwargs['batch_size'], shuffle=True, num_workers=2)
+        loader = torch.utils.data.DataLoader(dataset=data, batch_size=kwargs['batch_size'], shuffle=True, num_workers=kwargs['num_workers'])
         ret_dict = dict(train=loader)
 
     else:
         data = create_dataset_object(**kwargs)
 
-        loader = torch.utils.data.DataLoader(dataset=data, batch_size=kwargs['batch_size'], shuffle=False, num_workers=2)
+        loader = torch.utils.data.DataLoader(dataset=data, batch_size=kwargs['batch_size'], shuffle=False, num_workers=kwargs['num_workers'])
         ret_dict = dict(test=loader)
 
 

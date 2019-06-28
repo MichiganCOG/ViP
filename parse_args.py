@@ -16,6 +16,7 @@ class Parse():
         parser.add_argument('--rerun',           type=int, help='Number of trials to repeat an experiment')
         parser.add_argument('--dataset',         type=str, help='Name of dataset')
         parser.add_argument('--batch_size',      type=int, help='Numbers of videos in a mini-batch')
+        parser.add_argument('--num_workers',     type=int, help='Number of subprocesses for dataloading')
         parser.add_argument('--load_type',       type=str, help='Environment selection, to include only training/training and validation/testing dataset')
         parser.add_argument('--model',           type=str, help='Name of model to be loaded')
         parser.add_argument('--labels',          type=int, help='Number of total classes in the dataset')
