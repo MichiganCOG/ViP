@@ -2,17 +2,12 @@ import torch
 
 
 class Metrics():
-    def __init__(self, metric_type, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """
         Compute accuracy metrics from this Metrics class
 
-        Args:
-            metric_type: 
-
         """
-        self.metric_type = metric_type 
-
-        self.metric_object = None
+        self.metric_type = kwargs['acc_metric'] 
 
         if self.metric_type == 'Accuracy':
             self.metric_object = Accuracy(*args, **kwargs) 
@@ -22,14 +17,18 @@ class Metrics():
             self.metric_object = Precision(*args, **kwargs) 
         elif self.metric_type =='AP':
             self.metric_object = AveragePrecision(*args, **kwargs)
+        elif self.metric_type == 'SSD_AP':
+            self.metric_object = SSD_AP(*args, **kwargs)
         elif self.metric_type == 'mAP':
             self.metric_object = MAP(*args, **kwargs)
         elif self.metric_type == 'Recall':
             self.metric_object = Recall(*args, **kwargs) 
         elif self.metric_type == 'AR':
             self.metric_object = AverageRecall(*args, **kwargs)
+        else:
+            self.metric_type = None
 
-    def get_accuracy(self, predictions, targets):
+    def get_accuracy(self, predictions, targets, **kwargs):
         """
         Return accuracy from selected metric type
 
@@ -38,13 +37,16 @@ class Metrics():
             targets: ground truth or targets 
         """
 
-        return self.metric_object.get_accuracy(predictions, targets)
+        return self.metric_object.get_accuracy(predictions, targets, **kwargs)
 
 class Accuracy():
     """
     Standard accuracy computation. # of correct cases/# of total cases
 
     """
+    def __init__(self, *args, **kwargs):
+        pass
+
     def get_accuracy(self, predictions, targets):
         
         assert (predictions.shape == targets.shape)
@@ -61,7 +63,7 @@ class IOU():
     Args:
         average: if False, return all iou values rather than the arthimetic mean 
     """
-    def __init__(self, average=True):
+    def __init__(self, average=True, *args, **kwargs):
         
         self.average = average
 
@@ -77,10 +79,13 @@ class IOU():
             intersect area, shape [N,1]
         """
 
-        assert torch.all(box_p[:,0] < box_p[:,2])
-        assert torch.all(box_p[:,1] < box_p[:,3])
-        assert torch.all(box_t[:,0] < box_t[:,2])
-        assert torch.all(box_t[:,1] < box_t[:,3])
+        try :
+            assert torch.all(box_p[:,0] < box_p[:,2])
+            assert torch.all(box_p[:,1] < box_p[:,3])
+            assert torch.all(box_t[:,0] < box_t[:,2])
+            assert torch.all(box_t[:,1] < box_t[:,3])
+        except AssertionError:
+            return torch.Tensor([0])
 
         x_left = torch.max(box_p[:,0], box_t[:,0])
         y_top = torch.max(box_p[:,1], box_t[:,1])
@@ -102,6 +107,9 @@ class IOU():
         """
         
         intersect_area = self.intersect(box_p, box_t)
+
+        if intersect_area == 0:
+            return torch.Tensor([0])
 
         box_p_area = (box_p[:,2] - box_p[:,0]) * (box_p[:,3] - box_p[:,1])
         box_t_area = (box_t[:,2] - box_t[:,0]) * (box_t[:,3] - box_t[:,1])
@@ -126,7 +134,7 @@ class IOU():
             assert c == targets.shape[1]
             
             for cls in range(c):
-                iou_scores[:,cls] = self.iou(predictions[:,cls,:], targets[:,cls,:])
+                iou_scores[:,cls] = self.iou(predictions[:,cls,:],targets[:,cls,:])
         else:
             iou_scores = self.iou(predictions, targets)
 
@@ -137,7 +145,7 @@ class IOU():
 
 class Precision():
 
-    def __init__(self, threshold=0.5):
+    def __init__(self, threshold=0.5, *args, **kwargs):
 
         self.threshold = threshold
         self.IOU = IOU(average=False)
@@ -169,7 +177,7 @@ class Precision():
 
 class AveragePrecision():
 
-    def __init__(self, threshold=0.5, num_points=101):
+    def __init__(self, threshold=0.5, num_points=101, *args, **kwargs):
         """
         Compute Average Precision (AP)
         Args:
@@ -192,13 +200,13 @@ class AveragePrecision():
         """
 
         scores, idx = torch.sort(scores, descending=True)
-        targets_mask = targets_mask[idx]
+        targets_mask = targets_mask[:,idx]
 
         pr = torch.zeros(len(scores))
         rc = torch.zeros(len(scores))
 
         running_tp = 0 #running total number of predicted true positives
-        total_positives = sum(targets_mask)
+        total_positives = torch.sum(targets_mask)
 
         #Get values for precision-recall curve
         for n,(s,t) in enumerate(zip(scores, targets_mask)):
@@ -216,7 +224,7 @@ class AveragePrecision():
             idx = rc >= rc_values[n]
 
             if len(pr[idx]) == 0:
-                pr_inter[n] = pr_inter[n-1]
+                pr_inter[n] = 0
             else:
                 pr_inter[n] = max(pr[idx])
 
@@ -230,8 +238,12 @@ class AveragePrecision():
         """
 
         if len(targets.shape) > 2:
-            n,c,_ = targets.shape 
-            targets_mask = 1 - (targets == torch.Tensor([-1,-1,-1,-1]))[:,0].float() #TODO: Find way to generate masks for multiple objects. None relevant entries should be coordinates of -1
+            n,c,_ = targets.shape
+            targets_mask = torch.zeros(n,c)
+            for cls in range(c):
+                targets_mask[0,cls] = 1 - torch.equal(targets[0,cls], torch.Tensor([-1,-1,-1,-1]))
+
+            #TODO: Find way to generate masks for multiple objects. None relevant entries should be coordinates of -1
         else: #single class case
             n,_ = targets.shape 
             targets_mask = 1 - (targets == torch.Tensor([-1,-1,-1,-1]))[:,0].float()
@@ -240,9 +252,78 @@ class AveragePrecision():
 
         return self.get_average_precision(scores, targets_mask)
 
+class SSD_AP(AveragePrecision):
+    """
+    Compute Average Precision from the output of the SSD model
+    Accumulates all predictions before computing AP
+    """
+
+    def __init__(self, threshold=0.5, num_points=11, *args, **kwargs):
+        """
+        Compute Average Precision (AP)
+        Args:
+            threshold: (scalar) 
+            num_points: number of points to average for the interpolated AP calculation
+        """
+        super(SSD_AP, self).__init__(threshold=threshold, num_points=num_points)
+
+        self.result_dir = kwargs['result_dir']
+        resize_shape = kwargs['resize_shape']
+        #self.scale = torch.Tensor([resize_shape[0], resize_shape[1], resize_shape[0], resize_shape[1]]) #to scale predictions to image size
+        self.scale = torch.Tensor([353, 500, 353, 500])
+
+        self.ndata = kwargs['ndata']
+        self.count = 0
+
+    def get_accuracy(self, detections, gt):
+        """
+        Args:
+            detections: shape [N,C,D,5], each item [x1, y1, x2, y2, confidence]
+            gt: shape [N,D_,5], each item [x1, y1, x2, y3, class] 
+        """
+
+        detections = detections.data
+        N,C,D,_ = detections.shape
+        _,D_,_ = gt.shape 
+
+        if self.count == 0:
+            self._predictions = -1*torch.ones(self.ndata,C,D,5).to(detections.device)
+            self._targets = -1*torch.ones(self.ndata,D_,5).to(detections.device)
+
+        self._predictions[self.count:self.count+N] = detections 
+        self._targets[self.count:self.count+N] = gt
+
+        self.count += N
+
+        #Only compute Average Precision after accumulating all predictions
+        if self.count < self.ndata:
+            return -1
+
+        self.predictions = -1*torch.ones(self.ndata,C,D,4).to(detections.data)
+        self.targets = -1*torch.ones(self.ndata,C,D_,4).to(detections.data)
+        
+        #Retain only predictions with high confidence above threshold
+        for n, pred in enumerate(self._predictions):
+            for c in range(C):
+                d = 0
+
+                while pred[c, d, 0] >= 0.6:
+                    pt = (pred[c, d, 1:]*self.scale).cpu().numpy()
+                    self.predictions[n,c,d] = torch.Tensor(pt).to(detections.device)
+
+                    d += 1
+
+        for n, trgt in enumerate(self._targets):
+            for d_ in range(gt.shape[1]):
+                c = trgt[d_, -1].long() + 1 #c=0 is now the background class
+                self.targets[n,c,0] = trgt[d_,:4]
+
+        import pdb; pdb.set_trace()
+        return super(SSD_AP,self).get_accuracy(self.predictions, self.targets)
+
 class MAP():
 
-    def __init__(self, threshold=torch.linspace(0.5,0.95,10), num_points=101):
+    def __init__(self, threshold=torch.linspace(0.5,0.95,10), num_points=101, *args, **kwargs):
         """
         Mean average precision
 
@@ -280,7 +361,7 @@ class MAP():
         return self.get_mAP(predictions, targets)
 
 class Recall():
-    def __init__(self, threshold=0.5):
+    def __init__(self, threshold=0.5, *args, **kwargs):
 
         self.threshold = threshold
         self.IOU = IOU(average=False)
@@ -310,7 +391,7 @@ class Recall():
 
 class AverageRecall():
     #TODO: Incomplete
-    def __init__(self, threshold=0.5, det=None):
+    def __init__(self, threshold=0.5, det=None, *args, **kwargs):
         """
         Compute Average Recall (AR)
 
