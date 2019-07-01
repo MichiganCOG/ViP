@@ -32,6 +32,7 @@ class Parse():
         parser.add_argument('--gamma',        type=float, help='Multiplier with which to change learning rate')
         parser.add_argument('--epoch',        type=int,   help='Total number of epochs')
 
+        parser.add_argument('--json_path',    type=str, help='Path to train and test json files')
         parser.add_argument('--save_dir',     type=str, help='Path to results directory')
         parser.add_argument('--resize_shape', nargs=2,  help='(Height, Width) to resize original data')
         parser.add_argument('--final_shape',  nargs=2,  help='(Height, Width) of input to be given to CNN')
