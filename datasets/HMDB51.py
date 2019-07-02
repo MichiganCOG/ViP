@@ -1,6 +1,7 @@
 import torch
 from .abstract_datasets import RecognitionDataset 
 from PIL import Image
+import cv2
 import os
 import numpy as np
 import datasets.preprocessing_transforms as pt
@@ -9,14 +10,6 @@ from torchvision import transforms
 class HMDB51(RecognitionDataset):
     def __init__(self, *args, **kwargs):
         super(HMDB51, self).__init__(*args, **kwargs)
-
-        if self.dataset_type=='train':
-            self.transforms = PreprocessTrain()
-
-        else:
-            self.transforms = PreprocessEval()
-
-        # END IF
 
         self.load_type    = kwargs['load_type']
         self.resize_shape = kwargs['resize_shape']
@@ -28,7 +21,6 @@ class HMDB51(RecognitionDataset):
 
         else:
             self.transforms = PreprocessEval(**kwargs)
-
 
     def __getitem__(self, idx):
         vid_info  = self.samples[idx]
@@ -46,7 +38,8 @@ class HMDB51(RecognitionDataset):
                 labels[frame_ind] = frame_labels['action_class']
 
             # Load frame image data and preprocess image accordingly
-            input_data.append(Image.open(frame_path))
+            input_data.append(cv2.imread(frame_path)[...,::-1]/255.)
+            #input_data.append(Image.open(frame_path))
 
 
         # Preprocess data
@@ -73,16 +66,18 @@ class PreprocessTrainC3D(object):
         resize_shape = kwargs['resize_shape']
         self.transforms = []
 
-        self.clip_mean = np.zeros((16,224,224,3), dtype='uint8')
+        self.clip_mean = np.zeros((16,128,171,3), dtype='float')
+
+        self.transforms.append(pt.ResizeClip(*resize_shape))
+        self.transforms.append(pt.ToTensorClip())
+        self.transforms.append(pt.SubtractMeanClip(clip_mean=self.clip_mean))
+        
 
         if crop_type == 'Random':
             self.transforms.append(pt.RandomCropClip(*crop_shape))
         else:
             self.transforms.append(pt.CenterCropClip(*crop_shape))
         
-        self.transforms.append(pt.SubtractMeanClip(clip_mean=self.clip_mean))
-        
-        self.transforms.append(pt.ResizeClip(*resize_shape))
         self.transforms.append(pt.RandomFlipClip(direction='h', p=1.0))
         self.transforms.append(pt.RandomRotateClip())
         self.transforms.append(pt.ToTensorClip())

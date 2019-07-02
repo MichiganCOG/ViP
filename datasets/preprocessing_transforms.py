@@ -13,6 +13,8 @@ import torch
 from torchvision.transforms import functional as F
 from PIL import Image
 from PIL import ImageChops
+import cv2
+from scipy import ndimage
 import numpy as np
 from abc import ABCMeta
 
@@ -67,19 +69,19 @@ class ResizeClip(PreprocTransform):
         
     def __call__(self, clip, bbox=[]):
 
-        clip = self._format_clip(clip)
+        #clip = self._format_clip(clip)
         out_clip = []
         out_bbox = []
         for frame_ind in range(len(clip)):
             frame = clip[frame_ind]
 
-            proc_frame = frame.resize((self.size_w, self.size_h))
+            proc_frame = cv2.resize(frame, (self.size_w, self.size_h))
             out_clip.append(proc_frame)
             if bbox!=[]:
                 temp_bbox = np.zeros(bbox[frame_ind].shape) 
                 for class_ind in range(len(bbox)):
                     xmin, ymin, xmax, ymax = bbox[frame_ind, class_ind]
-                    proc_bbox = resize_bbox(xmin, ymin, xmax, ymax, frame.size, (self.size_w, self.size_h))
+                    proc_bbox = resize_bbox(xmin, ymin, xmax, ymax, frame.shape, (self.size_w, self.size_h))
                     temp_bbox[class_ind,:] = proc_bbox
                 out_bbox.append(temp_bbox)
 
@@ -106,13 +108,13 @@ class CropClip(PreprocTransform):
 
         
     def __call__(self, clip, bbox=[]):
-        clip = self._format_clip(clip)
+        #clip = self._format_clip(clip)
         out_clip = []
         out_bbox = []
 
         for frame_ind in range(len(clip)):
             frame = clip[frame_ind]
-            proc_frame = frame.crop((self.bbox_xmin, self.bbox_ymin, self.bbox_xmax, self.bbox_ymax))
+            proc_frame = np.array(frame[self.bbox_xmin:self.bbox_xmax, self.bbox_ymin:self.bbox_ymax])   #frame.crop((self.bbox_xmin, self.bbox_ymin, self.bbox_xmax, self.bbox_ymax))
             out_clip.append(proc_frame)
 
             if bbox!=[]:
@@ -124,9 +126,9 @@ class CropClip(PreprocTransform):
                 out_bbox.append(temp_bbox)
 
         if bbox!=[]:
-            return out_clip, np.array(out_bbox)
+            return np.array(out_clip), np.array(out_bbox)
         else:
-            return out_clip
+            return np.array(out_clip)
 
 
 class RandomCropClip(PreprocTransform):
@@ -153,8 +155,8 @@ class RandomCropClip(PreprocTransform):
         return self.xmin, self.xmax, self.ymin, self.ymax
         
     def __call__(self, clip, bbox=[]):
-        clip = self._format_clip(clip)
-        frame_shape = clip[0].size
+        #clip = self._format_clip(clip)
+        frame_shape = clip[0].shape
         self._update_random_sample(frame_shape[0], frame_shape[1])
         self.crop_transform._update_bbox(self.xmin, self.xmax, self.ymin, self.ymax) 
         return self.crop_transform(clip, bbox)
@@ -176,8 +178,8 @@ class CenterCropClip(PreprocTransform):
         return xmin, xmax, ymin, ymax
         
     def __call__(self, clip, bbox=[]):
-        clip = self._format_clip(clip)
-        frame_shape = clip[0].size
+        #clip = self._format_clip(clip)
+        frame_shape = clip[0].shape
         xmin, xmax, ymin, ymax = self._calculate_center(frame_shape[0], frame_shape[1])
         self.crop_transform._update_bbox(xmin, xmax, ymin, ymax) 
         return self.crop_transform(clip, bbox)
@@ -228,13 +230,15 @@ class RandomFlipClip(PreprocTransform):
         output_bbox = []
         
         if self.direction == 'h':
-            output_clip = [frame.transpose(Image.FLIP_LEFT_RIGHT) for frame in clip]
+            #output_clip = [frame.transpose(Image.FLIP_LEFT_RIGHT) for frame in clip]
+            output_clip = [cv2.flip(np.array(frame), 1) for frame in clip]
             
             if bbox!=[]:
                 output_bbox = [self._h_flip(curr_bbox, output_clip[0].size) for curr_bbox in bbox] 
 
         elif self.direction == 'v':
-            output_clip = [frame.transpose(Image.FLIP_TOP_BOTTOM) for frame in clip]
+            #output_clip = [frame.transpose(Image.FLIP_TOP_BOTTOM) for frame in clip]
+            output_clip = [cv2.flip(np.array(frame), 0) for frame in clip]
 
             if bbox!=[]:
                 output_bbox = [self._v_flip(curr_bbox, output_clip[0].size) for curr_bbox in bbox]
@@ -243,7 +247,7 @@ class RandomFlipClip(PreprocTransform):
         
 
     def __call__(self, clip, bbox=[]):
-        clip = self._format_clip(clip)
+        #clip = self._format_clip(clip)
         flip = self._random_flip()
         out_clip = clip
         out_bbox = bbox
@@ -263,8 +267,8 @@ class ToTensorClip(PreprocTransform):
         super(ToTensorClip, self).__init__(*args, **kwargs)
 
     def __call__(self, clip, bbox=[]):
-        clip = self._format_clip_numpy(clip)
-        clip = torch.from_numpy(clip).float()
+        #clip = self._format_clip_numpy(clip)
+        clip = torch.from_numpy(np.array(clip)).float()
         if bbox!=[]:
             bbox = torch.from_numpy(np.array(bbox))
             return clip, bbox
@@ -346,7 +350,8 @@ class RandomRotateClip(PreprocTransform):
         angle = np.random.choice(self.angles)
         output_clip = []
         for frame in clip:
-            output_clip.append(frame.rotate(angle))
+            #output_clip.append(frame.rotate(angle))
+            output_clip.append(ndimage.rotate(frame, angle))
 
         if bbox!=[]:
             bbox = np.array(bbox)
@@ -371,16 +376,18 @@ class RandomRotateClip(PreprocTransform):
 class SubtractMeanClip(PreprocTransform):
     def __init__(self, **kwargs):
         super(SubtractMeanClip, self).__init__(**kwargs)
-        self.clip_mean_args = kwargs['clip_mean']
-        self.clip_mean      = []
-
-        for frame in self.clip_mean_args:
-            self.clip_mean.append(Image.fromarray(frame))
+        self.clip_mean = torch.tensor(kwargs['clip_mean']).float()
+#        self.clip_mean_args = kwargs['clip_mean']
+#        self.clip_mean      = []
+#
+#        for frame in self.clip_mean_args:
+#            self.clip_mean.append(Image.fromarray(frame))
 
         
     def __call__(self, clip, bbox=[]):
-        for clip_ind in range(len(clip)):
-            clip[clip_ind] = ImageChops.subtract(clip[clip_ind], self.clip_mean[clip_ind])
+        clip = clip-self.clip_mean
+        #for clip_ind in range(len(clip)):
+        #    clip[clip_ind] = ImageChops.subtract(clip[clip_ind], self.clip_mean[clip_ind])
 
         
         if bbox!=[]:
