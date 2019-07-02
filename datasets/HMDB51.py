@@ -1,6 +1,7 @@
 import torch
 from .abstract_datasets import RecognitionDataset 
-from PIL import Image, ImageChops
+from PIL import Image
+import cv2
 import os
 import numpy as np
 import datasets.preprocessing_transforms as pt
@@ -24,7 +25,6 @@ class HMDB51(RecognitionDataset):
             self.transforms_p2 = PreprocessEvalC3DP2(**kwargs)
 
 
-
     def __getitem__(self, idx):
         vid_info  = self.samples[idx]
         base_path = vid_info['base_path']
@@ -41,7 +41,8 @@ class HMDB51(RecognitionDataset):
                 labels[frame_ind] = frame_labels['action_class']
 
             # Load frame image data and preprocess image accordingly
-            input_data.append(Image.open(frame_path))
+            input_data.append(cv2.imread(frame_path)[...,::-1]/255.)
+            #input_data.append(Image.open(frame_path))
 
 
         # Preprocess data
@@ -73,17 +74,17 @@ class PreprocessTrainC3DP2(object):
         #self.clip_mean = np.zeros((16,224,224,3), dtype='uint8')
         #self.transforms.append(pt.ResizeClip(*resize_shape))
         #self.transforms.append(pt.SubtractMeanClip(clip_mean=self.clip_mean))
+        self.clip_mean = np.zeros((16,128,171,3), dtype='float')
 
+        self.transforms.append(pt.ResizeClip(*resize_shape))
+        self.transforms.append(pt.ToTensorClip())
+        self.transforms.append(pt.SubtractMeanClip(clip_mean=self.clip_mean))
+        
         if crop_type == 'Random':
             self.transforms.append(pt.RandomCropClip(*crop_shape))
         else:
             self.transforms.append(pt.CenterCropClip(*crop_shape))
         
-        
-        self.transforms.append(pt.RandomFlipClip(direction='h', p=1.0))
-        self.transforms.append(pt.ToTensorClip())
-        #self.transforms.append(pt.RandomRotateClip())
-
 
     def __call__(self, input_data):
         """

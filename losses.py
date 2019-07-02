@@ -124,7 +124,7 @@ def gt_maps_ellipse(xmin, xmax, ymin, ymax, img_shape, labels, dims):
 
 
 
-class Losses():
+class Losses(object):
     def __init__(self, *args, **kwargs): #loss_type, size_average=None, reduce=None, reduction='mean', *args, **kwargs):
         """
         Args: 
@@ -158,7 +158,7 @@ class Losses():
         self.loss_object.loss(predictions, data, **kwargs)
 
 
-class HGC_MSE():
+class HGC_MSE(object):
     def __init__(self, *args, **kwargs):
         self.hgc_mse_loss = torch.nn.MSELoss() 
 
@@ -191,7 +191,7 @@ class HGC_MSE():
                 output[d_ind, f_ind] = ndimage.gaussian_filter(output[d_ind, f_ind], sigma=(sigma), order=0)
         return output
 
-class M_XENTROPY():
+class M_XENTROPY(object):
     def __init__(self, *args, **kwargs):
         self.logsoftmax = nn.LogSoftmax()
 
