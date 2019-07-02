@@ -82,7 +82,7 @@ def train(**args):
     
         # Load Network # EDIT
         #model = create_model_object(model_name=args['model'],num_classes=args['labels'], sample_size=args['sample_size'], sample_duration=args['sample_duration']).to(device)
-        model = create_model_object(args).to(device)
+        model = create_model_object(**args).to(device)
 
         # Training Setup
         params     = [p for p in model.parameters() if p.requires_grad]
@@ -111,9 +111,10 @@ def train(**args):
             # Setup Model To Train 
             model.train()
 
-            import pdb; pdb.set_trace() 
             # Start: Epoch
             for step, data in enumerate(train_loader):
+                import pdb; pdb.set_trace() 
+
                 # (True Batch, Augmented Batch, Sequence Length)
                 x_input       = data['data'].to(device) 
                 y_label       = data['labels'].to(device) 

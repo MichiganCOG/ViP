@@ -32,7 +32,7 @@ class PreprocTransform(object):
         if type(clip[0]) == self.numpy_type:
             for frame in clip:
                 if len(frame.size)==3:
-                    output_clip.append(Image.fromarray(frame, mode='RGB'))
+                    output_clip.append(Image.fromarray(frame, mode='F'))
                 else:
                     import pdb; pdb.set_trace()
                     output_clip.append(Image.fromarray(frame))
@@ -372,15 +372,24 @@ class SubtractMeanClip(PreprocTransform):
     def __init__(self, **kwargs):
         super(SubtractMeanClip, self).__init__(**kwargs)
         self.clip_mean_args = kwargs['clip_mean']
-        self.clip_mean      = []
+        self.clip_mean_1    = []
+        self.clip_mean_2    = []
+        self.clip_mean_3    = []
 
         for frame in self.clip_mean_args:
-            self.clip_mean.append(Image.fromarray(frame))
+            self.clip_mean_1.append(Image.fromarray(frame[:, : ,0], mode='F'))
+            self.clip_mean_2.append(Image.fromarray(frame[:, : ,1], mode='F'))
+            self.clip_mean_3.append(Image.fromarray(frame[:, : ,2], mode='F'))
+        import pdb; pdb.set_trace()
 
         
     def __call__(self, clip, bbox=[]):
+        print(len(clip))
         for clip_ind in range(len(clip)):
-            clip[clip_ind] = ImageChops.subtract(clip[clip_ind], self.clip_mean[clip_ind])
+            clip[clip_ind][:,:,0] = ImageChops.subtract(clip[clip_ind][:,:,0], self.clip_mean_1[clip_ind])
+            clip[clip_ind][:,:,1] = ImageChops.subtract(clip[clip_ind][:,:,1], self.clip_mean_2[clip_ind])
+            clip[clip_ind][:,:,2] = ImageChops.subtract(clip[clip_ind][:,:,2], self.clip_mean_3[clip_ind])
+            #clip[clip_ind] = clip[clip_ind].sub(self.clip_mean[clip_ind])
 
         
         if bbox!=[]:
