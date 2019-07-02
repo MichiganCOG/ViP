@@ -461,6 +461,7 @@ class ApplyToPIL(PreprocTransform):
         else:
             return output_clip
 
+
 class ApplyToTensor(PreprocTransform):
     """
     Apply standard pytorch transforms that require pytorch Tensors as input to their __call__ function, for example Normalize 
@@ -471,18 +472,20 @@ class ApplyToTensor(PreprocTransform):
     https://pytorch.org/docs/stable/_modules/torchvision/transforms/transforms.html
     """
     def __init__(self, **kwargs):
-        super(ApplyToPIL, self).__init__(**kwargs)
+        super(ApplyToTensor, self).__init__(**kwargs)
         self.kwargs = kwargs
         self.transform = kwargs['transform']
 
     def __call__(self, clip, bbox=[]):
-        if not isinstance(clip[0], Image.Image):
-            clip = self._to_pil(clip)
+        if not isinstance(clip, torch.Tensor):
+            clip = self._to_tensor(clip)
             if self.kwargs['verbose']:
-                print("Clip has been converted to PIL from numpy or tensor.")
+                print("Clip has been converted to tensor from numpy or PIL.")
         output_clip = []
         for frame in clip:
             output_clip.append(self.transform(frame))
+
+        output_clip = torch.stack(output_clip)
 
         if bbox!=[]:
             return output_clip, bbox
@@ -490,7 +493,35 @@ class ApplyToTensor(PreprocTransform):
         else:
             return output_clip
 
+class ApplyOpenCV(PreprocTransform):
+    """
+    Apply opencv transforms that require numpy arrays as input to their __call__ function, for example Rotate 
 
+    NOTE: The __call__ function of this class converts the clip to a Numpy array. If other transforms require PIL inputs, call them prior tho this one
+
+    Bounding box coordinates are not guaranteed to be transformed properly!
+    """
+    def __init__(self, **kwargs):
+        super(ApplyOpenCV, self).__init__(**kwargs)
+        self.kwargs = kwargs
+        self.function = kwargs['function']
+
+    def __call__(self, clip, bbox=[]):
+        if not isinstance(clip, torch.Tensor):
+            clip = self._to_array(clip)
+            if self.kwargs['verbose']:
+                print("Clip has been converted to numpy from pytorch tensor or PIL.")
+        output_clip = []
+        for frame in clip:
+            output_clip.append(self.function(frame))
+
+        output_clip = torch.stack(output_clip)
+
+        if bbox!=[]:
+            return output_clip, bbox
+
+        else:
+            return output_clip
 
 def resize_bbox(xmin, xmax, ymin, ymax, img_shape, resize_shape):
     # Resize a bounding box within a frame relative to the amount that the frame was resized
