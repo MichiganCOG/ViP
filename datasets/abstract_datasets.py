@@ -119,8 +119,9 @@ class RecognitionDataset(VideoDataset):
     __metaclass__ = ABCMeta
     def __init__(self, *args, **kwargs):
         super(RecognitionDataset, self).__init__(*args, **kwargs)
+        self.load_type = kwargs['load_type']
 
-    def _getClips(self):
+    def _getClips(self, *args, **kwargs):
         """
         Required format for all recognition dataset JSON files:
         
@@ -143,8 +144,7 @@ class RecognitionDataset(VideoDataset):
         """
 
         self.samples   = []
-        self.load_type = 'train'
-        
+ 
         if self.load_type == 'train':
             full_json_path = os.path.join(self.json_path, 'train.json')
 

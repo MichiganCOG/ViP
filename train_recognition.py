@@ -21,6 +21,7 @@ import torch.utils.data  as Data
 #import models.models_import as models_import
 #model = models_import.create_model_object(model_name='resnet101', num_classes=21, sample_size=224, sample_duration=16)
 #import pdb; pdb.set_trace()
+from losses                    import Losses
 from parse_args                import Parse
 from metrics                   import Metrics
 from checkpoint                import save_checkpoint, load_checkpoint
@@ -40,7 +41,7 @@ def train(**args):
     print("\n############################################################################\n")
 
     avg_acc = []
-    acc_metric = Metrics(args['acc_metric'])
+    #acc_metric = Metrics(**kwargs)
 
     for total_iteration in range(args['rerun']):
 
@@ -100,8 +101,10 @@ def train(**args):
         # END IF
             
         scheduler  = MultiStepLR(optimizer, milestones=args['milestones'], gamma=args['gamma'])    
+        model_loss = Losses(args)
 
     ############################################################################################################################################################################
+
 
         # Start: Training Loop
         for epoch in range(args['epoch']):
@@ -113,7 +116,6 @@ def train(**args):
 
             # Start: Epoch
             for step, data in enumerate(train_loader):
-                import pdb; pdb.set_trace() 
 
                 # (True Batch, Augmented Batch, Sequence Length)
                 x_input       = data['data'].to(device) 
@@ -124,7 +126,7 @@ def train(**args):
                 outputs = model(x_input)
 
                 # EDIT
-                loss    = torch.mean(torch.sum(-y_label * nn.functional.log_softmax(outputs,dim=1), dim=1))
+                loss    = model_loss.loss(outputs, y_label)#torch.mean(torch.sum(-y_label * nn.functional.log_softmax(outputs,dim=1), dim=1))
     
                 loss.backward()
                 optimizer.step()
@@ -155,11 +157,11 @@ def train(**args):
 
             scheduler.step()
 
-            # Add Validation Accuracy 
-            acc = 100.*valid(model, valid_loader, acc_metric, device)
-            writer.add_scalar(args['dataset']+'/'+args['model']+'/validation_accuracy', acc, epoch)
+            ## Add Validation Accuracy 
+            #acc = 100.*valid(model, valid_loader, acc_metric, device)
+            #writer.add_scalar(args['dataset']+'/'+args['model']+'/validation_accuracy', acc, epoch)
  
-            print('Accuracy of the network on the validation set: %d %%\n' % (acc))
+            #print('Accuracy of the network on the validation set: %d %%\n' % (acc))
     
         # END FOR: Training Loop
 

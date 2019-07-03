@@ -21,6 +21,7 @@ class Parse():
         parser.add_argument('--labels',          type=int, help='Number of total classes in the dataset')
         parser.add_argument('--sample_size',     type=int, help='Height of frame to be provided as input to the model')
         parser.add_argument('--sample_duration', type=int, help='Temporal size of video to be provided as input to the model')
+        parser.add_argument('--pretrained',      type=str, help='Path to pretrained checkpoint')
 
         parser.add_argument('--loss',         type=str,   help='Loss function')
         parser.add_argument('--acc_metric',   type=str,   help='Accuracy metric')

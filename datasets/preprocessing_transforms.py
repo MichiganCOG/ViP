@@ -376,16 +376,18 @@ class RandomRotateClip(PreprocTransform):
 class SubtractMeanClip(PreprocTransform):
     def __init__(self, **kwargs):
         super(SubtractMeanClip, self).__init__(**kwargs)
-        self.clip_mean = torch.tensor(kwargs['clip_mean']).float()
+        self.clip_mean = kwargs['clip_mean']
 #        self.clip_mean_args = kwargs['clip_mean']
 #        self.clip_mean      = []
 #
 #        for frame in self.clip_mean_args:
 #            self.clip_mean.append(Image.fromarray(frame))
-
         
     def __call__(self, clip, bbox=[]):
-        clip = clip-self.clip_mean
+        #print(clip[0].shape)
+        for clip_ind in range(len(clip)):
+            clip[clip_ind] -= self.clip_mean[clip_ind]
+        #clip = clip-self.clip_mean
         #for clip_ind in range(len(clip)):
         #    clip[clip_ind] = ImageChops.subtract(clip[clip_ind], self.clip_mean[clip_ind])
         

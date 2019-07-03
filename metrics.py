@@ -1,8 +1,8 @@
 import torch
 
 
-class Metrics():
-    def __init__(self, metric_type, *args, **kwargs):
+class Metrics(object):
+    def __init__(self, *args, **kwargs):
         """
         Compute accuracy metrics from this Metrics class
 
@@ -10,7 +10,7 @@ class Metrics():
             metric_type: 
 
         """
-        self.metric_type = metric_type 
+        self.metric_type = kwargs['acc_metric']
 
         self.metric_object = None
 
@@ -40,19 +40,23 @@ class Metrics():
 
         return self.metric_object.get_accuracy(predictions, targets)
 
-class Accuracy():
+class Accuracy(object):
     """
     Standard accuracy computation. # of correct cases/# of total cases
 
     """
+    def __init__(self, *args, **kwargs):
+        self.correct = 0.
+        self.total   = 0. 
+
     def get_accuracy(self, predictions, targets):
         
-        assert (predictions.shape == targets.shape)
+        assert (predictions.shape[0] == targets.shape[0])
 
-        correct = torch.sum(predictions == targets).float()
-        total = predictions.nelement()
+        self.correct += torch.sum(torch.argmax(predictions,1) == targets[:,-1]).float().detach().cpu().item()
+        self.total   += predictions.shape[0]
 
-        return correct/total
+        return self.correct/self.total
 
 class IOU():
     """
