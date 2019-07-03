@@ -23,8 +23,45 @@ class PreprocTransform(object):
     Abstract class for preprocessing transforms that contains methods to convert clips to PIL images.
     """
     __metaclass__ = ABCMeta
-    def __init__(self, **kwargs):
-        self.numpy_type = type(np.array(0))
+
+    def _to_pil(self, clip):
+        output=[]
+        for frame in clip:
+            output.append(F._to_pil_image(frame))
+        
+        return output
+
+
+    def _to_numpy(self, clip):
+        output = []
+        if isinstance(clip[0], torch.Tensor):
+            if isinstance(clip, torch.Tensor):
+                output = clip.numpy()
+            else:
+                for frame in clip:
+                    output.append(frame.numpy())
+            
+
+        elif isinstance(clip[0], Image.Image):
+            for frame in clip:
+                output.append(np.array(frame))
+
+        output = np.array(output)
+
+        if output.max > 1.0:
+            output = output/255.
+
+        return output
+
+
+    def _to_tensor(self, clip):
+            
+
+        output = []
+        for frame in clip:
+            output.append(F.to_tensor(frame))
+        
+        return output
 
     def _format_clip(self, clip):
 
@@ -34,7 +71,7 @@ class PreprocTransform(object):
         if type(clip[0]) == self.numpy_type:
             for frame in clip:
                 if len(frame.size)==3:
-                    output_clip.append(Image.fromarray(frame, mode='F'))
+                    output_clip.append(Image.fromarray(frame, mode='RGB'))
                 else:
                     import pdb; pdb.set_trace()
                     output_clip.append(Image.fromarray(frame))
@@ -61,11 +98,10 @@ class PreprocTransform(object):
 
 
 class ResizeClip(PreprocTransform):
-    def __init__(self, size_h, size_w, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(ResizeClip, self).__init__(*args, **kwargs)
 
-        self.size_h = size_h
-        self.size_w = size_w
+        self.size_h, self.size_w = kwargs['resize_shape']
         
     def __call__(self, clip, bbox=[]):
 
@@ -132,10 +168,9 @@ class CropClip(PreprocTransform):
 
 
 class RandomCropClip(PreprocTransform):
-    def __init__(self, crop_w, crop_h, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(RandomCropClip, self).__init__(*args, **kwargs)
-        self.crop_w = crop_w 
-        self.crop_h = crop_h
+        self.crop_h, self.crop_w = kwargs['crop_shape']
 
         self.crop_transform = CropClip(0, 0, self.crop_w, self.crop_h)
 
@@ -163,10 +198,9 @@ class RandomCropClip(PreprocTransform):
 
 
 class CenterCropClip(PreprocTransform):
-    def __init__(self, crop_w, crop_h, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(CenterCropClip, self).__init__(*args, **kwargs)
-        self.crop_w = crop_w 
-        self.crop_h = crop_h
+        self.crop_h, self.crop_w = kwargs['crop_shape']
 
         self.crop_transform = CropClip(0, 0, self.crop_w, self.crop_h)
 
@@ -390,6 +424,7 @@ class SubtractMeanClip(PreprocTransform):
         #clip = clip-self.clip_mean
         #for clip_ind in range(len(clip)):
         #    clip[clip_ind] = ImageChops.subtract(clip[clip_ind], self.clip_mean[clip_ind])
+
         
         if bbox!=[]:
             return clip, bbox
@@ -398,12 +433,26 @@ class SubtractMeanClip(PreprocTransform):
             return clip
 
 
-class ApplyToClip(PreprocTransform):
+class ApplyToPIL(PreprocTransform):
+    """
+    Apply standard pytorch transforms that require PIL images as input to their __call__ function, for example Resize
+
+    NOTE: The __call__ function of this class converts the clip to a list of PIL images in the form of integers from 0-255. If the clips are floats (for example afer mean subtraction), then only call this transform before the float transform
+
+    Bounding box coordinates are not guaranteed to be transformed properly!
+
+    https://pytorch.org/docs/stable/_modules/torchvision/transforms/transforms.html
+    """
     def __init__(self, **kwargs):
-        super(ApplyToClip, self).__init__(**kwargs)
+        super(ApplyToPIL, self).__init__(**kwargs)
+        self.kwargs = kwargs
         self.transform = kwargs['transform']
 
     def __call__(self, clip, bbox=[]):
+        if not isinstance(clip[0], Image.Image):
+            clip = self._to_pil(clip)
+            if self.kwargs['verbose']:
+                print("Clip has been converted to PIL from numpy or tensor.")
         output_clip = []
         for frame in clip:
             output_clip.append(self.transform(frame))
@@ -415,7 +464,66 @@ class ApplyToClip(PreprocTransform):
             return output_clip
 
 
+class ApplyToTensor(PreprocTransform):
+    """
+    Apply standard pytorch transforms that require pytorch Tensors as input to their __call__ function, for example Normalize 
 
+    NOTE: The __call__ function of this class converts the clip to a pytorch float tensor. If other transforms require PIL inputs, call them prior tho this one
+    Bounding box coordinates are not guaranteed to be transformed properly!
+
+    https://pytorch.org/docs/stable/_modules/torchvision/transforms/transforms.html
+    """
+    def __init__(self, **kwargs):
+        super(ApplyToTensor, self).__init__(**kwargs)
+        self.kwargs = kwargs
+        self.transform = kwargs['transform']
+
+    def __call__(self, clip, bbox=[]):
+        if not isinstance(clip, torch.Tensor):
+            clip = self._to_tensor(clip)
+            if self.kwargs['verbose']:
+                print("Clip has been converted to tensor from numpy or PIL.")
+        output_clip = []
+        for frame in clip:
+            output_clip.append(self.transform(frame))
+
+        output_clip = torch.stack(output_clip)
+
+        if bbox!=[]:
+            return output_clip, bbox
+
+        else:
+            return output_clip
+
+class ApplyOpenCV(PreprocTransform):
+    """
+    Apply opencv transforms that require numpy arrays as input to their __call__ function, for example Rotate 
+
+    NOTE: The __call__ function of this class converts the clip to a Numpy array. If other transforms require PIL inputs, call them prior tho this one
+
+    Bounding box coordinates are not guaranteed to be transformed properly!
+    """
+    def __init__(self, **kwargs):
+        super(ApplyOpenCV, self).__init__(**kwargs)
+        self.kwargs = kwargs
+        self.function = kwargs['function']
+
+    def __call__(self, clip, bbox=[]):
+        if not isinstance(clip, torch.Tensor):
+            clip = self._to_array(clip)
+            if self.kwargs['verbose']:
+                print("Clip has been converted to numpy from pytorch tensor or PIL.")
+        output_clip = []
+        for frame in clip:
+            output_clip.append(self.function(frame))
+
+        output_clip = torch.stack(output_clip)
+
+        if bbox!=[]:
+            return output_clip, bbox
+
+        else:
+            return output_clip
 
 def resize_bbox(xmin, xmax, ymin, ymax, img_shape, resize_shape):
     # Resize a bounding box within a frame relative to the amount that the frame was resized
