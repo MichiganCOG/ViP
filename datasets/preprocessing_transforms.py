@@ -24,6 +24,9 @@ class PreprocTransform(object):
     """
     __metaclass__ = ABCMeta
 
+    def __init__(self, *args, **kwargs):
+        pass
+
     def _to_pil(self, clip):
         output=[]
         for frame in clip:
@@ -100,7 +103,6 @@ class PreprocTransform(object):
 class ResizeClip(PreprocTransform):
     def __init__(self, *args, **kwargs):
         super(ResizeClip, self).__init__(*args, **kwargs)
-
         self.size_h, self.size_w = kwargs['resize_shape']
         
     def __call__(self, clip, bbox=[]):

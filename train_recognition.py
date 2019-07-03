@@ -13,26 +13,22 @@ import io
 import yaml 
 import torch
 import torchvision
+
 import numpy             as np
 import torch.nn          as nn
 import torch.optim       as optim
 import torch.utils.data  as Data
 
-#import models.models_import as models_import
-#model = models_import.create_model_object(model_name='resnet101', num_classes=21, sample_size=224, sample_duration=16)
-#import pdb; pdb.set_trace()
 from losses                    import Losses
-from parse_args                import Parse
 from metrics                   import Metrics
-from checkpoint                import save_checkpoint, load_checkpoint
-#from torchvision               import datasets, transforms
 from datasets                  import data_loader
+from checkpoint                import save_checkpoint, load_checkpoint
+from parse_args                import Parse
 from tensorboardX              import SummaryWriter
 from torch.autograd            import Variable
+from models.models_import      import create_model_object
 from torch.optim.lr_scheduler  import MultiStepLR
 
-# Import models 
-from models.models_import      import create_model_object
 
 def train(**args):
 
@@ -40,21 +36,20 @@ def train(**args):
     print("Experimental Setup: ", args)
     print("\n############################################################################\n")
 
-    avg_acc = []
-    #acc_metric = Metrics(**kwargs)
-
     for total_iteration in range(args['rerun']):
 
-        d = datetime.datetime.today()
-        date = d.strftime('%Y%m%d-%H%M%S')
+        # Generate Results Directory
+        d          = datetime.datetime.today()
+        date       = d.strftime('%Y%m%d-%H%M%S')
         result_dir = os.path.join(args['save_dir'], args['model'], '_'.join((args['dataset'],'[exp]',date)))
-        log_dir    = os.path.join(result_dir, 'logs')
-        save_dir   = os.path.join(result_dir, 'checkpoints')
+        log_dir    = os.path.join(result_dir,       'logs')
+        save_dir   = os.path.join(result_dir,       'checkpoints')
 
         os.makedirs(result_dir, exist_ok=True)
-        os.makedirs(log_dir, exist_ok=True) 
-        os.makedirs(save_dir, exist_ok=True) 
+        os.makedirs(log_dir,    exist_ok=True) 
+        os.makedirs(save_dir,   exist_ok=True) 
 
+        # Save Copy of Config File
         with open(os.path.join(result_dir, 'config.yaml'),'w') as outfile:
             yaml.dump(args, outfile, default_flow_style=False)
 
@@ -71,7 +66,7 @@ def train(**args):
 
         elif args['load_type'] == 'train_val':
             train_loader = loader['train']
-            valid_loader  = loader['valid'] 
+            valid_loader = loader['valid'] 
 
         else:
             print('Invalid environment selection for training, exiting')
@@ -81,8 +76,7 @@ def train(**args):
         # Check if GPU is available (CUDA)
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     
-        # Load Network # EDIT
-        #model = create_model_object(model_name=args['model'],num_classes=args['labels'], sample_size=args['sample_size'], sample_duration=args['sample_duration']).to(device)
+        # Load Network
         model = create_model_object(**args).to(device)
 
         # Training Setup
@@ -102,6 +96,7 @@ def train(**args):
             
         scheduler  = MultiStepLR(optimizer, milestones=args['milestones'], gamma=args['gamma'])    
         model_loss = Losses(args)
+        acc_metric = Metrics(**args)
 
     ############################################################################################################################################################################
 
@@ -124,9 +119,7 @@ def train(**args):
                 optimizer.zero_grad()
 
                 outputs = model(x_input)
-
-                # EDIT
-                loss    = model_loss.loss(outputs, y_label)#torch.mean(torch.sum(-y_label * nn.functional.log_softmax(outputs,dim=1), dim=1))
+                loss    = model_loss.loss(outputs, y_label)
     
                 loss.backward()
                 optimizer.step()
@@ -135,10 +128,10 @@ def train(**args):
 
                 # Add Learning Rate Element
                 for param_group in optimizer.param_groups:
-                    writer.add_scalar(args['dataset']+'/'+args['model']+'/learningrate', param_group['lr'], epoch*len(train_loader) + step)
+                    writer.add_scalar(args['dataset']+'/'+args['model']+'/learning_rate', param_group['lr'], epoch*len(train_loader) + step)
 
                 # Add Loss Element
-                writer.add_scalar(args['dataset']+'/'+args['model']+'/minibatchloss', loss.item(), epoch*len(train_loader) + step)
+                writer.add_scalar(args['dataset']+'/'+args['model']+'/minibatch_loss', loss.item(), epoch*len(train_loader) + step)
 
                 if np.isnan(running_loss):
                     import pdb; pdb.set_trace()
@@ -157,12 +150,15 @@ def train(**args):
 
             scheduler.step()
 
-            ## Add Validation Accuracy 
-            #acc = 100.*valid(model, valid_loader, acc_metric, device)
-            #writer.add_scalar(args['dataset']+'/'+args['model']+'/validation_accuracy', acc, epoch)
- 
-            #print('Accuracy of the network on the validation set: %d %%\n' % (acc))
-    
+            ## START FOR: Validation Accuracy
+            #model.eval()
+
+            #running_acc = []
+            #running_acc = valid(valid_loader, running_acc, writer, model, device, acc_metric)
+            #
+            #writer.add_scalar(args['dataset']+'/'+args['model']+'/validation_accuracy', 100.*running_acc[-1], epoch*len(train_loader) + step)
+            #print('Accuracy of the network on the validation set: %f %%\n' % (100.*running_acc[-1]))
+
         # END FOR: Training Loop
 
     ############################################################################################################################################################################
@@ -170,28 +166,20 @@ def train(**args):
         # Close Tensorboard Element
         writer.close()
 
-        # Save Final Model
-        save_checkpoint(epoch + 1, 0, model, optimizer, args['save_dir']+'/'+str(total_iteration)+'/final_model.pkl')
-        avg_acc.append(100.*valid(model, valid_loader, acc_metric, device))
-    
-    print("Average training accuracy across %d runs is %f" %(args['rerun'], np.mean(avg_acc)))
-
-#Compute accuracy on validation split
-def valid(model, valid_loader, acc_metric, device):
-
+def valid(valid_loader, running_acc, writer, model, device, acc_metric):
     model.eval()
-    running_acc = []
-
+    
     for step, data in enumerate(valid_loader):
-        
         x_input = data['data'].to(device)
-        y_label = data['labels'].to(device)
-
+        y_label = data['labels'] 
         outputs = model(x_input)
-        
-        running_acc.append(acc_metric.get_accuracy(outputs, y_label))
+    
+        running_acc.append(acc_metric.get_accuracy(outputs.detach().cpu().numpy(), y_label.numpy()))
+    
+    # END FOR: Validation Accuracy
 
-    return torch.mean(torch.Tensor(running_acc))
+    return running_acc
+
 
 if __name__ == "__main__":
 

@@ -1,5 +1,5 @@
 import torch
-
+import numpy as np
 
 class Metrics(object):
     def __init__(self, *args, **kwargs):
@@ -53,8 +53,15 @@ class Accuracy(object):
         
         assert (predictions.shape[0] == targets.shape[0])
 
-        self.correct += torch.sum(torch.argmax(predictions,1) == targets[:,-1]).float().detach().cpu().item()
-        self.total   += predictions.shape[0]
+        if len(targets.shape) == 2 and len(predictions.shape) == 2:
+            self.correct += np.sum(np.argmax(predictions,1) == targets[:, -1])
+            self.total   += predictions.shape[0]
+
+        else: 
+            self.correct += np.sum(np.argmax(predictions,1) == targets[:, -1])
+            self.total   += predictions.shape[0]
+
+        # END IF
 
         return self.correct/self.total
 
