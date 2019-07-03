@@ -26,4 +26,5 @@ crop_shape:      [112,112]             # (Height, Width) of frame
 crop_type:       Random                # Type of cropping operation (Random, Central and None)  
 num_clips:       -1                    # Number clips to be generated from a video (<0: uniform sampling, 0: Divide entire video into clips, >0: Defines number of clips) 
 seed:            999                   # Seed for reproducibility 
-pretrained:      1                     # Load pretrained network 
+pretrained:      0                     # Load pretrained network 
+verbose:         1                     # Print status updates during runtime (1 true, 0 false)

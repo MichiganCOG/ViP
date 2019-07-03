@@ -25,3 +25,4 @@ crop_type:       Random                                 # Type of cropping opera
 num_clips:       -1                                     # Number clips to be generated from a video (<0: uniform sampling, 0: Divide entire video into clips, >0: Defines number of clips) 
 seed:            998                                    # Seed for reproducibility  
 loss_type:       HGC_MSE                                # Loss class to be loaded
+verbose:         1                                      # Print status updates during runtime (1 true, 0 false)
