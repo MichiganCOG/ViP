@@ -119,23 +119,21 @@ class PreprocessTrain(object):
     Container for all transforms used to preprocess clips for training in this dataset.
     """
     def __init__(self, **kwargs):
-        crop_shape = kwargs['crop_shape']
         crop_type = kwargs['crop_type']
-        resize_shape = kwargs['resize_shape']
         self.transforms = []
-
+        
         if crop_type == 'Random':
-            self.transforms.append(pt.RandomCropClip(*crop_shape))
+            self.transforms.append(pt.RandomCropClip(**kwargs))
 
         elif crop_type=='RandomFrame':
-            self.transforms.append(pt.ApplyToClip(transform=torchvision.transforms.RandomCrop(crop_shape)))
+            self.transforms.append(pt.ApplyToClip(transform=torchvision.transforms.RandomCrop(**kwargs)))
         else:
-            self.transforms.append(pt.CenterCropClip(*crop_shape))
+            self.transforms.append(pt.CenterCropClip(**kwargs))
 
-        self.transforms.append(pt.ResizeClip(*resize_shape))
-        self.transforms.append(pt.RandomFlipClip(direction='h', p=1.0))
-        self.transforms.append(pt.RandomRotateClip())
-        self.transforms.append(pt.ToTensorClip())
+        self.transforms.append(pt.ResizeClip(**kwargs))
+        self.transforms.append(pt.RandomFlipClip(direction='h', p=1.0, **kwargs))
+        self.transforms.append(pt.RandomRotateClip(**kwargs))
+        self.transforms.append(pt.ToTensorClip(**kwargs))
 
 
 
