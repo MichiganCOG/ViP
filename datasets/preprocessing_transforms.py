@@ -23,6 +23,8 @@ class PreprocTransform(object):
     Abstract class for preprocessing transforms that contains methods to convert clips to PIL images.
     """
     __metaclass__ = ABCMeta
+    def __init__(self, **kwargs):
+        pass
 
     def _to_pil(self, clip):
         output=[]
@@ -46,9 +48,12 @@ class PreprocTransform(object):
             for frame in clip:
                 output.append(np.array(frame))
 
+        else:
+            output = clip 
+
         output = np.array(output)
 
-        if output.max > 1.0:
+        if output.max() > 1.0:
             output = output/255.
 
         return output
@@ -106,6 +111,7 @@ class ResizeClip(PreprocTransform):
     def __call__(self, clip, bbox=[]):
 
         #clip = self._format_clip(clip)
+        clip = self._to_numpy(clip)
         out_clip = []
         out_bbox = []
         for frame_ind in range(len(clip)):
@@ -122,9 +128,9 @@ class ResizeClip(PreprocTransform):
                 out_bbox.append(temp_bbox)
 
         if bbox!=[]:
-            return out_clip, np.array(out_bbox)
+            return np.array(out_clip), np.array(out_bbox)
         else:
-            return out_clip
+            return np.array(out_clip)
 
 
 class CropClip(PreprocTransform):
@@ -168,7 +174,7 @@ class CropClip(PreprocTransform):
 
 
 class RandomCropClip(PreprocTransform):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *  args, **kwargs):
         super(RandomCropClip, self).__init__(*args, **kwargs)
         self.crop_h, self.crop_w = kwargs['crop_shape']
 
@@ -220,7 +226,7 @@ class CenterCropClip(PreprocTransform):
 
 
 class RandomFlipClip(PreprocTransform):
-    """
+    """   
     Specify a flip direction:
     Horizontal, left right flip = 'h' (Default)
     Vertical, top bottom flip = 'v'
@@ -571,5 +577,71 @@ def crop_bbox(xmin, xmax, ymin, ymax, crop_xmin, crop_xmax, crop_ymin, crop_ymax
         xmin_new = xmin 
 
     return xmin_new, xmax_new, ymin_new, ymax_new
+
+
+class TestPreproc(object):
+    def __init__(self):
+        self.resize = ResizeClip(resize_shape = [2,2])
+        self.crop = CropClip(0,0,0,0)
+        self.rand_crop = RandomCropClip(crop_shape=[2,2])
+        self.cent_crop = CenterCropClip(crop_shape=[2,2])
+        self.rand_flip_h = RandomFlipClip(direction='h', p=1.0)
+        self.rand_flip_v = RandomFlipClip(direction='v', p=1.0)
+        self.rand_rot = RandomRotateClip(angles=[90])
+        self.sub_mean = SubtractMeanClip(clip_mean=np.zeros(1))
+
+    def resize_test(self):
+        inp = np.array([[[.1,.2,.3,.4],[.1,.2,.3,.4],[.1,.2,.3,.4]]]).astype(float)
+        inp2 = np.array([[[.1,.1,.1,.1],[.2,.2,.2,.2],[.3,.3,.3,.3]]]).astype(float)
+        expected_out = np.array([[[.15,.35],[.15,.35]]]).astype(float)
+        expected_out2 = np.array([[[.125,.125],[.275,.275]]]).astype(float)
+        out = self.resize(inp)
+        out2 = self.resize(inp2)
+        assert (False not in np.isclose(out,expected_out)) and (False not in np.isclose(out2,expected_out2))
+
+    def crop_test(self):
+        inp = np.array([[[.1,.2,.3],[.4,.5,.6],[.7,.8,.9]]]).astype(float)
+        self.crop._update_bbox(1, 3, 1, 3)
+
+        exp_out = np.array([[[.5,.6],[.8,.9]]]).astype(float)
+        out = self.crop(inp)
+        assert (False not in np.isclose(out,exp_out))
+
+    def cent_crop_test(self):
+        inp = np.array([[[.1,.2,.3,.4],[.1,.2,.3,.4],[.1,.2,.3,.4],[.1,.2,.3,.4]]]).astype(float)
+        exp_out = np.array([[[.2,.3],[.2,.3]]]).astype(float)
+        out = self.cent_crop(inp)
+        assert (False not in np.isclose(out, exp_out))
+
+    def rand_flip_test(self):
+        inp = np.array([[[.1,.2,.3],[.4,.5,.6],[.7,.8,.9]]]).astype(float)
+        exp_outh = np.array([[[.3,.2,.1],[.6,.5,.4],[.9,.8,.7]]]).astype(float)
+        exp_outv = np.array([[[.7,.8,.9],[.4,.5,.6],[.1,.2,.3]]]).astype(float)
+
+        outh = self.rand_flip_h(inp)
+        outv = self.rand_flip_v(inp)
+        assert (False not in np.isclose(outh,exp_outh)) and (False not in np.isclose(outv,exp_outv))
+
+    def rand_rot_test(self):
+        inp = np.array([[[.1,.2,.3],[.4,.5,.6],[.7,.8,.9]]]).astype(float)
+        exp_out = np.array([[[.3,.6,.9],[.2,.5,.8],[.1,.4,.7]]]).astype(float)
+
+        out = self.rand_rot(inp)
+        assert (False not in np.isclose(out, exp_out))
+
+    def run_tests(self):
+        self.resize_test()
+        self.crop_test()
+        self.cent_crop_test()
+        self.rand_flip_test()
+        self.rand_rot_test()
+        print("Tests passed")
+        
+
+
+
+if __name__=='__main__':
+    test = TestPreproc()
+    test.run_tests()
 
 

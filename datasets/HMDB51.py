@@ -98,21 +98,21 @@ class PreprocessTrainC3D(object):
     """
     def __init__(self, **kwargs):
         crop_type       = kwargs['crop_type']
-        resize_shape    = kwargs['resize_shape']
-        crop_shape      = kwargs['crop_shape']
-        self.clip_mean  = np.load('models/weights/sport1m_train16_128_mean.npy')[0]
-        self.clip_mean  = np.transpose(self.clip_mean, (1,2,3,0))
         self.transforms = []
 
-        self.transforms.append(pt.ResizeClip(*resize_shape))
-        self.transforms.append(pt.SubtractMeanClip(clip_mean=self.clip_mean))
-        if crop_type == 'Random':
-            self.transforms.append(pt.RandomCropClip(*crop_shape))
-        else:
-            self.transforms.append(pt.CenterCropClip(*crop_shape))
-        self.transforms.append(pt.RandomFlipClip(direction='h', p=0.5))
-        self.transforms.append(pt.ToTensorClip())
+        self.clip_mean  = np.load('models/weights/sport1m_train16_128_mean.npy')[0]
+        self.clip_mean  = np.transpose(self.clip_mean, (1,2,3,0))
 
+        self.transforms.append(pt.ResizeClip(**kwargs))
+        self.transforms.append(pt.ToTensorClip(**kwargs))
+        self.transforms.append(pt.SubtractMeanClip(clip_mean=self.clip_mean, **kwargs))
+        
+        if crop_type == 'Random':
+            self.transforms.append(pt.RandomCropClip(**kwargs))
+        else:
+            self.transforms.append(pt.CenterCropClip(**kwargs))
+        self.transforms.append(pt.RandomFlipClip(direction='h', p=1.0, **kwargs))
+        self.transforms.append(pt.ToTensorClip())
 
     def __call__(self, input_data):
         """
@@ -179,18 +179,21 @@ class PreprocessEvalC3D(object):
 
     def __call__(self, input_data):
         """
-        Preprocess the clip accordingly
+        Preprocess the clip and the bbox data accordingly
         Args:
             input_data: List of PIL images containing clip frames 
+            bbox_data:  Numpy array containing bbox coordinates per object per frame 
 
         Return:
             input_data: Pytorch tensor containing the processed clip data 
+            bbox_data:  Numpy tensor containing the augmented bbox coordinates
         """
-        for transform in self.transforms:
-            input_data = transform(input_data)
+        input_data = self.resize(input_data)
+        input_data = self.crop(input_data)
+        input_data = self.flip(input_data)
+        input_data = self.toTensor(input_data)
 
         return input_data
-
 
 
 
