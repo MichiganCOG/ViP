@@ -66,51 +66,39 @@ def eval(**args):
         acc_metric = Metrics(**args, result_dir=result_dir, ndata=len(eval_loader.dataset))
 
         running_loss = 0.0
-        running_acc = []
+        acc = 0.0
 
         # Setup Model To Evaluate 
-        model.load_state_dict(torch.load('/z/home/natlouis/ssd.pytorch/weights/ssd300_mAP_77.43_v2.pth'))
         model.eval()
 
-        import pdb; pdb.set_trace()
         for step, data in enumerate(eval_loader):
             # (True Batch, Augmented Batch, Sequence Length)
             data = dict((k, v.to(device)) for k,v in data.items())
             x_input       = data['data']
             y_label       = data['labels'] 
 
-            #Temporarily squeeze this meaningless dimension #TODO: To remove
-            x_input.squeeze_(2)
-
             outputs = model(x_input)
 
-            running_acc.append(acc_metric.get_accuracy(outputs, data))
-            '''
-            loss = model_loss.loss(outputs, data)
-            running_loss += loss.item()
+            acc = acc_metric.get_accuracy(outputs, data)
+            #loss = model_loss.loss(outputs, data)
+            #running_loss += loss.item()
 
             # Add Loss Element
-            writer.add_scalar(args['dataset']+'/'+args['model']+'/loss', loss.item(), epoch*len(eval_loader) + step)
+            #writer.add_scalar(args['dataset']+'/'+args['model']+'/loss', loss.item(), epoch*len(eval_loader) + step)
 
             if np.isnan(running_loss):
                 import pdb; pdb.set_trace()
 
             if step % 100 == 0:
-                print('Epoch: {} | {} loss: {.4f}'.format(epoch, args['load_type'], running_loss/100.))
+                print('Step: {}/{} | {} loss: {:.4f}'.format(step, len(eval_loader), args['load_type'], running_loss/100.))
                 running_loss = 0.0
 
-            acc = 100*accuracy_action(model, testloader, device)
-            writer.add_scalar(args['dataset']+'/'+args['model']+'/'+args['load_type']+'_accuracy', acc, epoch)
- 
-            print('Accuracy of the network on the {} set: {} %%\n'.format(args['load_type'], acc))
-            '''
-    
+        writer.add_scalar(args['dataset']+'/'+args['model']+'/'+args['load_type']+'_accuracy', acc)
+        print('Accuracy of the network on the {} set: {:.3f} %\n'.format(args['load_type'], 100.*acc))
         # Close Tensorboard Element
         writer.close()
 
-        # Save Final Model
-        save_checkpoint(1, 0, model, optimizer, args['save_dir']+'/'+str(total_iteration)+'/final_model.pkl')
-        avg_acc.append(100.*accuracy(model, testloader, device))
+        avg_acc.append(acc)
     
     print('Average {} accuracy across {} runs is {}'.format(args['load_type'], args['rerun'], np.mean(avg_acc)))
 

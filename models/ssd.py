@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-from models.layers import *
+from models.ssd_utils import *
 import os
 
 __all__ = [
@@ -89,6 +89,11 @@ class SSD(nn.Module):
                     2: localization layers, Shape: [batch,num_priors*4]
                     3: priorbox layers, Shape: [2,num_priors*4]
         """
+        if len(x.shape) > 4: #dataset outputs shape [batch,3,T,300,300]
+            x.squeeze_(2)
+
+        assert(len(x.shape) == 4)
+
         sources = list()
         loc = list()
         conf = list()
@@ -201,34 +206,3 @@ def multibox(vgg, extra_layers, cfg, num_classes):
         conf_layers += [nn.Conv2d(v.out_channels, cfg[k]
                                   * num_classes, kernel_size=3, padding=1)]
     return vgg, extra_layers, (loc_layers, conf_layers)
-
-
-base = {
-    '300': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
-            512, 512, 512],
-    '512': [],
-}
-extras = {
-    '300': [256, 'S', 512, 128, 'S', 256, 128, 256, 128, 256],
-    '512': [],
-}
-mbox = {
-    '300': [4, 6, 6, 6, 4, 4],  # number of boxes per feature map location
-    '512': [],
-}
-
-
-'''
-def build_ssd(load_type, resize_shape=300, num_classes=21):
-    if load_type != "test" and load_type != "train":
-        print("ERROR: Load_type: " + load_type + " not recognized")
-        return
-    if resize_shape != 300:
-        print("ERROR: You specified size " + repr(size) + ". However, " +
-              "currently only SSD300 (size=300) is supported!")
-        return
-    base_, extras_, head_ = multibox(vgg(base[str(resize_shape)], 3),
-                                     add_extras(extras[str(resize_shape)], 1024),
-                                     mbox[str(resize_shape)], num_classes)
-    return SSD(load_type, resize_shape, base_, extras_, head_, num_classes)
-'''

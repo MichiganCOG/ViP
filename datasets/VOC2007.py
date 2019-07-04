@@ -15,6 +15,7 @@ class VOC2007(DetectionDataset):
         # Maximum number of annotated object present in a single frame in entire dataset
         # Dictates the return size of annotations in __getitem__
         self.max_objects = 50 #TODO: Verify real value
+
         #Map class name to a class id
         self.class_to_id = {'aeroplane':0,
                             'bicycle':1,
@@ -73,7 +74,6 @@ class VOC2007(DetectionDataset):
                 labels[frame_ind, trackid]       = label 
                 diff_labels[frame_ind, trackid]  = difficult 
 
-            #input_data.append(Image.open(os.path.join(base_path, frame_path)))
             input_data.append(cv2.imread(os.path.join(base_path, frame_path), cv2.IMREAD_COLOR))
 
         #vid_data, bbox_data = self.transforms(input_data, bbox_data)
@@ -104,7 +104,7 @@ class VOC2007(DetectionDataset):
 
         #mean = torch.Tensor([[[[104, 117, 123]]]]) 
         #vid_data = vid_data - mean
-        # Permute the PIL dimensions (Frame, Height, Width, Chan) to pytorch (Chan, frame, height, width) 
+        # Permute the vid dimensions (Frame, Height, Width, Chan) to PyTorch (Chan, Frame, Height, Width) 
         vid_data = vid_data.permute(3, 0, 1, 2)
 
         ret_dict = dict() 
