@@ -1,15 +1,6 @@
-"""
-LEGACY:
-    View more, visit my tutorial page: https://morvanzhou.github.io/tutorials/
-    My Youtube Channel: https://www.youtube.com/user/MorvanZhou
-    Dependencies:
-    torch: 0.4
-    matplotlib
-    numpy
-"""
 import os
+import sys 
 import datetime
-import io
 import yaml 
 import torch
 import torchvision
@@ -18,20 +9,15 @@ import torch.nn          as nn
 import torch.optim       as optim
 import torch.utils.data  as Data
 
-#import models.models_import as models_import
-#model = models_import.create_model_object(model_name='resnet101', num_classes=21, sample_size=224, sample_duration=16)
-#import pdb; pdb.set_trace()
-from parse_args                import Parse
-from metrics                   import Metrics
-from checkpoint                import save_checkpoint, load_checkpoint
-#from torchvision               import datasets, transforms
-from datasets                  import data_loader
-from tensorboardX              import SummaryWriter
-from torch.autograd            import Variable
-from torch.optim.lr_scheduler  import MultiStepLR
+from torch.optim.lr_scheduler           import MultiStepLR
+from tensorboardX                       import SummaryWriter
 
-# Import models 
-from models.models_import      import create_model_object
+from parse_args                         import Parse
+from models.models_import               import create_model_object
+from datasets                           import data_loader 
+from losses                             import Losses
+from metrics                            import Metrics
+from checkpoint                         import save_checkpoint, load_checkpoint
 
 def train(**args):
 
@@ -73,7 +59,7 @@ def train(**args):
             valid_loader  = loader['valid'] 
 
         else:
-            print('Invalid environment selection for training, exiting')
+            sys.exit('Invalid environment selection for training, exiting')
 
         # END IF
     
@@ -81,8 +67,9 @@ def train(**args):
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     
         # Load Network # EDIT
-        #model = create_model_object(model_name=args['model'],num_classes=args['labels'], sample_size=args['sample_size'], sample_duration=args['sample_duration']).to(device)
         model = create_model_object(args).to(device)
+        if args['pretrained']:
+            model.load_state_dict(torch.load(args['pretrained']))
 
         # Training Setup
         params     = [p for p in model.parameters() if p.requires_grad]
@@ -94,8 +81,7 @@ def train(**args):
             optimizer  = optim.Adam(params, lr=args['lr'], weight_decay=args['weight_decay'])
         
         else:
-            print('Unsupported optimizer selected. Exiting')
-            exit(1)
+            sys.exit('Unsupported optimizer selected. Exiting')
 
         # END IF
             
@@ -111,10 +97,10 @@ def train(**args):
             # Setup Model To Train 
             model.train()
 
-            import pdb; pdb.set_trace() 
             # Start: Epoch
             for step, data in enumerate(train_loader):
                 # (True Batch, Augmented Batch, Sequence Length)
+                data = dict((k, v.to(device)) for k,v in data.items())
                 x_input       = data['data'].to(device) 
                 y_label       = data['labels'].to(device) 
 

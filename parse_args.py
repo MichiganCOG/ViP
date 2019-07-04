@@ -23,7 +23,7 @@ class Parse():
         parser.add_argument('--sample_size',     type=int, help='Height of frame to be provided as input to the model')
         parser.add_argument('--sample_duration', type=int, help='Temporal size of video to be provided as input to the model')
 
-        parser.add_argument('--loss',         type=str,   help='Loss function')
+        parser.add_argument('--loss_type',    type=str,   help='Loss function')
         parser.add_argument('--acc_metric',   type=str,   help='Accuracy metric')
         parser.add_argument('--opt',          type=str,   help='Name of optimizer')
         parser.add_argument('--lr',           type=float, help='Learning rate')
@@ -34,6 +34,8 @@ class Parse():
         parser.add_argument('--epoch',        type=int,   help='Total number of epochs')
 
         parser.add_argument('--save_dir',     type=str, help='Path to results directory')
+        parser.add_argument('--pretrained',   type=str, help='Load pretrained network')
+        parser.add_argument('--subtract_mean',     type=str, help='Subtract mean (R,G,B) from all frames during preprocessing')
         parser.add_argument('--resize_shape', nargs=2,  help='(Height, Width) to resize original data')
         parser.add_argument('--final_shape',  nargs=2,  help='(Height, Width) of input to be given to CNN')
         parser.add_argument('--clip_length',  type=int, help='Number of frames within a clip')

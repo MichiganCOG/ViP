@@ -1,21 +1,23 @@
 import os
-import io #needed?
-#import cv2 #needed?
+import sys
+import datetime
 import yaml
 import torch
 import torchvision
-import numpy as np
-import torch.nn as nn
-import torch.optim as optim
-import torch.utils.data as Data
+import numpy                    as np
+import torch.nn                 as nn
+import torch.optim              as optim
+import torch.utils.data         as Data
 
-import models.models_import as models_import
-model = models_import.create_model_object(model_name='HGC3D', num_classes=21, sample_size=224, sample_duration=16)
-from tensorboardX import SummaryWriter
-from torch.optim.lr_scheduler import MultiStepLR
-from datasets import data_loader 
-from checkpoint import save_checkpoint
-from losses import Losses
+from torch.optim.lr_scheduler           import MultiStepLR
+from tensorboardX                       import SummaryWriter
+
+from parse_args                         import Parse
+from models.models_import               import create_model_object
+from datasets                           import data_loader 
+from losses                             import Losses
+from metrics                            import Metrics
+from checkpoint                         import save_checkpoint, load_checkpoint
 
 def train(**args):
 
@@ -24,6 +26,19 @@ def train(**args):
     avg_acc = []
 
     for total_iteration in range(args['rerun']):
+        d = datetime.datetime.today()
+        date = d.strftime('%Y%m%d-%H%M%S')
+        result_dir = os.path.join(args['save_dir'], args['model'], '_'.join((args['dataset'],'[exp]',date)))
+        log_dir    = os.path.join(result_dir, 'logs')
+        save_dir   = os.path.join(result_dir, 'checkpoints')
+
+        os.makedirs(result_dir, exist_ok=True)
+        os.makedirs(log_dir, exist_ok=True) 
+        os.makedirs(save_dir, exist_ok=True) 
+
+        with open(os.path.join(result_dir, 'config.yaml'),'w') as outfile:
+            yaml.dump(args, outfile, default_flow_style=False)
+
         # Tensorboard Element
         writer = SummaryWriter()
 
@@ -37,13 +52,15 @@ def train(**args):
             testloader  = loader['valid'] 
 
         else:
-            print('Invalid environment selection for training, exiting')
+            sys.exit('Invalid environment selection for training, exiting')
 
         # Check if GPU is available (CUDA)
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     
-        # Load Network # EDIT
-        #model = res(num_classes=args['labels'], sample_size=args['sample_size'], sample_duration=args['sample_duration']).to(device)
+        # Load Network
+        model = create_model_object(args).to(device)
+        if args['pretrained']:
+                        model.load_state_dict(torch.load(args['pretrained']))
 
         # Training Setup
         params     = [p for p in model.parameters() if p.requires_grad]
@@ -53,23 +70,20 @@ def train(**args):
         elif args['opt'] == 'adam':
             optimizer  = optim.Adam(params, lr=args['lr'], weight_decay=args['weight_decay'])
         else:
-            print('Unsupported optimizer selected. Exiting')
-            exit(1)
+            sys.exit('Unsupported optimizer selected. Exiting')
             
         scheduler  = MultiStepLR(optimizer, milestones=args['milestones'], gamma=args['gamma'])    
 
-        model_loss = Losses(args)
+        #model_loss = Losses(**args)
 
         for epoch in range(args['epoch']):
             running_loss = 0.0
             print('Epoch: ', epoch)
 
-            # Save Current Model
-            save_checkpoint(epoch, 0, model, optimizer, args['save_dir']+'/'+str(total_iteration)+'/model_'+str(epoch)+'.pkl')
-
             # Setup Model To Train 
             model.train()
 
+            import pdb; pdb.set_trace()
             for step, data in enumerate(trainloader):
                 # (True Batch, Augmented Batch, Sequence Length)
                 data = dict((k, v.to(device)) for k,v in data.items())
@@ -97,6 +111,10 @@ def train(**args):
                     print('Epoch: ', epoch, '| train loss: %.4f' % (running_loss/100.))
                     running_loss = 0.0
 
+            # Save Current Model
+            save_path = os.path.join(save_dir, args['dataset']+'_epoch'+str(epoch)+'.pkl')
+            save_checkpoint(epoch, 0, model, optimizer, save_path)
+
             scheduler.step()
 
             acc = 100*accuracy_action(model, testloader, device)
@@ -115,8 +133,8 @@ def train(**args):
 
 if __name__ == '__main__':
 
-    with open('config_det.yaml', 'r') as filestream:
-        args = yaml.load(filestream)
+    parse = Parse()
+    args = parse.get_args()
 
     # For reproducibility
     torch.backends.cudnn.deterministic = True

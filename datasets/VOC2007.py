@@ -1,12 +1,12 @@
 import torch
 from .abstract_datasets import DetectionDataset 
 from PIL import Image
+import cv2
 import os
 import numpy as np
 import datasets.preprocessing_transforms as pt
 
 class VOC2007(DetectionDataset):
-
     def __init__(self, *args, **kwargs):
         super(VOC2007, self).__init__(*args, **kwargs)
 
@@ -14,27 +14,27 @@ class VOC2007(DetectionDataset):
 
         # Maximum number of annotated object present in a single frame in entire dataset
         # Dictates the return size of annotations in __getitem__
-        self.max_objects = 20
+        self.max_objects = 50 #TODO: Verify real value
         #Map class name to a class id
-        self.class_to_id = {'person':0,
-                            'bird':1,
-                            'cat':2,
-                            'cow':3,
-                            'dog':4,
-                            'horse':5,
-                            'sheep':6,
-                            'aeroplane':7,
-                            'bicycle':8,
-                            'boat':9,
-                            'bus':10,
-                            'car':11,
-                            'motorbike':12,
-                            'train':13,
-                            'bottle':14,
-                            'chair':15,
-                            'diningtable':16,
-                            'pottedplant':17,
-                            'sofa':18,
+        self.class_to_id = {'aeroplane':0,
+                            'bicycle':1,
+                            'bird':2,
+                            'boat':3,
+                            'bottle':4,
+                            'bus':5,
+                            'car':6,
+                            'cat':7,
+                            'chair':8,
+                            'cow':9,
+                            'diningtable':10,
+                            'dog':11,
+                            'horse':12,
+                            'motorbike':13,
+                            'person':14,
+                            'pottedplant':15,
+                            'sheep':16,
+                            'sofa':17,
+                            'train':18,
                             'tvmonitor':19
                             }
         #TODO: maybe add a reverse mapping
@@ -52,10 +52,11 @@ class VOC2007(DetectionDataset):
         base_path = vid_info['base_path']
         vid_size  = vid_info['frame_size']
 
-        input_data = []
-        vid_data   = np.zeros((self.clip_length, self.final_shape[0], self.final_shape[1], 3))-1
-        bbox_data  = np.zeros((self.clip_length, self.max_objects, 4))-1
-        labels     = np.zeros((self.clip_length, self.max_objects))-1
+        input_data  = []
+        vid_data    = np.zeros((self.clip_length, self.final_shape[0], self.final_shape[1], 3))-1
+        bbox_data   = np.zeros((self.clip_length, self.max_objects, 4))-1
+        labels      = np.zeros((self.clip_length, self.max_objects))-1
+        diff_labels = np.zeros((self.clip_length, self.max_objects)) #difficult object labels
 
         for frame_ind in range(len(vid_info['frames'])):
             frame      = vid_info['frames'][frame_ind]
@@ -66,32 +67,57 @@ class VOC2007(DetectionDataset):
                 trackid   = obj['trackid']
                 label     = self.class_to_id[obj['c']]
                 obj_bbox  = obj['bbox'] # [xmin, ymin, xmax, ymax]
+                difficult = obj['difficult']
                 
                 bbox_data[frame_ind, trackid, :] = obj_bbox
                 labels[frame_ind, trackid]       = label 
+                diff_labels[frame_ind, trackid]  = difficult 
 
-            input_data.append(Image.open(os.path.join(base_path, frame_path)))
+            #input_data.append(Image.open(os.path.join(base_path, frame_path)))
+            input_data.append(cv2.imread(os.path.join(base_path, frame_path), cv2.IMREAD_COLOR))
 
-        vid_data, bbox_data = self.transforms(input_data, bbox_data)
+        #vid_data, bbox_data = self.transforms(input_data, bbox_data)
+        ####
+        vid_data = torch.zeros((1,300,300,3))
+        mean = np.array((104, 117, 123), dtype=np.float32) #assuming BGR channel order
 
-        bbox_data = bbox_data.type(torch.LongTensor)
-        xmin_data  = bbox_data[:,:,0]
-        ymin_data  = bbox_data[:,:,1]
-        xmax_data  = bbox_data[:,:,2]
-        ymax_data  = bbox_data[:,:,3]
-        labels     = torch.from_numpy(labels)
+        for i,pil_img in enumerate(input_data):
+            cv2_img = np.array(pil_img)
 
+            x = cv2.resize(cv2_img, (300, 300)).astype(np.float32)
+            x -= mean
+            x = x.astype(np.float32)[:, :, (2,1,0)] #BGR to RGB
+
+            vid_data[i] = torch.Tensor(x)
+        
+        bbox_data = torch.Tensor(bbox_data)
+
+        ####
+
+        bbox_data   = bbox_data.type(torch.LongTensor)
+        xmin_data   = bbox_data[:,:,0]
+        ymin_data   = bbox_data[:,:,1]
+        xmax_data   = bbox_data[:,:,2]
+        ymax_data   = bbox_data[:,:,3]
+        labels      = torch.from_numpy(labels).type(torch.LongTensor)
+        diff_labels = torch.from_numpy(diff_labels).type(torch.LongTensor)
+
+        #mean = torch.Tensor([[[[104, 117, 123]]]]) 
+        #vid_data = vid_data - mean
         # Permute the PIL dimensions (Frame, Height, Width, Chan) to pytorch (Chan, frame, height, width) 
         vid_data = vid_data.permute(3, 0, 1, 2)
 
         ret_dict = dict() 
         ret_dict['data']       = vid_data 
+        ret_dict['height']     = torch.Tensor([vid_size[0]])
+        ret_dict['width']     = torch.Tensor([vid_size[1]])
         ret_dict['xmin']       = xmin_data
         ret_dict['ymin']       = ymin_data
         ret_dict['xmax']       = xmax_data
         ret_dict['ymax']       = ymax_data
         ret_dict['bbox_data']  = bbox_data
-        ret_dict['labels']     = labels
+        ret_dict['labels']     = torch.cat((bbox_data, labels.unsqueeze(2)),2) #[xmin,ymin,xmax,ymax,class_id]
+        ret_dict['diff_labels'] = diff_labels 
 
         return ret_dict
 
@@ -143,7 +169,7 @@ class PreprocessEval(object):
 
         if crop_type == 'Random':
             self.transforms.append(pt.RandomCropClip(*crop_shape))
-        else:
+        elif crop_type == 'Center':
             self.transforms.append(pt.CenterCropClip(*crop_shape))
 
         self.transforms.append(pt.ResizeClip(*resize_shape))
