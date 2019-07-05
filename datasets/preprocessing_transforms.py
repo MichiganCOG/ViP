@@ -17,6 +17,7 @@ import cv2
 from scipy import ndimage
 import numpy as np
 from abc import ABCMeta
+from math import floor, ceil
 
 class PreprocTransform(object):
     """
@@ -319,6 +320,7 @@ class ToTensorClip(PreprocTransform):
 class RandomRotateClip(PreprocTransform):
     """
     Randomly rotate a clip from a fixed set of angles.
+    The rotation is counterclockwise
     """
     def __init__(self,  angles=[0,90,180,270], *args, **kwargs):
         super(RandomRotateClip, self).__init__(*args, **kwargs)
@@ -338,6 +340,9 @@ class RandomRotateClip(PreprocTransform):
         y = rho * np.sin(phi)
         return(x, y)
     #####
+
+    def _update_angles(self, angles):
+        self.angles=angles
 
 
     def _rotate_bbox(self, bboxes, frame_shape, angle):
@@ -360,10 +365,10 @@ class RandomRotateClip(PreprocTransform):
             bl = self._cart2pol(bl)
             br = self._cart2pol(br)
 
-            tl = (tl[0], tl[1] + angle)
-            tr = (tr[0], tr[1] + angle)
-            bl = (bl[0], bl[1] + angle)
-            br = (br[0], br[1] + angle)
+            tl = (tl[0], tl[1] - angle)
+            tr = (tr[0], tr[1] - angle)
+            bl = (bl[0], bl[1] - angle)
+            br = (br[0], br[1] - angle)
 
             tl = self._pol2cart(tl) 
             tr = self._pol2cart(tr)    
@@ -375,10 +380,10 @@ class RandomRotateClip(PreprocTransform):
             bl = (bl[0]+half_w, bl[1]+half_h)
             br = (br[0]+half_w, br[1]+half_h)
 
-            xmin_new = int(min(tl[0], tr[0], bl[0], br[0]))
-            xmax_new = int(max(tl[0], tr[0], bl[0], br[0]))
-            ymin_new = int(min(tl[1], tr[1], bl[1], br[1]))
-            ymax_new = int(max(tl[1], tr[1], bl[1], br[1]))
+            xmin_new = int(min(floor(tl[0]), floor(tr[0]), floor(bl[0]), floor(br[0])))
+            xmax_new = int(max(ceil(tl[0]), ceil(tr[0]), ceil(bl[0]), ceil(br[0])))
+            ymin_new = int(min(floor(tl[1]), floor(tr[1]), floor(bl[1]), floor(br[1])))
+            ymax_new = int(max(ceil(tl[1]), ceil(tr[1]), ceil(bl[1]), ceil(br[1])))
 
             output_bboxes[bbox_ind] = [xmin_new, ymin_new, xmax_new, ymax_new]
 
@@ -389,15 +394,16 @@ class RandomRotateClip(PreprocTransform):
     def __call__(self, clip, bbox=[]):
         angle = np.random.choice(self.angles)
         output_clip = []
+        clip = self._to_numpy(clip)
         for frame in clip:
             #output_clip.append(frame.rotate(angle))
-            output_clip.append(ndimage.rotate(frame, angle))
+            output_clip.append(ndimage.rotate(frame, angle, reshape=False))
 
         if bbox!=[]:
             bbox = np.array(bbox)
             output_bboxes = np.zeros(bbox.shape)
-            for bbox_ind in range(bbox.shape[0]):
-                output_bboxes[bbox_ind] = self._rotate_bbox(bbox[bbox_ind], clip[0].size, angle)
+            #for bbox_ind in range(bbox.shape[0]):
+            output_bboxes = self._rotate_bbox(bbox, clip[0].shape, angle)
 
             return output_clip, output_bboxes 
 
@@ -416,18 +422,16 @@ class RandomRotateClip(PreprocTransform):
 class SubtractMeanClip(PreprocTransform):
     def __init__(self, **kwargs):
         super(SubtractMeanClip, self).__init__(**kwargs)
-        self.clip_mean = kwargs['clip_mean']
+        self.clip_mean = torch.tensor(kwargs['clip_mean']).float()
 #        self.clip_mean_args = kwargs['clip_mean']
 #        self.clip_mean      = []
 #
 #        for frame in self.clip_mean_args:
 #            self.clip_mean.append(Image.fromarray(frame))
+
         
     def __call__(self, clip, bbox=[]):
-        #print(clip[0].shape)
-        for clip_ind in range(len(clip)):
-            clip[clip_ind] -= self.clip_mean[clip_ind]
-        #clip = clip-self.clip_mean
+        clip = clip-self.clip_mean
         #for clip_ind in range(len(clip)):
         #    clip[clip_ind] = ImageChops.subtract(clip[clip_ind], self.clip_mean[clip_ind])
 
@@ -628,6 +632,30 @@ class TestPreproc(object):
 
         out = self.rand_rot(inp)
         assert (False not in np.isclose(out, exp_out))
+
+    def rand_rot_vis(self):
+        import matplotlib.pyplot as plt
+        self.rand_rot._update_angles([20])
+        x = np.arange(112*112).reshape(112,112)
+        #x = np.arange(6*6).reshape(6,6)
+        #bbox = [51,51,61,61]
+        bbox = [30,40,50,100]
+        #bbox = [2,2,4,4]
+        plt1 = x[:]
+        plt1[bbox[1]:bbox[3], bbox[0]] = 0
+        plt1[bbox[1]:bbox[3], bbox[2]-1] = 0
+        plt1[bbox[1], bbox[0]:bbox[2]] = 0
+        plt1[bbox[3]-1, bbox[0]:bbox[2]] = 0
+        plt.imshow(plt1); plt.show()
+        out2 = self.rand_rot([x], np.array([bbox]))
+        plt2 = out2[0][0]
+        bbox = out2[1][0].astype(int)
+        plt2[bbox[1]:bbox[3], bbox[0]] = 0
+        plt2[bbox[1]:bbox[3], bbox[2]] = 0
+        plt2[bbox[1], bbox[0]:bbox[2]] = 0
+        plt2[bbox[3], bbox[0]:bbox[2]] = 0
+        plt.imshow(plt2); plt.show()
+        import pdb; pdb.set_trace()
 
     def run_tests(self):
         self.resize_test()
