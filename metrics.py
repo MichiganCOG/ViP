@@ -334,9 +334,9 @@ class SSD_AP(AveragePrecision):
         _,D_,_ = gt.shape 
 
         if self.count == 0:
-            self.predictions = -1*torch.ones(self.ndata,C,D,5).to(detections.device)
-            self._targets     = -1*torch.ones(self.ndata,D_,5).to(detections.device)
-            self._diff        = torch.zeros(self.ndata,D_, dtype=torch.long).to(detections.device)
+            self.predictions = -1*torch.ones(self.ndata,C,D,5)
+            self._targets     = -1*torch.ones(self.ndata,D_,5)
+            self._diff        = torch.zeros(self.ndata,D_, dtype=torch.long)
 
         self.predictions[self.count:self.count+N] = detections * scale
         self._targets[self.count:self.count+N] = gt 
@@ -348,7 +348,7 @@ class SSD_AP(AveragePrecision):
         if self.count < self.ndata:
             return -1
 
-        self.targets = -1*torch.ones(self.ndata,C,D_,4).to(detections.device)
+        self.targets = -1*torch.ones(self.ndata,C,D_,4)
         for n, trgt in enumerate(self._targets):
             for d_ in range(D_):
                 c = trgt[d_,-1].long() + 1 #c=0 is now the background class

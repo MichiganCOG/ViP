@@ -77,14 +77,11 @@ def eval(**args):
         model.eval()
 
         for step, data in enumerate(eval_loader):
-            # (True Batch, Augmented Batch, Sequence Length)
-            data = dict((k, v.to(device)) for k,v in data.items())
-            x_input       = data['data']
-            y_label       = data['labels'] 
-
+            x_input = data['data'].to(device)
             outputs = model(x_input)
 
             acc = acc_metric.get_accuracy(outputs, data)
+
             #loss = model_loss.loss(outputs, data)
             #running_loss += loss.item()
 

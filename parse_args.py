@@ -53,7 +53,7 @@ class Parse():
 
         config_file = self.cmd_args['cfg_file']
         with open(config_file, 'r') as f:
-            self.cfg_args = yaml.load(f) #config file arguments
+            self.cfg_args = yaml.safe_load(f) #config file arguments
 
     def get_args(self):
         
