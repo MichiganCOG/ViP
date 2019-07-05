@@ -1,6 +1,7 @@
 import torch
 from .abstract_datasets import RecognitionDataset 
 from PIL import Image
+import cv2
 import os
 import numpy as np
 import datasets.preprocessing_transforms as pt
@@ -9,14 +10,6 @@ from torchvision import transforms
 class HMDB51(RecognitionDataset):
     def __init__(self, *args, **kwargs):
         super(HMDB51, self).__init__(*args, **kwargs)
-
-        if self.dataset_type=='train':
-            self.transforms = PreprocessTrain()
-
-        else:
-            self.transforms = PreprocessEval()
-
-        # END IF
 
         self.load_type    = kwargs['load_type']
         self.resize_shape = kwargs['resize_shape']
@@ -27,7 +20,7 @@ class HMDB51(RecognitionDataset):
             self.transforms = PreprocessTrainC3D(**kwargs)
 
         else:
-            self.transforms = PreprocessEval(**kwargs)
+            self.transforms = PreprocessEvalC3D(**kwargs)
 
 
     def __getitem__(self, idx):
@@ -46,7 +39,8 @@ class HMDB51(RecognitionDataset):
                 labels[frame_ind] = frame_labels['action_class']
 
             # Load frame image data and preprocess image accordingly
-            input_data.append(Image.open(frame_path))
+            input_data.append(cv2.imread(frame_path)[...,::-1]/1.)
+            #input_data.append(Image.open(frame_path))
 
 
         # Preprocess data
@@ -68,25 +62,22 @@ class PreprocessTrainC3D(object):
     Container for all transforms used to preprocess clips for training in this dataset.
     """
     def __init__(self, **kwargs):
-        crop_shape = kwargs['crop_shape']
-        crop_type = kwargs['crop_type']
-        resize_shape = kwargs['resize_shape']
+        crop_type       = kwargs['crop_type']
         self.transforms = []
 
-        self.clip_mean = np.zeros((16,224,224,3), dtype='uint8')
+        self.clip_mean  = np.load('models/weights/sport1m_train16_128_mean.npy')[0]
+        self.clip_mean  = np.transpose(self.clip_mean, (1,2,3,0))
 
+        self.transforms.append(pt.ResizeClip(**kwargs))
+        self.transforms.append(pt.ToTensorClip(**kwargs))
+        self.transforms.append(pt.SubtractMeanClip(clip_mean=self.clip_mean, **kwargs))
+        
         if crop_type == 'Random':
-            self.transforms.append(pt.RandomCropClip(*crop_shape))
+            self.transforms.append(pt.RandomCropClip(**kwargs))
         else:
-            self.transforms.append(pt.CenterCropClip(*crop_shape))
-        
-        self.transforms.append(pt.SubtractMeanClip(clip_mean=self.clip_mean))
-        
-        self.transforms.append(pt.ResizeClip(*resize_shape))
-        self.transforms.append(pt.RandomFlipClip(direction='h', p=1.0))
-        self.transforms.append(pt.RandomRotateClip())
+            self.transforms.append(pt.CenterCropClip(**kwargs))
+        self.transforms.append(pt.RandomFlipClip(direction='h', p=1.0, **kwargs))
         self.transforms.append(pt.ToTensorClip())
-
 
     def __call__(self, input_data):
         """
@@ -102,65 +93,22 @@ class PreprocessTrainC3D(object):
 
         return input_data
 
-class PreprocessTrain(object):
+
+class PreprocessEvalC3D(object):
     """
     Container for all transforms used to preprocess clips for training in this dataset.
     """
     def __init__(self, **kwargs):
-        crop_shape = kwargs['crop_shape']
-        crop_type = kwargs['crop_type']
-        resize_shape = kwargs['resize_shape']
+        resize_shape    = kwargs['resize_shape']
+        crop_shape      = kwargs['crop_shape']
         self.transforms = []
+        self.clip_mean  = np.load('models/weights/sport1m_train16_128_mean.npy')[0]
+        self.clip_mean  = np.transpose(self.clip_mean, (1,2,3,0))
 
-        if crop_type == 'Random':
-            self.transforms.append(pt.RandomCropClip(*crop_shape))
-        else:
-            self.transforms.append(pt.CenterCropClip(*crop_shape))
-
-        self.transforms.append(pt.ResizeClip(*resize_shape))
-        self.transforms.append(pt.RandomFlipClip(direction='h', p=1.0))
-        self.transforms.append(pt.RandomRotateClip())
-        self.transforms.append(pt.ToTensorClip())
-
-
-    def __call__(self, input_data):
-        """
-        Preprocess the clip accordingly
-        Args:
-            input_data: List of PIL images containing clip frames 
-
-        Return:
-            input_data: Pytorch tensor containing the processed clip data 
-        """
-        for transform in self.transforms:
-            input_data = transform(input_data)
-
-        return input_data
-
-
-class PreprocessEval(object):
-    """
-    Container for all transforms used to preprocess clips for evaluation in this dataset.
-    """
-    def __init__(self):
-        self.resize   = pt.ResizeClip(128,171)
-        self.crop     = pt.CenterCropClip(112, 112)
-        self.flip     = pt.RandomFlipClip(direction='h')
-        self.toTensor = pt.ToTensorClip()
-        #self.mean     = np.load('models/weights/sport1m_train16_128_mean.npy')[0]
-        #self.mean     = torch.Tensor(np.transpose(self.mean, (1,2,3,0)))
-    def __init__(self, **kwargs):
-        crop_shape = kwargs['crop_shape']
-        crop_type = kwargs['crop_type']
-        resize_shape = kwargs['resize_shape']
-        self.transforms = []
-
-        if crop_type == 'Random':
-            self.transforms.append(pt.RandomCropClip(*crop_shape))
-        else:
-            self.transforms.append(pt.CenterCropClip(*crop_shape))
-
-        self.transforms.append(pt.ResizeClip(*resize_shape))
+        self.transforms.append(pt.ResizeClip(**kwargs))
+        self.transforms.append(pt.SubtractMeanClip(clip_mean=self.clip_mean, **kwargs))
+        self.transforms.append(pt.CenterCropClip(**kwargs))
+        self.transforms.append(pt.RandomFlipClip(direction='h', p=0.5, **kwargs))
         self.transforms.append(pt.ToTensorClip())
 
 

@@ -29,11 +29,10 @@ class SSD(nn.Module):
         head: "multibox head" consists of loc and conf conv layers
     """
 
-    def __init__(self, *args):
+    def __init__(self, **kwargs):
         super(SSD, self).__init__()
-        args = args[0]
-        self.load_type = args['load_type']
-        self.num_classes = args['labels']
+        self.load_type = kwargs['load_type']
+        self.num_classes = kwargs['labels']
         #self.cfg = (coco, voc)[num_classes == 21]
         self.cfg = {'num_classes': 21, 'lr_steps': (80000, 100000, 120000), 'max_iter': 120000, 'feature_maps': [38, 19, 10, 5, 3, 1], 'min_dim': 300, 'steps': [8, 16, 32, 64, 100, 300], 'min_sizes': [30, 60, 111, 162, 213, 264], 'max_sizes': [60, 111, 162, 213, 264, 315], 'aspect_ratios': [[2], [2, 3], [2, 3], [2, 3], [2], [2]], 'variance': [0.1, 0.2], 'clip': True, 'name': 'VOC'}
 

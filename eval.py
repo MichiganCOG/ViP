@@ -46,16 +46,21 @@ def eval(**args):
 
         if args['load_type'] == 'valid':
             eval_loader = loader['valid']
+
         elif args['load_type'] == 'test':
             eval_loader  = loader['test'] 
+
         else:
             sys.exit('load_type must be valid or test for eval, exiting')
+
+        # END IF
 
         # Check if GPU is available (CUDA)
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     
         # Load Network
-        model = create_model_object(args).to(device)
+        model = create_model_object(**args).to(device)
+
         if args['pretrained']:
             model.load_state_dict(torch.load(args['pretrained']))
 

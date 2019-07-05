@@ -1,6 +1,8 @@
 import torch
+import torchvision
 from .abstract_datasets import DetectionDataset 
-from PIL import Image
+#from PIL import Image
+import cv2
 import os
 import numpy as np
 import json
@@ -70,7 +72,9 @@ class ImageNetVID(DetectionDataset):
             # Load frame image data, preprocess image, and augment bounding boxes accordingly
             # TODO: Augment bounding boxes according to frame augmentations 
             # vid_data[frame_ind], bbox_data[frame_ind] = self._preprocFrame(os.path.join(base_path, frame_path), bbox_data[frame_ind])
-            input_data.append(Image.open(os.path.join(base_path, frame_path)))
+            #input_data.append(Image.open(os.path.join(base_path, frame_path)))
+            # Load frame, convert to RGB from BGR and normalize from 0 to 1
+            input_data.append(cv2.imread(os.path.join(base_path, frame_path))[...,::-1]/255.)
 
         vid_data, bbox_data = self.transforms(input_data, bbox_data)
         def plotim(ind):
@@ -115,20 +119,21 @@ class PreprocessTrain(object):
     Container for all transforms used to preprocess clips for training in this dataset.
     """
     def __init__(self, **kwargs):
-        crop_shape = kwargs['crop_shape']
         crop_type = kwargs['crop_type']
-        resize_shape = kwargs['resize_shape']
         self.transforms = []
-
+        
         if crop_type == 'Random':
-            self.transforms.append(pt.RandomCropClip(*crop_shape))
-        else:
-            self.transforms.append(pt.CenterCropClip(*crop_shape))
+            self.transforms.append(pt.RandomCropClip(**kwargs))
 
-        self.transforms.append(pt.ResizeClip(*resize_shape))
-        self.transforms.append(pt.RandomFlipClip(direction='h', p=1.0))
-        self.transforms.append(pt.RandomRotateClip())
-        self.transforms.append(pt.ToTensorClip())
+        elif crop_type=='RandomFrame':
+            self.transforms.append(pt.ApplyToClip(transform=torchvision.transforms.RandomCrop(**kwargs)))
+        else:
+            self.transforms.append(pt.CenterCropClip(**kwargs))
+
+        self.transforms.append(pt.ResizeClip(**kwargs))
+        self.transforms.append(pt.RandomFlipClip(direction='h', p=1.0, **kwargs))
+        self.transforms.append(pt.RandomRotateClip(**kwargs))
+        self.transforms.append(pt.ToTensorClip(**kwargs))
 
 
 

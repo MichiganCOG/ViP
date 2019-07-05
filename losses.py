@@ -124,7 +124,7 @@ def gt_maps_ellipse(xmin, xmax, ymin, ymax, img_shape, labels, dims):
 
 
 
-class Losses():
+class Losses(object):
     def __init__(self, *args, **kwargs): #loss_type, size_average=None, reduce=None, reduction='mean', *args, **kwargs):
         """
         Args: 
@@ -155,10 +155,10 @@ class Losses():
             predictions: Tensor output by the network
             target: Target tensor used with predictions to compute the loss
         """ 
-        self.loss_object.loss(predictions, data, **kwargs)
+        return self.loss_object.loss(predictions, data, **kwargs)
 
 
-class HGC_MSE():
+class HGC_MSE(object):
     def __init__(self, *args, **kwargs):
         self.hgc_mse_loss = torch.nn.MSELoss() 
 
@@ -191,10 +191,13 @@ class HGC_MSE():
                 output[d_ind, f_ind] = ndimage.gaussian_filter(output[d_ind, f_ind], sigma=(sigma), order=0)
         return output
 
-class M_XENTROPY():
+class M_XENTROPY(object):
     def __init__(self, *args, **kwargs):
         self.logsoftmax = nn.LogSoftmax()
 
     def loss(self, predictions, targets):
-        targets = data['labels']
-        return torch.mean(torch.sum(-targets * self.logsoftmax(predictions), dim=1))
+        one_hot                                       = np.zeros((targets.shape[0], predictions.shape[1]))
+        one_hot[np.arange(targets.shape[0]), targets.cpu().numpy().astype('int32')[:, -1]] = 1
+        one_hot                                       = torch.Tensor(one_hot).cuda() 
+
+        return torch.mean(torch.sum(-one_hot * self.logsoftmax(predictions), dim=1))

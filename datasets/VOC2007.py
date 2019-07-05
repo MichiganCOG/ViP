@@ -172,7 +172,7 @@ class PreprocessEval(object):
         elif crop_type == 'Center':
             self.transforms.append(pt.CenterCropClip(*crop_shape))
 
-        self.transforms.append(pt.ResizeClip(*resize_shape))
+        self.transforms.append(pt.ResizeClip(**kwargs))
         self.transforms.append(pt.ToTensorClip())
 
 

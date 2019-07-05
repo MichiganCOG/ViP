@@ -119,8 +119,9 @@ class RecognitionDataset(VideoDataset):
     __metaclass__ = ABCMeta
     def __init__(self, *args, **kwargs):
         super(RecognitionDataset, self).__init__(*args, **kwargs)
+        self.load_type = kwargs['load_type']
 
-    def _getClips(self):
+    def _getClips(self, *args, **kwargs):
         """
         Required format for all recognition dataset JSON files:
         
@@ -143,8 +144,7 @@ class RecognitionDataset(VideoDataset):
         """
 
         self.samples   = []
-        self.load_type = 'train'
-        
+ 
         if self.load_type == 'train':
             full_json_path = os.path.join(self.json_path, 'train.json')
 
@@ -179,24 +179,24 @@ class DetectionDataset(VideoDataset):
     def _getClips(self):
         """
         Required format for all detection datset JSON files:
-        
-        List(Vidnumber: Dict{
-                   List(Frames 'frame': Dict{
-                                     Frame Size 'frame_size',
-                                     Frame Path 'img_path',
-                                     List(Objects 'objs': Dict{
-                                                        Track ID 'trackid'
-                                                        Object Class 'c'
-                                                        Occluded 'occ'
-                                                        List(Bounding box coordinates 'bbox': [xmin, ymin, xmax, ymax])
-        
-                                     }) End Object List in Frame
-        
-                   }) End Frame List in Video
-        
-                   Str(Base Vid Path) 'base_path
-        
-             }) End Video List in Dataset
+        Json (List of dicts) List where each element contains a dict with annotations for a video:
+            Dict{
+            'frame_size' (int,int): Width, Height for all frames in video
+            'base_path' (str): The path to the folder containing frame images for the video
+            'frame' (List of dicts): A list with annotation dicts per frame
+                Dict{
+                'img_path' (Str): File name of the image corresponding to the frame annotations
+                'objs' (List of dicts): A list of dicts containing annotations for each object in the frame  
+                    Dict{
+                    'trackid' (Int): Id of the current object
+                    'c' (Str or Int): Value indicating the class of the current object 
+                    'bbox' (int, int, int, int): Bbox coordinates of the current object in the current frame (xmin, ymin, xmax, ymax)
+                    (Optional) 'iscrowd' (int): Boolean indicating if the object represents a crowed (Used in MSCOCO dataset)
+                    (Optional) 'occ' (int): Boolean indicating if the object is occluded in the current frame (Used in ImageNetVID dataset)
+                    }
+                }
+            }
+            
         
         Ex: coordinates = dataset[vid_index]['frame'][frame_index]['objs'][obj_index]['bbox']
         """

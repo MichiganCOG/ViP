@@ -4,6 +4,7 @@ import datetime
 import yaml
 import torch
 import torchvision
+
 import numpy                    as np
 import torch.nn                 as nn
 import torch.optim              as optim
@@ -58,7 +59,7 @@ def train(**args):
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     
         # Load Network
-        model = create_model_object(args).to(device)
+        model = create_model_object(**args).to(device)
         if args['pretrained']:
                         model.load_state_dict(torch.load(args['pretrained']))
 

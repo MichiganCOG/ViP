@@ -33,6 +33,7 @@ class Parse():
         parser.add_argument('--gamma',        type=float, help='Multiplier with which to change learning rate')
         parser.add_argument('--epoch',        type=int,   help='Total number of epochs')
 
+        parser.add_argument('--json_path',    type=str, help='Path to train and test json files')
         parser.add_argument('--save_dir',     type=str, help='Path to results directory')
         parser.add_argument('--pretrained',   type=str, help='Load pretrained network')
         parser.add_argument('--subtract_mean',     type=str, help='Subtract mean (R,G,B) from all frames during preprocessing')

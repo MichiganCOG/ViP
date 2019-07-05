@@ -1,7 +1,7 @@
 import torch
+import numpy as np
 
-
-class Metrics():
+class Metrics(object):
     def __init__(self, *args, **kwargs):
         """
         Compute accuracy metrics from this Metrics class
@@ -39,22 +39,30 @@ class Metrics():
 
         return self.metric_object.get_accuracy(predictions, targets, **kwargs)
 
-class Accuracy():
+class Accuracy(object):
     """
     Standard accuracy computation. # of correct cases/# of total cases
 
     """
     def __init__(self, *args, **kwargs):
-        pass
+        self.correct = 0.
+        self.total   = 0. 
 
     def get_accuracy(self, predictions, targets):
         
-        assert (predictions.shape == targets.shape)
+        assert (predictions.shape[0] == targets.shape[0])
 
-        correct = torch.sum(predictions == targets).float()
-        total = predictions.nelement()
+        if len(targets.shape) == 2 and len(predictions.shape) == 2:
+            self.correct += np.sum(np.argmax(predictions,1) == targets[:, -1])
+            self.total   += predictions.shape[0]
 
-        return correct/total
+        else: 
+            self.correct += np.sum(np.argmax(predictions,1) == targets[:, -1])
+            self.total   += predictions.shape[0]
+
+        # END IF
+
+        return self.correct/self.total
 
 class IOU():
     """
@@ -170,7 +178,7 @@ class Precision():
 
         n,_ = targets.shape 
         targets_mask = torch.ones(n)
-        scores = self.IOU.get_accuracy(predictions, targets) #TODO: Find alternate way to compute scores 
+        scores = self.IOU.get_accuracy(predictions, targets) 
 
         return self.get_precision(scores, targets_mask)
 
@@ -425,7 +433,7 @@ class Recall():
         """
         n,c,_ = targets.shape 
         targets_mask = torch.ones((n,c))
-        scores = self.IOU.get_accuracy(predictions, targets) #TODO: Add alternate way to compute scores
+        scores = self.IOU.get_accuracy(predictions, targets)
 
         return self.get_recall(scores, targets_mask)
 

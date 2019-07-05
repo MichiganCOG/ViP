@@ -12,8 +12,7 @@ def create_model_object(*args, **kwargs):
     Returns:
         model: initialized model object 
     """
-    args       = args[0]
-    model_name = args['model']
+    model_name = kwargs['model']
 
     model_files = glob.glob('models/*.py')
     ignore_files = ['__init__.py', 'models_import.py']
@@ -28,7 +27,7 @@ def create_model_object(*args, **kwargs):
 
         if model_name.lower() in module_lower:
             model_index = module_lower.index(model_name.lower())
-            model = getattr(module, dir(module)[model_index])(args)
+            model = getattr(module, dir(module)[model_index])(**kwargs)
 
             return model
 
