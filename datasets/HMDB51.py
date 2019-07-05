@@ -57,41 +57,6 @@ class HMDB51(RecognitionDataset):
         return ret_dict
 
 
-#class PreprocessTrainC3DP2(object):
-#    """
-#    Container for all transforms used to preprocess clips for training in this dataset.
-#    """
-#    def __init__(self, **kwargs):
-#        crop_shape      = kwargs['crop_shape']
-#        crop_type       = kwargs['crop_type']
-#        resize_shape    = kwargs['resize_shape']
-#        self.transforms = []
-#
-#        #self.clip_mean = np.zeros((16,224,224,3), dtype='uint8')
-#        #self.transforms.append(pt.ResizeClip(*resize_shape))
-#        #self.transforms.append(pt.SubtractMeanClip(clip_mean=self.clip_mean))
-#        self.clip_mean = np.zeros((16,128,171,3), dtype='float')
-#
-#        self.transforms.append(pt.ResizeClip(*resize_shape))
-#        self.transforms.append(pt.ToTensorClip())
-#        self.transforms.append(pt.SubtractMeanClip(clip_mean=self.clip_mean))
-#        
-#        
-#
-#    def __call__(self, input_data):
-#        """
-#        Preprocess the clip accordingly
-#        Args:
-#            input_data: List of PIL images containing clip frames 
-#
-#        Return:
-#            input_data: Pytorch tensor containing the processed clip data 
-#        """
-#        for transform in self.transforms:
-#            input_data = transform(input_data)
-#
-#        return input_data
-
 class PreprocessTrainC3D(object):
     """
     Container for all transforms used to preprocess clips for training in this dataset.
@@ -128,36 +93,6 @@ class PreprocessTrainC3D(object):
 
         return input_data
 
-#class PreprocessEvalC3DP2(object):
-#    """
-#    Container for all transforms used to preprocess clips for training in this dataset.
-#    """
-#    def __init__(self, **kwargs):
-#        crop_shape      = kwargs['crop_shape']
-#        crop_type       = kwargs['crop_type']
-#        resize_shape    = kwargs['resize_shape']
-#        self.transforms = []
-#
-#        #self.clip_mean = np.zeros((16,224,224,3), dtype='uint8')
-#        #self.transforms.append(pt.ResizeClip(*resize_shape))
-#        #self.transforms.append(pt.SubtractMeanClip(clip_mean=self.clip_mean))
-#
-#        #self.transforms.append(pt.RandomRotateClip())
-#
-#
-#    def __call__(self, input_data):
-#        """
-#        Preprocess the clip accordingly
-#        Args:
-#            input_data: List of PIL images containing clip frames 
-#
-#        Return:
-#            input_data: Pytorch tensor containing the processed clip data 
-#        """
-#        for transform in self.transforms:
-#            input_data = transform(input_data)
-#
-#        return input_data
 
 class PreprocessEvalC3D(object):
     """
@@ -170,10 +105,10 @@ class PreprocessEvalC3D(object):
         self.clip_mean  = np.load('models/weights/sport1m_train16_128_mean.npy')[0]
         self.clip_mean  = np.transpose(self.clip_mean, (1,2,3,0))
 
-        self.transforms.append(pt.ResizeClip(*resize_shape))
-        self.transforms.append(pt.SubtractMeanClip(clip_mean=self.clip_mean))
-        self.transforms.append(pt.CenterCropClip(*crop_shape))
-        self.transforms.append(pt.RandomFlipClip(direction='h', p=0.5))
+        self.transforms.append(pt.ResizeClip(**kwargs))
+        self.transforms.append(pt.SubtractMeanClip(clip_mean=self.clip_mean, **kwargs))
+        self.transforms.append(pt.CenterCropClip(**kwargs))
+        self.transforms.append(pt.RandomFlipClip(direction='h', p=0.5, **kwargs))
         self.transforms.append(pt.ToTensorClip())
 
 

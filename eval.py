@@ -46,72 +46,61 @@ def eval(**args):
 
         if args['load_type'] == 'valid':
             eval_loader = loader['valid']
+
         elif args['load_type'] == 'test':
             eval_loader  = loader['test'] 
+
         else:
             sys.exit('load_type must be valid or test for eval, exiting')
+
+        # END IF
 
         # Check if GPU is available (CUDA)
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     
         # Load Network
         model = create_model_object(**args).to(device)
+
         if args['pretrained']:
-            model.load_state_dict(load_checkpoint(args['pretrained']))
+            model.load_state_dict(torch.load(args['pretrained']))
 
         # Training Setup
         params     = [p for p in model.parameters() if p.requires_grad]
 
         #model_loss = Losses(**args)
-        #acc_metric = Metrics(**args, result_dir=result_dir, ndata=len(eval_loader.dataset))
-        acc_metric = Metrics(**args)
+        acc_metric = Metrics(**args, result_dir=result_dir, ndata=len(eval_loader.dataset))
 
         running_loss = 0.0
-        running_acc = []
+        acc = 0.0
 
         # Setup Model To Evaluate 
         model.eval()
 
         for step, data in enumerate(eval_loader):
-            # (True Batch, Augmented Batch, Sequence Length)
-            #data = dict((k, v.to(device)) for k,v in data.items())
-            x_input       = data['data'].to(device)
-            y_label       = data['labels'].type(torch.LongTensor).to(device) 
-
-            #Temporarily squeeze this meaningless dimension #TODO: To remove
-            x_input.squeeze_(2)
-
+            x_input = data['data'].to(device)
             outputs = model(x_input)
 
-            running_acc.append(acc_metric.get_accuracy(outputs, y_label))
-            #print('Average {} accuracy across {} runs is {}'.format(args['load_type'], args['rerun'], running_acc[-1]))
-            print('Videos processed: {}'.format(step * y_label.shape[0] + y_label.shape[0]))
-            '''
-            loss = model_loss.loss(outputs, data)
-            running_loss += loss.item()
+            acc = acc_metric.get_accuracy(outputs, data)
+
+            #loss = model_loss.loss(outputs, data)
+            #running_loss += loss.item()
 
             # Add Loss Element
-            writer.add_scalar(args['dataset']+'/'+args['model']+'/loss', loss.item(), epoch*len(eval_loader) + step)
+            #writer.add_scalar(args['dataset']+'/'+args['model']+'/loss', loss.item(), epoch*len(eval_loader) + step)
 
             if np.isnan(running_loss):
                 import pdb; pdb.set_trace()
 
             if step % 100 == 0:
-                print('Epoch: {} | {} loss: {.4f}'.format(epoch, args['load_type'], running_loss/100.))
+                print('Step: {}/{} | {} loss: {:.4f}'.format(step, len(eval_loader), args['load_type'], running_loss/100.))
                 running_loss = 0.0
 
-            acc = 100*accuracy_action(model, testloader, device)
-            writer.add_scalar(args['dataset']+'/'+args['model']+'/'+args['load_type']+'_accuracy', acc, epoch)
- 
-            print('Accuracy of the network on the {} set: {} %%\n'.format(args['load_type'], acc))
-            '''
-    
+        writer.add_scalar(args['dataset']+'/'+args['model']+'/'+args['load_type']+'_accuracy', acc)
+        print('Accuracy of the network on the {} set: {:.3f} %\n'.format(args['load_type'], 100.*acc))
         # Close Tensorboard Element
         writer.close()
 
-        ## Save Final Model
-        #save_checkpoint(1, 0, model, optimizer, args['save_dir']+'/'+str(total_iteration)+'/final_model.pkl')
-        avg_acc.append(100.*running_acc[-1])
+        avg_acc.append(acc)
     
     print('Average {} accuracy across {} runs is {}'.format(args['load_type'], args['rerun'], np.mean(avg_acc)))
 

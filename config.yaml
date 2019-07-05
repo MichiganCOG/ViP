@@ -7,7 +7,7 @@ model:           C3D                   # Name of model to be loaded
 labels:          51                    # Number of total classes in the dataset
 sample_size:     112                   # Height of frame to be provided as input to the model
 sample_duration: 16                    # Temporal size of video to be provided as input to the model 
-loss_type:       M_XENTROPY            # Loss function #TODO: Default needs to be specified
+loss_type:       M_XENTROPY            # Loss function
 acc_metric:      Accuracy              # Accuracy metric 
 opt:             sgd                   # Name of optimizer
 lr:              0.0001                # Learning rate
@@ -17,6 +17,7 @@ milestones:      [10, 20]              # Epoch values to change learning rate
 gamma:           0.1                   # Multiplier with which to change learning rate
 epoch:           30                    # Total number of epochs 
 save_dir:        './results'           # Path to results directory
+subtract_mean:   ''                    # Subtract mean (R,G,B) from all frames during preprocessing
 resize_shape:    [128,171]             # (Height, Width) to resize original data 
 final_shape:     [112,112]             # (Height, Width) of input to be given to CNN
 clip_length:     16                    # Number of frames within a clip 

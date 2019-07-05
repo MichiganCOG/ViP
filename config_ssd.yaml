@@ -1,0 +1,32 @@
+rerun:           1                     # Number of trials to repeat an experiment
+dataset:         VOC2007               # Name of dataset 
+json_path:       /z/home/natlouis/data/VOC_2007        # Path to the json file for the given dataset
+batch_size:      1                     # Numbers of videos in a mini-batch 
+num_workers:     0                     # Number of subprocesses for dataloading 
+load_type:       test                  # Environment selection, to include only training/training and validation/testing dataset
+model:           SSD                   # Name of model to be loaded  
+labels:          21                    # Number of total classes in the dataset
+sample_size:     112                   # Height of frame to be provided as input to the model
+sample_duration: 16                    # Temporal size of video to be provided as input to the model 
+loss:            todo                  # Loss function #TODO: Default needs to be specified
+acc_metric:      SSD_AP                # Accuracy metric 
+opt:             sgd                   # Name of optimizer
+lr:              0.001                 # Learning rate
+momentum:        0.9                   # Momentum value in optimizer
+weight_decay:    0.0005                # Weight decay
+milestones:      [100, 150, 200]       # Epoch values to change learning rate     
+gamma:           0.2                   # Multiplier with which to change learning rate
+epoch:           10                    # Total number of epochs 
+save_dir:        './results'           # Path to results directory
+subtract_mean:   ''                    # Subtract mean (R,G,B) from all frames during preprocessing 
+resize_shape:    [300,300]             # (Height, Width) to resize original data 
+final_shape:     [300,300]             # (Height, Width) of input to be given to CNN
+clip_length:     1                     # Number of frames within a clip 
+clip_offset:     0                     # Frame offset between beginning of video and clip (1st clip only) 
+clip_stride:     0                     # Frame offset between successive frames
+crop_shape:      [112,112]             # (Height, Width) of frame  
+crop_type:       None                  # Type of cropping operation (Random, Center and None)  
+num_clips:       -1                    # Number clips to be generated from a video (<0: uniform sampling, 0: Divide entire video into clips, >0: Defines number of clips) 
+seed:            999                   # Seed for reproducibility 
+pretrained:      './weights/ssd300_mAP_77.43_v2.pth'                     # Load pretrained network 
+verbose:         1                     # Print status updates during runtime (1 true, 0 false)
