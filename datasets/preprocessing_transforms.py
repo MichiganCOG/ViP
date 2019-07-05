@@ -269,7 +269,7 @@ class RandomFlipClip(PreprocTransform):
             height = frame_size[0]
             ymax_new = height - ymin 
             ymin_new = height - ymax
-            output_bbox[bbox_ind] = xmin_new, ymin, xmax_new, ymax
+            output_bbox[bbox_ind] = xmin, ymin_new, xmax, ymax_new
         return output_bbox 
 
 
@@ -277,24 +277,21 @@ class RandomFlipClip(PreprocTransform):
         output_bbox = []
         
         if self.direction == 'h':
-            #output_clip = [frame.transpose(Image.FLIP_LEFT_RIGHT) for frame in clip]
             output_clip = [cv2.flip(np.array(frame), 1) for frame in clip]
             
             if bbox!=[]:
-                output_bbox = [self._h_flip(curr_bbox, output_clip[0].size) for curr_bbox in bbox] 
+                output_bbox = self._h_flip(bbox, output_clip[0].shape) 
 
         elif self.direction == 'v':
-            #output_clip = [frame.transpose(Image.FLIP_TOP_BOTTOM) for frame in clip]
             output_clip = [cv2.flip(np.array(frame), 0) for frame in clip]
 
             if bbox!=[]:
-                output_bbox = [self._v_flip(curr_bbox, output_clip[0].size) for curr_bbox in bbox]
+                output_bbox = self._v_flip(bbox, output_clip[0].shape)
 
         return output_clip, output_bbox 
         
 
     def __call__(self, clip, bbox=[]):
-        #clip = self._format_clip(clip)
         flip = self._random_flip()
         out_clip = clip
         out_bbox = bbox
@@ -402,7 +399,6 @@ class RandomRotateClip(PreprocTransform):
         output_clip = []
         clip = self._to_numpy(clip)
         for frame in clip:
-            #output_clip.append(frame.rotate(angle))
             output_clip.append(ndimage.rotate(frame, angle, reshape=False))
 
         if bbox!=[]:
@@ -414,14 +410,6 @@ class RandomRotateClip(PreprocTransform):
 
         return output_clip
 
-
-
-#class oversample(object):
-#    def __init__(self, output_size):
-#        self.size_h, self.size_w = output_size
-#        
-#    def __call__(self, clip, bbox):
-#        return clip, bbox
 
 
 class SubtractMeanClip(PreprocTransform):
@@ -626,17 +614,47 @@ class TestPreproc(object):
         inp = np.array([[[.1,.2,.3],[.4,.5,.6],[.7,.8,.9]]]).astype(float)
         exp_outh = np.array([[[.3,.2,.1],[.6,.5,.4],[.9,.8,.7]]]).astype(float)
         exp_outv = np.array([[[.7,.8,.9],[.4,.5,.6],[.1,.2,.3]]]).astype(float)
-
         outh = self.rand_flip_h(inp)
-        outv = self.rand_flip_v(inp)
+        outv = self.rand_flip_v(inp)       
         assert (False not in np.isclose(outh,exp_outh)) and (False not in np.isclose(outv,exp_outv))
+
+
+        inp2 = np.arange(36).reshape(6,6)
+        bbox = np.array([[0,0,2,2]]).astype(float)
+        exp_bboxh = np.array([[4,0,6,2]]).astype(float)
+        exp_bboxv = np.array([[0,4,2,6]]).astype(float)
+        _, bboxh = self.rand_flip_h([inp2], bbox)
+        _, bboxv = self.rand_flip_v([inp2], bbox)       
+         
+        assert (False not in np.isclose(bboxh, exp_bboxh)) and (False not in np.isclose(bboxv, exp_bboxv))
+
+    def rand_flip_vis(self):
+        import matplotlib.pyplot as plt
+        x = np.arange(112*112).reshape(112,112)
+        x[:, 10] = 10000
+        x[:, 50] = 5000
+        x[10, :] = 5000
+        x[50, :] = 10000
+        plt.imshow(x); plt.show()
+        h = self.rand_flip_h([x])
+        plt.imshow(h[0]); plt.show()
+        v = self.rand_flip_v([x])
+        plt.imshow(v[0]); plt.show()
+
 
     def rand_rot_test(self):
         inp = np.array([[[.1,.2,.3],[.4,.5,.6],[.7,.8,.9]]]).astype(float)
         exp_out = np.array([[[.3,.6,.9],[.2,.5,.8],[.1,.4,.7]]]).astype(float)
 
         out = self.rand_rot(inp)
-        assert (False not in np.isclose(out, exp_out))
+
+
+        self.rand_rot._update_angles([45])
+        inp2 = np.arange(6*6).reshape(6,6)
+        bbox = [2,2,4,4]
+        exp_bbox = [1,1,5,5]
+        out_bbox = self.rand_rot([inp2], np.array([bbox]))[1][0].tolist()
+        assert (False not in np.isclose(out, exp_out)) and (False not in np.isclose(exp_bbox, out_bbox))
 
     def rand_rot_vis(self):
         import matplotlib.pyplot as plt
@@ -669,6 +687,7 @@ class TestPreproc(object):
         self.rand_flip_test()
         self.rand_rot_test()
         print("Tests passed")
+        #self.rand_flip_vis()
         
 
 
