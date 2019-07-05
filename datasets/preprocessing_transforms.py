@@ -10,6 +10,7 @@ clip: Input to __call__ of each transform is a list of PIL images
 """
 
 import torch
+import torchvision
 from torchvision.transforms import functional as F
 from PIL import Image
 from PIL import ImageChops
@@ -31,9 +32,16 @@ class PreprocTransform(object):
         pass
 
     def _to_pil(self, clip):
+        # Must be of type uint8, int16, int32, or float32
+        if isinstance(clip[0], np.ndarray):
+            if 'float' in str(clip[0].dtype):
+                clip = np.array(clip).astype('float32')
+            if 'int64' == str(clip[0].dtype):
+                clip = np.array(clip).astype('int32')
+
         output=[]
         for frame in clip:
-            output.append(F._to_pil_image(frame))
+            output.append(F.to_pil_image(frame))
         
         return output
 
@@ -462,15 +470,17 @@ class ApplyToPIL(PreprocTransform):
     https://pytorch.org/docs/stable/_modules/torchvision/transforms/transforms.html
     """
     def __init__(self, **kwargs):
-        super(ApplyToPIL, self).__init__(**kwargs)
+        """
+        class_kwargs is a dictionary that contains the keyword arguments to be passed to the chosen pytorch transform class
+        """
+        super(ApplyToPIL, self).__init__( **kwargs)
         self.kwargs = kwargs
-        self.transform = kwargs['transform']
+        self.class_kwargs = kwargs['class_kwargs']
+        self.transform = kwargs['transform'](**self.class_kwargs)
 
     def __call__(self, clip, bbox=[]):
         if not isinstance(clip[0], Image.Image):
             clip = self._to_pil(clip)
-            if self.kwargs['verbose']:
-                print("Clip has been converted to PIL from numpy or tensor.")
         output_clip = []
         for frame in clip:
             output_clip.append(self.transform(frame))
@@ -556,6 +566,8 @@ class TestPreproc(object):
         self.rand_flip_v = RandomFlipClip(direction='v', p=1.0)
         self.rand_rot = RandomRotateClip(angles=[90])
         self.sub_mean = SubtractMeanClip(clip_mean=np.zeros(1))
+        self.applypil = ApplyToPIL(transform=torchvision.transforms.ColorJitter, class_kwargs=dict(brightness=1))
+        self.applypil2 = ApplyToPIL(transform=torchvision.transforms.FiveCrop, class_kwargs=dict(size=(64,64)))
 
     def resize_test(self):
         inp = np.array([[[.1,.2,.3,.4],[.1,.2,.3,.4],[.1,.2,.3,.4]]]).astype(float)
@@ -655,12 +667,29 @@ class TestPreproc(object):
         plt2[bbox[3], bbox[0]:bbox[2]] = 0
         plt.imshow(plt2); plt.show()
 
+    def applypil_test(self):
+        inp = np.arange(112*112).reshape(112,112)
+        inp = self.applypil._to_pil([inp, inp])
+        inp = [inp[0].convert('RGB'), inp[1].convert('RGB')]
+        out1 = self.applypil(inp)
+        out = self.applypil2(out1)
+        assert (len(out)==2) and (len(out[0])==5) and (out[0][0].size==(64,64)) and (isinstance(out[0][0], Image.Image))
+
+#    def applytensor_test(self):
+#        inp = np.arange(112*112).reshape(112,112)
+#        size = [64,64]
+#        out = self.applypil([inp, inp])
+#        assert (len(out)==2) and (len(out[0])==5) and (out[0][0].size==(64,64)) and (isinstance(out[0][0], Image.Image))
+
+
+
     def run_tests(self):
         self.resize_test()
         self.crop_test()
         self.cent_crop_test()
         self.rand_flip_test()
         self.rand_rot_test()
+        self.applypil_test()
         print("Tests passed")
         #self.rand_flip_vis()
         #self.rand_rot_vis()
