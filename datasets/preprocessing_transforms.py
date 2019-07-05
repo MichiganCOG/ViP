@@ -72,36 +72,6 @@ class PreprocTransform(object):
         
         return output
 
-    def _format_clip(self, clip):
-
-        assert((type(clip)==type(list())) or (type(clip)==self.numpy_type)), "Clips input to preprocessing transforms must be a list of PIL Images or numpy arrays"
-        output_clip = []
-        
-        if type(clip[0]) == self.numpy_type:
-            for frame in clip:
-                if len(frame.size)==3:
-                    output_clip.append(Image.fromarray(frame, mode='RGB'))
-                else:
-                    import pdb; pdb.set_trace()
-                    output_clip.append(Image.fromarray(frame))
-        else:
-            output_clip = clip
-
-
-        return output_clip
-    
-    def _format_clip_numpy(self, clip):
-        assert(type(clip)==type(list())), "Clip must be a list when input to _format_clip_numpy"
-        output_clip = []
-        if type(clip[0]) == self.numpy_type:
-            output_clip = clip
-
-        else:
-            for frame in clip:
-                output_clip.append(np.array(frame))
-
-        return np.array(output_clip)
-
 
 
 
@@ -111,9 +81,29 @@ class ResizeClip(PreprocTransform):
         super(ResizeClip, self).__init__(*args, **kwargs)
         self.size_h, self.size_w = kwargs['resize_shape']
         
+    def resize_bbox(self, xmin, xmax, ymin, ymax, img_shape, resize_shape):
+        # Resize a bounding box within a frame relative to the amount that the frame was resized
+    
+        img_h = img_shape[0]
+        img_w = img_shape[1]
+    
+        res_h = resize_shape[0]
+        res_w = resize_shape[1]
+    
+        frac_h = res_h/float(img_h)
+        frac_w = res_w/float(img_w)
+    
+        xmin_new = int(xmin * frac_w)
+        xmax_new = int(xmax * frac_w)
+    
+        ymin_new = int(ymin * frac_h)
+        ymax_new = int(ymax * frac_h)
+    
+        return xmin_new, xmax_new, ymin_new, ymax_new 
+
+
     def __call__(self, clip, bbox=[]):
 
-        #clip = self._format_clip(clip)
         clip = self._to_numpy(clip)
         out_clip = []
         out_bbox = []
@@ -128,7 +118,7 @@ class ResizeClip(PreprocTransform):
                     if np.array_equal(bbox[frame_ind,class_ind],-1*np.ones(4)): #only annotated objects
                         continue
                     xmin, ymin, xmax, ymax = bbox[frame_ind, class_ind]
-                    proc_bbox = resize_bbox(xmin, ymin, xmax, ymax, frame.shape, (self.size_w, self.size_h))
+                    proc_bbox = self.resize_bbox(xmin, ymin, xmax, ymax, frame.shape, (self.size_w, self.size_h))
                     temp_bbox[class_ind,:] = proc_bbox
                 out_bbox.append(temp_bbox)
 
@@ -153,15 +143,42 @@ class CropClip(PreprocTransform):
         self.bbox_ymin = ymin
         self.bbox_ymax = ymax
 
+
+    def crop_bbox(self, xmin, xmax, ymin, ymax, crop_xmin, crop_xmax, crop_ymin, crop_ymax):
+        if (xmin >= crop_xmax) or (xmax <= crop_xmin) or (ymin >= crop_ymax) or (ymax <= crop_ymin):
+            return -1, -1, -1, -1
+    
+        if ymax > crop_ymax:
+            ymax_new = crop_ymax
+        else:
+            ymax_new = ymax
+    
+        if xmax > crop_xmax:
+            xmax_new = crop_xmax
+        else:
+            xmax_new = xmax
+        
+        if ymin < crop_ymin:
+            ymin_new = crop_ymin
+        else:
+            ymin_new = ymin 
+    
+        if xmin < crop_xmin:
+            xmin_new = crop_xmin
+        else:
+            xmin_new = xmin 
+    
+        return xmin_new, xmax_new, ymin_new, ymax_new
+
+
         
     def __call__(self, clip, bbox=[]):
-        #clip = self._format_clip(clip)
         out_clip = []
         out_bbox = []
 
         for frame_ind in range(len(clip)):
             frame = clip[frame_ind]
-            proc_frame = np.array(frame[self.bbox_xmin:self.bbox_xmax, self.bbox_ymin:self.bbox_ymax])   #frame.crop((self.bbox_xmin, self.bbox_ymin, self.bbox_xmax, self.bbox_ymax))
+            proc_frame = np.array(frame[self.bbox_xmin:self.bbox_xmax, self.bbox_ymin:self.bbox_ymax]) 
             out_clip.append(proc_frame)
 
             if bbox!=[]:
@@ -170,7 +187,7 @@ class CropClip(PreprocTransform):
                     if np.array_equal(bbox[frame_ind,class_ind],-1*np.ones(4)): #only annotated objects
                         continue
                     xmin, ymin, xmax, ymax = bbox[frame_ind, class_ind]
-                    proc_bbox = crop_bbox(xmin, ymin, xmax, ymax, self.bbox_xmin, self.bbox_xmax, self.bbox_ymin, self.bbox_ymax)
+                    proc_bbox = self.crop_bbox(xmin, ymin, xmax, ymax, self.bbox_xmin, self.bbox_xmax, self.bbox_ymin, self.bbox_ymax)
                     temp_bbox[class_ind,:] = proc_bbox
                 out_bbox.append(temp_bbox)
 
@@ -203,7 +220,6 @@ class RandomCropClip(PreprocTransform):
         return self.xmin, self.xmax, self.ymin, self.ymax
         
     def __call__(self, clip, bbox=[]):
-        #clip = self._format_clip(clip)
         frame_shape = clip[0].shape
         self._update_random_sample(frame_shape[0], frame_shape[1])
         self.crop_transform._update_bbox(self.xmin, self.xmax, self.ymin, self.ymax) 
@@ -225,7 +241,6 @@ class CenterCropClip(PreprocTransform):
         return xmin, xmax, ymin, ymax
         
     def __call__(self, clip, bbox=[]):
-        #clip = self._format_clip(clip)
         frame_shape = clip[0].shape
         xmin, xmax, ymin, ymax = self._calculate_center(frame_shape[0], frame_shape[1])
         self.crop_transform._update_bbox(xmin, xmax, ymin, ymax) 
@@ -280,13 +295,13 @@ class RandomFlipClip(PreprocTransform):
             output_clip = [cv2.flip(np.array(frame), 1) for frame in clip]
             
             if bbox!=[]:
-                output_bbox = self._h_flip(bbox, output_clip[0].shape) 
+                output_bbox = [self._h_flip(frame, output_clip[0].shape) for frame in bbox] 
 
         elif self.direction == 'v':
             output_clip = [cv2.flip(np.array(frame), 0) for frame in clip]
 
             if bbox!=[]:
-                output_bbox = self._v_flip(bbox, output_clip[0].shape)
+                output_bbox = [self._v_flip(frame, output_clip[0].shape) for frame in bbox]
 
         return output_clip, output_bbox 
         
@@ -311,7 +326,6 @@ class ToTensorClip(PreprocTransform):
         super(ToTensorClip, self).__init__(*args, **kwargs)
 
     def __call__(self, clip, bbox=[]):
-        #clip = self._format_clip_numpy(clip)
         clip = torch.from_numpy(np.array(clip)).float()
         if bbox!=[]:
             bbox = torch.from_numpy(np.array(bbox))
@@ -383,10 +397,10 @@ class RandomRotateClip(PreprocTransform):
             bl = (bl[0]+half_w, bl[1]+half_h)
             br = (br[0]+half_w, br[1]+half_h)
 
-            xmin_new = int(min(floor(tl[0]), floor(tr[0]), floor(bl[0]), floor(br[0])))
-            xmax_new = int(max(ceil(tl[0]), ceil(tr[0]), ceil(bl[0]), ceil(br[0])))
-            ymin_new = int(min(floor(tl[1]), floor(tr[1]), floor(bl[1]), floor(br[1])))
-            ymax_new = int(max(ceil(tl[1]), ceil(tr[1]), ceil(bl[1]), ceil(br[1])))
+            xmin_new = int(np.clip(min(floor(tl[0]), floor(tr[0]), floor(bl[0]), floor(br[0])), 0, frame_w-1))
+            xmax_new = int(np.clip(max(ceil(tl[0]), ceil(tr[0]), ceil(bl[0]), ceil(br[0])), 0, frame_w-1))
+            ymin_new = int(np.clip(min(floor(tl[1]), floor(tr[1]), floor(bl[1]), floor(br[1])), 0, frame_h-1))
+            ymax_new = int(np.clip(max(ceil(tl[1]), ceil(tr[1]), ceil(bl[1]), ceil(br[1])), 0, frame_h-1))
 
             output_bboxes[bbox_ind] = [xmin_new, ymin_new, xmax_new, ymax_new]
 
@@ -404,7 +418,8 @@ class RandomRotateClip(PreprocTransform):
         if bbox!=[]:
             bbox = np.array(bbox)
             output_bboxes = np.zeros(bbox.shape)-1
-            output_bboxes = self._rotate_bbox(bbox, clip[0].shape, angle)
+            for bbox_ind in range(bbox.shape[0]):
+                output_bboxes[bbox_ind] = self._rotate_bbox(bbox[bbox_ind], clip[0].shape, angle)
 
             return output_clip, output_bboxes 
 
@@ -528,52 +543,7 @@ class ApplyOpenCV(PreprocTransform):
         else:
             return output_clip
 
-def resize_bbox(xmin, xmax, ymin, ymax, img_shape, resize_shape):
-    # Resize a bounding box within a frame relative to the amount that the frame was resized
 
-    img_h = img_shape[0]
-    img_w = img_shape[1]
-
-    res_h = resize_shape[0]
-    res_w = resize_shape[1]
-
-    frac_h = res_h/float(img_h)
-    frac_w = res_w/float(img_w)
-
-    xmin_new = int(xmin * frac_w)
-    xmax_new = int(xmax * frac_w)
-
-    ymin_new = int(ymin * frac_h)
-    ymax_new = int(ymax * frac_h)
-
-    return xmin_new, xmax_new, ymin_new, ymax_new 
-
-
-def crop_bbox(xmin, xmax, ymin, ymax, crop_xmin, crop_xmax, crop_ymin, crop_ymax):
-    if (xmin >= crop_xmax) or (xmax <= crop_xmin) or (ymin >= crop_ymax) or (ymax <= crop_ymin):
-        return -1, -1, -1, -1
-
-    if ymax > crop_ymax:
-        ymax_new = crop_ymax
-    else:
-        ymax_new = ymax
-
-    if xmax > crop_xmax:
-        xmax_new = crop_xmax
-    else:
-        xmax_new = xmax
-    
-    if ymin < crop_ymin:
-        ymin_new = crop_ymin
-    else:
-        ymin_new = ymin 
-
-    if xmin < crop_xmin:
-        xmin_new = crop_xmin
-    else:
-        xmin_new = xmin 
-
-    return xmin_new, xmax_new, ymin_new, ymax_new
 
 
 class TestPreproc(object):
@@ -595,6 +565,11 @@ class TestPreproc(object):
         out = self.resize(inp)
         out2 = self.resize(inp2)
         assert (False not in np.isclose(out,expected_out)) and (False not in np.isclose(out2,expected_out2))
+        
+        bbox = np.array([[[0,0,3,3]]]).astype(float)
+        _, bbox_out = self.resize(inp, bbox)
+        exp_bbox = np.array([[[0,0,2,2]]])
+        assert (False not in np.isclose(bbox_out, exp_bbox))
 
     def crop_test(self):
         inp = np.array([[[.1,.2,.3],[.4,.5,.6],[.7,.8,.9]]]).astype(float)
@@ -620,9 +595,9 @@ class TestPreproc(object):
 
 
         inp2 = np.arange(36).reshape(6,6)
-        bbox = np.array([[0,0,2,2]]).astype(float)
-        exp_bboxh = np.array([[4,0,6,2]]).astype(float)
-        exp_bboxv = np.array([[0,4,2,6]]).astype(float)
+        bbox = np.array([[[0,0,2,2]]]).astype(float)
+        exp_bboxh = np.array([[[4,0,6,2]]]).astype(float)
+        exp_bboxv = np.array([[[0,4,2,6]]]).astype(float)
         _, bboxh = self.rand_flip_h([inp2], bbox)
         _, bboxv = self.rand_flip_v([inp2], bbox)       
          
@@ -651,7 +626,7 @@ class TestPreproc(object):
 
         self.rand_rot._update_angles([45])
         inp2 = np.arange(6*6).reshape(6,6)
-        bbox = [2,2,4,4]
+        bbox = [[2,2,4,4]]
         exp_bbox = [1,1,5,5]
         out_bbox = self.rand_rot([inp2], np.array([bbox]))[1][0].tolist()
         assert (False not in np.isclose(out, exp_out)) and (False not in np.isclose(exp_bbox, out_bbox))
@@ -663,6 +638,7 @@ class TestPreproc(object):
         #x = np.arange(6*6).reshape(6,6)
         #bbox = [51,51,61,61]
         bbox = [30,40,50,100]
+        bbox = [30,40,50,110]
         #bbox = [2,2,4,4]
         plt1 = x[:]
         plt1[bbox[1]:bbox[3], bbox[0]] = 0
@@ -670,15 +646,14 @@ class TestPreproc(object):
         plt1[bbox[1], bbox[0]:bbox[2]] = 0
         plt1[bbox[3]-1, bbox[0]:bbox[2]] = 0
         plt.imshow(plt1); plt.show()
-        out2 = self.rand_rot([x], np.array([bbox]))
+        out2 = self.rand_rot([x], np.array([[bbox]]))
         plt2 = out2[0][0]
-        bbox = out2[1][0].astype(int)
+        bbox = out2[1][0][0].astype(int)
         plt2[bbox[1]:bbox[3], bbox[0]] = 0
         plt2[bbox[1]:bbox[3], bbox[2]] = 0
         plt2[bbox[1], bbox[0]:bbox[2]] = 0
         plt2[bbox[3], bbox[0]:bbox[2]] = 0
         plt.imshow(plt2); plt.show()
-        import pdb; pdb.set_trace()
 
     def run_tests(self):
         self.resize_test()
@@ -688,6 +663,7 @@ class TestPreproc(object):
         self.rand_rot_test()
         print("Tests passed")
         #self.rand_flip_vis()
+        #self.rand_rot_vis()
         
 
 
