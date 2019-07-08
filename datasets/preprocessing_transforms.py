@@ -7,6 +7,8 @@ Usage:
     from preprocessing_transforms import *
 
 clip: Input to __call__ of each transform is a list of PIL images
+
+All functions have an example in the TestPreproc class at the bottom of this file
 """
 
 import torch
@@ -65,14 +67,16 @@ class PreprocTransform(object):
 
         output = np.array(output)
 
-        if output.max() > 1.0:
-            output = output/255.
+        #if output.max() > 1.0:
+        #    output = output/255.
 
         return output
 
 
     def _to_tensor(self, clip):
             
+        if isinstance(clip[0], torch.Tensor):
+            return clip
 
         output = []
         for frame in clip:
@@ -504,13 +508,13 @@ class ApplyToTensor(PreprocTransform):
     def __init__(self, **kwargs):
         super(ApplyToTensor, self).__init__(**kwargs)
         self.kwargs = kwargs
-        self.transform = kwargs['transform']
+        self.class_kwargs = kwargs['class_kwargs']
+        self.transform = kwargs['transform'](**self.class_kwargs)
 
     def __call__(self, clip, bbox=[]):
         if not isinstance(clip, torch.Tensor):
             clip = self._to_tensor(clip)
-            if self.kwargs['verbose']:
-                print("Clip has been converted to tensor from numpy or PIL.")
+
         output_clip = []
         for frame in clip:
             output_clip.append(self.transform(frame))
@@ -534,18 +538,17 @@ class ApplyOpenCV(PreprocTransform):
     def __init__(self, **kwargs):
         super(ApplyOpenCV, self).__init__(**kwargs)
         self.kwargs = kwargs
-        self.function = kwargs['function']
+        self.class_kwargs = kwargs['class_kwargs']
+        self.transform = kwargs['transform']
 
     def __call__(self, clip, bbox=[]):
         if not isinstance(clip, torch.Tensor):
-            clip = self._to_array(clip)
-            if self.kwargs['verbose']:
-                print("Clip has been converted to numpy from pytorch tensor or PIL.")
+            clip = self._to_numpy(clip)
+
         output_clip = []
         for frame in clip:
-            output_clip.append(self.function(frame))
+            output_clip.append(self.transform(frame, **self.class_kwargs))
 
-        output_clip = torch.stack(output_clip)
 
         if bbox!=[]:
             return output_clip, bbox
@@ -568,6 +571,8 @@ class TestPreproc(object):
         self.sub_mean = SubtractMeanClip(clip_mean=np.zeros(1))
         self.applypil = ApplyToPIL(transform=torchvision.transforms.ColorJitter, class_kwargs=dict(brightness=1))
         self.applypil2 = ApplyToPIL(transform=torchvision.transforms.FiveCrop, class_kwargs=dict(size=(64,64)))
+        self.applytensor = ApplyToTensor(transform=torchvision.transforms.Normalize, class_kwargs=dict(mean=torch.tensor([0.,0.,0.]), std=torch.tensor([1.,1.,1.])))
+        self.applycv = ApplyOpenCV(transform=cv2.threshold, class_kwargs=dict(thresh=100, maxval=100, type=cv2.THRESH_TRUNC))
 
     def resize_test(self):
         inp = np.array([[[.1,.2,.3,.4],[.1,.2,.3,.4],[.1,.2,.3,.4]]]).astype(float)
@@ -675,13 +680,17 @@ class TestPreproc(object):
         out = self.applypil2(out1)
         assert (len(out)==2) and (len(out[0])==5) and (out[0][0].size==(64,64)) and (isinstance(out[0][0], Image.Image))
 
-#    def applytensor_test(self):
-#        inp = np.arange(112*112).reshape(112,112)
-#        size = [64,64]
-#        out = self.applypil([inp, inp])
-#        assert (len(out)==2) and (len(out[0])==5) and (out[0][0].size==(64,64)) and (isinstance(out[0][0], Image.Image))
+    def applytensor_test(self):
+        inp = np.arange(112*112*3).reshape(3,112,112).astype('float32')
+        inp = torch.from_numpy(inp)
+        out = self.applytensor([inp, inp])
+        assert False not in np.array(inp==out)
 
 
+    def applycv_test(self):
+        inp = np.arange(112*112).reshape(112,112).astype('float32')
+        out = self.applycv([inp])
+        assert (out[0][1].min()==0.0) and (out[0][1].max()==100.0) 
 
     def run_tests(self):
         self.resize_test()
@@ -690,6 +699,8 @@ class TestPreproc(object):
         self.rand_flip_test()
         self.rand_rot_test()
         self.applypil_test()
+        self.applytensor_test()
+        self.applycv_test()
         print("Tests passed")
         #self.rand_flip_vis()
         #self.rand_rot_vis()
