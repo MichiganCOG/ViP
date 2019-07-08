@@ -49,8 +49,10 @@ class Accuracy(object):
         self.total   = 0. 
 
     def get_accuracy(self, predictions, targets):
-        
         assert (predictions.shape[0] == targets.shape[0])
+
+        targets     = targets.detach().cpu().numpy()
+        predictions = predictions.detach().cpu().numpy()
 
         if len(targets.shape) == 2 and len(predictions.shape) == 2:
             self.correct += np.sum(np.argmax(predictions,1) == targets[:, -1])

@@ -62,22 +62,35 @@ class PreprocessTrainC3D(object):
     Container for all transforms used to preprocess clips for training in this dataset.
     """
     def __init__(self, **kwargs):
-        crop_type       = kwargs['crop_type']
-        self.transforms = []
 
-        self.clip_mean  = np.load('models/weights/sport1m_train16_128_mean.npy')[0]
-        self.clip_mean  = np.transpose(self.clip_mean, (1,2,3,0))
+        self.transforms  = []
+        self.transforms1 = []
+        self.preprocess  = kwargs['preprocess']
+ 
+        if kwargs['preprocess'] == 'rotation':
+            self.transforms.append(pt.ResizeClip(**kwargs))
+            self.transforms.append(pt.RandomFlipClip(direction='h', p=0.5, **kwargs))
+            self.transforms.append(pt.RandomRotateClip(angles=1, **kwargs))
+            self.transforms1 = pt.RandomRotateClip(angles=90, **kwargs)
+            self.transforms.append(pt.ToTensorClip(**kwargs))
 
-        self.transforms.append(pt.ResizeClip(**kwargs))
-        self.transforms.append(pt.ToTensorClip(**kwargs))
-        self.transforms.append(pt.SubtractMeanClip(clip_mean=self.clip_mean, **kwargs))
-        
-        if crop_type == 'Random':
-            self.transforms.append(pt.RandomCropClip(**kwargs))
         else:
-            self.transforms.append(pt.CenterCropClip(**kwargs))
-        self.transforms.append(pt.RandomFlipClip(direction='h', p=1.0, **kwargs))
-        self.transforms.append(pt.ToTensorClip())
+            crop_type       = kwargs['crop_type']
+
+            self.clip_mean  = np.load('models/weights/sport1m_train16_128_mean.npy')[0]
+            self.clip_mean  = np.transpose(self.clip_mean, (1,2,3,0))
+
+            self.transforms.append(pt.ResizeClip(**kwargs))
+            self.transforms.append(pt.SubtractMeanClip(clip_mean=self.clip_mean, **kwargs))
+            
+            if crop_type == 'Random':
+                self.transforms.append(pt.RandomCropClip(**kwargs))
+
+            else:
+                self.transforms.append(pt.CenterCropClip(**kwargs))
+
+            self.transforms.append(pt.RandomFlipClip(direction='h', p=0.5, **kwargs))
+            self.transforms.append(pt.ToTensorClip(**kwargs))
 
     def __call__(self, input_data):
         """
@@ -88,8 +101,15 @@ class PreprocessTrainC3D(object):
         Return:
             input_data: Pytorch tensor containing the processed clip data 
         """
+         
         for transform in self.transforms:
             input_data = transform(input_data)
+
+        if self.preprocess == 'rotation':
+            input_data1 = self.transforms1(input_data)
+            input_data2 = self.transforms1(input_data1)
+            input_data3 = self.transforms1(input_data2)
+            input_data  = np.stack((input_data, input_data1, input_data2, input_data3))
 
         return input_data
 
@@ -108,8 +128,7 @@ class PreprocessEvalC3D(object):
         self.transforms.append(pt.ResizeClip(**kwargs))
         self.transforms.append(pt.SubtractMeanClip(clip_mean=self.clip_mean, **kwargs))
         self.transforms.append(pt.CenterCropClip(**kwargs))
-        self.transforms.append(pt.RandomFlipClip(direction='h', p=0.5, **kwargs))
-        self.transforms.append(pt.ToTensorClip())
+        self.transforms.append(pt.ToTensorClip(**kwargs))
 
 
     def __call__(self, input_data):
@@ -123,10 +142,8 @@ class PreprocessEvalC3D(object):
             input_data: Pytorch tensor containing the processed clip data 
             bbox_data:  Numpy tensor containing the augmented bbox coordinates
         """
-        input_data = self.resize(input_data)
-        input_data = self.crop(input_data)
-        input_data = self.flip(input_data)
-        input_data = self.toTensor(input_data)
+        for transform in self.transforms:
+            input_data = transform(input_data)
 
         return input_data
 
