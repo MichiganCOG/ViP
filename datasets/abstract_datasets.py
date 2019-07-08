@@ -65,6 +65,7 @@ class VideoDataset(Dataset):
             self.num_clips:   Number of clips to extract from each video (-1 uses the entire video, 0 paritions the entire video in clip_length clips)
             self.clip_offset: Number of frames from beginning of video to start extracting clips 
             self.clip_stride: Number of frames between clips when extracting them from videos 
+            self.random_offset: Randomly select a clip_length sized clip from a video
         """
         if self.num_clips < 0:
             if len(video) >= self.clip_length:
@@ -105,7 +106,31 @@ class VideoDataset(Dataset):
             # END IF                               
     
         else:
-            final_video = video[:self.clip_length]
+            if self.random_offset:
+                if len(video) >= self.clip_length:
+                    indices = np.random.choice(np.arange(len(video) - self.clip_length), 1)
+                    indices = indices.astype('int32')
+                    indices = np.arange(indices, indices + self.clip_length).astype('int32') 
+
+                    final_video = [video[_idx] for _idx in indices]
+
+                else:
+                    indices = np.ceil(self.clip_length/float(len(video)))
+                    indices = indices.astype('int32')
+                    indices = np.tile(np.arange(0, len(video), 1, dtype='int32'), indices)
+
+                    index   = np.random.choice(np.arange(len(indices) - self.clip_length), 1)
+                    index   = index.astype('int32')
+                    indices = indices[index:index + self.clip_length]
+
+                    final_video = [video[_idx] for _idx in indices]
+
+                # END IF
+
+            else:
+                final_video = video[:self.clip_length]
+
+            # END IF
 
         # END IF
 

@@ -62,7 +62,7 @@ def eval(**args):
         model = create_model_object(**args).to(device)
 
         if args['pretrained']:
-            model.load_state_dict(torch.load(args['pretrained']))
+            model.load_state_dict(load_checkpoint(args['pretrained']))
 
         # Training Setup
         params     = [p for p in model.parameters() if p.requires_grad]
@@ -80,7 +80,7 @@ def eval(**args):
             x_input = data['data'].to(device)
             outputs = model(x_input)
 
-            acc = acc_metric.get_accuracy(outputs, data)
+            acc = acc_metric.get_accuracy(outputs, data['labels'])
 
             #loss = model_loss.loss(outputs, data)
             #running_loss += loss.item()
@@ -97,6 +97,7 @@ def eval(**args):
 
         writer.add_scalar(args['dataset']+'/'+args['model']+'/'+args['load_type']+'_accuracy', acc)
         print('Accuracy of the network on the {} set: {:.3f} %\n'.format(args['load_type'], 100.*acc))
+        
         # Close Tensorboard Element
         writer.close()
 

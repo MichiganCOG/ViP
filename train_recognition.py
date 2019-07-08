@@ -68,8 +68,8 @@ def train(**args):
     
         # Load Network # EDIT
         model = create_model_object(**args).to(device)
-        if args['pretrained']:
-            model.load_state_dict(torch.load(args['pretrained']))
+        #if args['pretrained']:
+        #    model.load_state_dict(torch.load(args['pretrained']))
 
         # Training Setup
         params     = [p for p in model.parameters() if p.requires_grad]
