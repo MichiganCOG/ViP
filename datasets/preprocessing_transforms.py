@@ -34,12 +34,14 @@ class PreprocTransform(object):
         pass
 
     def _to_pil(self, clip):
-        # Must be of type uint8, int16, int32, or float32
+        # Must be of type uint8 if images have multiple channels, int16, int32, or float32 if there is only one channel
         if isinstance(clip[0], np.ndarray):
             if 'float' in str(clip[0].dtype):
                 clip = np.array(clip).astype('float32')
             if 'int64' == str(clip[0].dtype):
                 clip = np.array(clip).astype('int32')
+            if clip[0].ndim == 3:
+                clip = np.array(clip).astype('uint8')
 
         output=[]
         for frame in clip:
@@ -55,7 +57,11 @@ class PreprocTransform(object):
                 output = clip.numpy()
             else:
                 for frame in clip:
-                    output.append(frame.numpy())
+                    f_shape = frame.shape
+                    # Convert from torch's C, H, W to numpy H, W, C
+                    frame = frame.numpy().reshape(f_shape[1], f_shape[2], f_shape[0])
+
+                    output.append(frame)
             
 
         elif isinstance(clip[0], Image.Image):
@@ -74,6 +80,10 @@ class PreprocTransform(object):
 
 
     def _to_tensor(self, clip):
+        """
+        torchvision converts PIL images and numpy arrays that are uint8 0 to 255 to float 0 to 1
+        Converts numpy arrays that are float to float tensor
+        """
             
         if isinstance(clip[0], torch.Tensor):
             return clip
@@ -573,6 +583,7 @@ class TestPreproc(object):
         self.applypil2 = ApplyToPIL(transform=torchvision.transforms.FiveCrop, class_kwargs=dict(size=(64,64)))
         self.applytensor = ApplyToTensor(transform=torchvision.transforms.Normalize, class_kwargs=dict(mean=torch.tensor([0.,0.,0.]), std=torch.tensor([1.,1.,1.])))
         self.applycv = ApplyOpenCV(transform=cv2.threshold, class_kwargs=dict(thresh=100, maxval=100, type=cv2.THRESH_TRUNC))
+        self.preproc = PreprocTransform()
 
     def resize_test(self):
         inp = np.array([[[.1,.2,.3,.4],[.1,.2,.3,.4],[.1,.2,.3,.4]]]).astype(float)
@@ -692,6 +703,35 @@ class TestPreproc(object):
         out = self.applycv([inp])
         assert (out[0][1].min()==0.0) and (out[0][1].max()==100.0) 
 
+
+    def to_numpy_test(self):
+        inp_torch = [torch.zeros((3,112,112))]
+        inp_pil = [Image.fromarray(np.zeros((112,112,3)).astype('uint8'))]
+        out_torch = self.preproc._to_numpy(inp_torch)
+        out_pil = self.preproc._to_numpy(inp_pil)
+
+        assert (False not in np.array(out_pil==out_torch))
+
+
+    def to_tensor_test(self):
+        inp_np_f = np.zeros((1,112,112,3)).astype('float')+201
+        inp_np = np.zeros((1,112,112,3)).astype('uint8')+1
+        inp_pil = [Image.fromarray(inp_np[0], mode='RGB')]
+        out_np_f = self.preproc._to_tensor(inp_np_f)
+        out_np = self.preproc._to_tensor(inp_np)
+        out_pil = self.preproc._to_tensor(inp_pil)
+        assert (False not in np.array(out_np[0]==out_pil[0])) and isinstance(out_np_f[0], torch.DoubleTensor)
+
+
+    def to_pil_test(self):
+        inp_np = [np.zeros((112,112,3)).astype('int32')]
+        inp_torch = [torch.zeros((3,112,112))]
+        out_np = self.preproc._to_pil(inp_np)
+        out_torch = self.preproc._to_pil(inp_torch)
+
+        assert (False not in np.array(np.array(out_np[0])==np.array(out_torch[0])))
+
+
     def run_tests(self):
         self.resize_test()
         self.crop_test()
@@ -701,6 +741,9 @@ class TestPreproc(object):
         self.applypil_test()
         self.applytensor_test()
         self.applycv_test()
+        self.to_tensor_test()
+        self.to_pil_test()
+        self.to_numpy_test()
         print("Tests passed")
         #self.rand_flip_vis()
         #self.rand_rot_vis()
