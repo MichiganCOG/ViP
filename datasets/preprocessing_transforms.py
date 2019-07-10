@@ -103,7 +103,7 @@ class ResizeClip(PreprocTransform):
         super(ResizeClip, self).__init__(*args, **kwargs)
         self.size_h, self.size_w = kwargs['resize_shape']
         
-    def resize_bbox(self, xmin, xmax, ymin, ymax, img_shape, resize_shape):
+    def resize_bbox(self, xmin, ymin, xmax, ymax, img_shape, resize_shape):
         # Resize a bounding box within a frame relative to the amount that the frame was resized
     
         img_h = img_shape[0]
@@ -121,7 +121,7 @@ class ResizeClip(PreprocTransform):
         ymin_new = int(ymin * frac_h)
         ymax_new = int(ymax * frac_h)
     
-        return xmin_new, xmax_new, ymin_new, ymax_new 
+        return xmin_new, ymin_new, xmax_new, ymax_new 
 
 
     def __call__(self, clip, bbox=[]):
@@ -166,7 +166,7 @@ class CropClip(PreprocTransform):
         self.bbox_ymax = ymax
 
 
-    def crop_bbox(self, xmin, xmax, ymin, ymax, crop_xmin, crop_xmax, crop_ymin, crop_ymax):
+    def crop_bbox(self, xmin, ymin, xmax, ymax, crop_xmin, crop_ymin, crop_xmax, crop_ymax):
         if (xmin >= crop_xmax) or (xmax <= crop_xmin) or (ymin >= crop_ymax) or (ymax <= crop_ymin):
             return -1, -1, -1, -1
     
@@ -190,7 +190,7 @@ class CropClip(PreprocTransform):
         else:
             xmin_new = xmin 
     
-        return xmin_new, xmax_new, ymin_new, ymax_new
+        return xmin_new-crop_xmin, ymin_new-crop_ymin, xmax_new-crop_xmin, ymax_new-crop_ymin
 
 
         
@@ -200,7 +200,7 @@ class CropClip(PreprocTransform):
 
         for frame_ind in range(len(clip)):
             frame = clip[frame_ind]
-            proc_frame = np.array(frame[self.bbox_xmin:self.bbox_xmax, self.bbox_ymin:self.bbox_ymax]) 
+            proc_frame = np.array(frame[self.bbox_ymin:self.bbox_ymax, self.bbox_xmin:self.bbox_xmax]) 
             out_clip.append(proc_frame)
 
             if bbox!=[]:
@@ -209,7 +209,7 @@ class CropClip(PreprocTransform):
                     if np.array_equal(bbox[frame_ind,class_ind],-1*np.ones(4)): #only annotated objects
                         continue
                     xmin, ymin, xmax, ymax = bbox[frame_ind, class_ind]
-                    proc_bbox = self.crop_bbox(xmin, ymin, xmax, ymax, self.bbox_xmin, self.bbox_xmax, self.bbox_ymin, self.bbox_ymax)
+                    proc_bbox = self.crop_bbox(xmin, ymin, xmax, ymax, self.bbox_xmin, self.bbox_ymin, self.bbox_xmax, self.bbox_ymax)
                     temp_bbox[class_ind,:] = proc_bbox
                 out_bbox.append(temp_bbox)
 
@@ -388,7 +388,7 @@ class RandomRotateClip(PreprocTransform):
         angle = np.deg2rad(angle)
         bboxes_shape = bboxes.shape
         output_bboxes = np.zeros(bboxes_shape)-1
-        frame_h, frame_w = frame_shape 
+        frame_h, frame_w = frame_shape[0], frame_shape[1] 
         half_h = frame_h/2. 
         half_w = frame_w/2. 
 

@@ -1,10 +1,10 @@
 rerun:           5                                      # Number of trials to repeat an experiment
 dataset:         ImageNetVID                            # Name of dataset 
 json_path:       /z/home/erichof/datasets/ILSVRC2015/   # Path to the json file for the given dataset
-batch_size:      2                                      # Numbers of videos in a mini-batch 
+batch_size:      1                                      # Numbers of videos in a mini-batch 
 load_type:       train                                  # Environment selection, to include only training/training and validation/testing dataset
 model:           HGC3D                                  # Name of model to be loaded  
-labels:          21                                     # Number of total classes in the dataset
+labels:          30                                     # Number of total classes in the dataset
 sample_size:     224                                    # Height of frame to be provided as input to the model
 sample_duration: 16                                     # Temporal size of video to be provided as input to the model 
 opt:             sgd                                    # Name of optimizer
@@ -27,3 +27,5 @@ num_clips:       -1                                     # Number clips to be gen
 seed:            998                                    # Seed for reproducibility  
 loss_type:       HGC_MSE                                # Loss class to be loaded
 verbose:         1                                      # Print status updates during runtime (1 true, 0 false)
+num_workers:     2                                      # Number of processing units used to load data
+pretrained:      0                                      # Load pretrained network 

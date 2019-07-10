@@ -115,7 +115,7 @@ class HGC3D(nn.Module):
     def __init__(self,
                  sample_size,
                  sample_duration,
-                 num_classes=400,
+                 labels=400,
                  **kwargs):
         self.inplanes = 64
         super(HGC3D, self).__init__()
@@ -128,8 +128,8 @@ class HGC3D(nn.Module):
         self.conv3_bn = nn.BatchNorm3d(64)
         self.conv4 = DilatedConv3d(64, 128, kernel_size=5, kernel_depth=12, max_dilation=4, min_dilation=1, stride=1, padding=2, bias=True, stride_depth=1, depth_padding=0)
         self.conv4_bn = nn.BatchNorm3d(128)
-        self.final = nn.Conv2d(128, num_classes*1+1, kernel_size=1, stride=1, padding=0, bias=None)
-        #self.final = nn.Conv2d(256, num_classes*3+1, kernel_size=1, stride=1, padding=0, bias=None)
+        self.final = nn.Conv2d(128, labels*1+1, kernel_size=1, stride=1, padding=0, bias=None)
+        #self.final = nn.Conv2d(256, labels*3+1, kernel_size=1, stride=1, padding=0, bias=None)
 
         self.idxtensor = torch.tensor([0])
 

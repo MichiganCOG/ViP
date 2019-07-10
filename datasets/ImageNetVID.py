@@ -24,7 +24,7 @@ class ImageNetVID(DetectionDataset):
 
         # Maximum number of annotated object present in a single frame in entire dataset
         # Dictates the return size of annotations in __getitem__
-        self.max_objects = 22
+        self.max_objects = 38 
 
 
         if self.load_type=='train':
@@ -32,8 +32,6 @@ class ImageNetVID(DetectionDataset):
 
         else:
             self.transforms = PreprocessEval(**kwargs)
-
-        self.__getitem__(0)
 
     def __getitem__(self, idx):
         vid_info = self.samples[idx]
@@ -122,6 +120,8 @@ class PreprocessTrain(object):
         crop_type = kwargs['crop_type']
         self.transforms = []
         
+        self.transforms.append(pt.ResizeClip(**kwargs))
+
         if crop_type == 'Random':
             self.transforms.append(pt.RandomCropClip(**kwargs))
 
@@ -130,7 +130,6 @@ class PreprocessTrain(object):
         else:
             self.transforms.append(pt.CenterCropClip(**kwargs))
 
-        self.transforms.append(pt.ResizeClip(**kwargs))
         self.transforms.append(pt.RandomFlipClip(direction='h', p=1.0, **kwargs))
         self.transforms.append(pt.RandomRotateClip(**kwargs))
         self.transforms.append(pt.ToTensorClip(**kwargs))

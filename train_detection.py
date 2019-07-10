@@ -75,7 +75,7 @@ def train(**args):
             
         scheduler  = MultiStepLR(optimizer, milestones=args['milestones'], gamma=args['gamma'])    
 
-        #model_loss = Losses(**args)
+        model_loss = Losses(device = device, **args)
 
         for epoch in range(args['epoch']):
             running_loss = 0.0
@@ -83,8 +83,6 @@ def train(**args):
 
             # Setup Model To Train 
             model.train()
-
-            import pdb; pdb.set_trace()
             for step, data in enumerate(trainloader):
                 # (True Batch, Augmented Batch, Sequence Length)
                 data = dict((k, v.to(device)) for k,v in data.items())
@@ -96,7 +94,7 @@ def train(**args):
                 outputs = model(x_input)
                 #loss    = nn.functional.mse_loss(outputs, y_label) #TODO: Replace with Losses class
                 loss = model_loss.loss(outputs, data)
-    
+
                 loss.backward()
                 optimizer.step()
     

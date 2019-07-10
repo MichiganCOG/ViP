@@ -86,7 +86,7 @@ def train(**args):
         # END IF
             
         scheduler  = MultiStepLR(optimizer, milestones=args['milestones'], gamma=args['gamma'])    
-        model_loss = Losses(args)
+        model_loss = Losses(device=device, **args)
         acc_metric = Metrics(**args)
 
     ############################################################################################################################################################################
