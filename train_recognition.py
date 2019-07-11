@@ -31,7 +31,7 @@ def train(**args):
         # Generate Results Directory
         d          = datetime.datetime.today()
         date       = d.strftime('%Y%m%d-%H%M%S')
-        result_dir = os.path.join(args['save_dir'], args['model'], '_'.join((args['dataset'],'[exp]',date)))
+        result_dir = os.path.join(args['save_dir'], args['model'], '_'.join((args['dataset'],args['exp'],date)))
         log_dir    = os.path.join(result_dir,       'logs')
         save_dir   = os.path.join(result_dir,       'checkpoints')
 

@@ -29,3 +29,4 @@ loss_type:       HGC_MSE                                # Loss class to be loade
 verbose:         1                                      # Print status updates during runtime (1 true, 0 false)
 num_workers:     2                                      # Number of processing units used to load data
 pretrained:      0                                      # Load pretrained network 
+exp:             exp                                    # Experiment name

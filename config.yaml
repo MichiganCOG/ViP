@@ -32,3 +32,4 @@ pretrained:      1                     # Load pretrained network
 verbose:         1                     # Print status updates during runtime (1 true, 0 false)
 preprocess:      default               # String argument to select preprocessing type
 num_workers:     2                     # Number of CPU worker used to load data
+exp:             exp                   # Experiment name

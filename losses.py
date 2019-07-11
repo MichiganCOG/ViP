@@ -2,7 +2,6 @@ import torch
 import torch.nn    as nn
 import numpy as np
 from scipy import ndimage
-import time
 
 
 class Losses(object):
@@ -55,9 +54,7 @@ class HGC_MSE(object):
         ymax = bbox[0,:,:,3]
         #plotabb(data['data'][0].permute(1,2,3,0).cpu(), xmin, xmax, ymin, ymax)
         input_shape = np.array(data['data'].size())[-3:]
-        pregt = time.time()
         gtmap = self.gt_maps_square(xmin.cpu().numpy().astype(int), xmax.cpu().numpy().astype(int), ymin.cpu().numpy().astype(int), ymax.cpu().numpy().astype(int), input_shape, targets.cpu().numpy()[0].astype(int), self.num_classes)
-        print(time.time()-pregt)
         targets = torch.tensor([gtmap[:,int(gtmap.shape[1]/2.)]]).float().to(self.device)
 
         return self.hgc_mse_loss(predictions, targets)

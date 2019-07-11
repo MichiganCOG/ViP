@@ -29,7 +29,7 @@ def train(**args):
     for total_iteration in range(args['rerun']):
         d = datetime.datetime.today()
         date = d.strftime('%Y%m%d-%H%M%S')
-        result_dir = os.path.join(args['save_dir'], args['model'], '_'.join((args['dataset'],'[exp]',date)))
+        result_dir = os.path.join(args['save_dir'], args['model'], '_'.join((args['dataset'],args['exp'],date)))
         log_dir    = os.path.join(result_dir, 'logs')
         save_dir   = os.path.join(result_dir, 'checkpoints')
 
@@ -41,7 +41,7 @@ def train(**args):
             yaml.dump(args, outfile, default_flow_style=False)
 
         # Tensorboard Element
-        writer = SummaryWriter()
+        writer = SummaryWriter(log_dir)
 
         # Load Data
         loader = data_loader(**args)#['dataset'], args['batch_size'], args['load_type'])
@@ -116,19 +116,19 @@ def train(**args):
 
             scheduler.step()
 
-            acc = 100*accuracy_action(model, testloader, device)
-            writer.add_scalar(args['dataset']+'/'+args['model']+'/train_accuracy', acc, epoch)
+            #acc = 100*accuracy_action(model, testloader, device)
+            #writer.add_scalar(args['dataset']+'/'+args['model']+'/train_accuracy', acc, epoch)
  
-            print('Accuracy of the network on the training set: %d %%\n' % (acc))
+            #print('Accuracy of the network on the training set: %d %%\n' % (acc))
     
         # Close Tensorboard Element
         writer.close()
 
         # Save Final Model
         save_checkpoint(epoch + 1, 0, model, optimizer, args['save_dir']+'/'+str(total_iteration)+'/final_model.pkl')
-        avg_acc.append(100.*accuracy(model, testloader, device))
+        #avg_acc.append(100.*accuracy(model, testloader, device))
     
-    print("Average training accuracy across %d runs is %f" %(args['rerun'], np.mean(avg_acc)))
+    #print("Average training accuracy across %d runs is %f" %(args['rerun'], np.mean(avg_acc)))
 
 if __name__ == '__main__':
 

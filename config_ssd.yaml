@@ -30,3 +30,4 @@ num_clips:       -1                    # Number clips to be generated from a vid
 seed:            999                   # Seed for reproducibility 
 pretrained:      './weights/ssd300_mAP_77.43_v2.pth'                     # Load pretrained network 
 verbose:         1                     # Print status updates during runtime (1 true, 0 false)
+exp:             exp                   # Experiment name

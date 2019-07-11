@@ -35,6 +35,7 @@ class Parse():
 
         parser.add_argument('--json_path',    type=str, help='Path to train and test json files')
         parser.add_argument('--save_dir',     type=str, help='Path to results directory')
+        parser.add_argument('--exp',          type=str, help='Experiment name')
         parser.add_argument('--pretrained',   type=str, help='Load pretrained network')
         parser.add_argument('--subtract_mean',type=str, help='Subtract mean (R,G,B) from all frames during preprocessing')
         parser.add_argument('--resize_shape', nargs=2,  help='(Height, Width) to resize original data')
