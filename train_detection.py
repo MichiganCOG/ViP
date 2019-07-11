@@ -44,7 +44,7 @@ def train(**args):
         writer = SummaryWriter(log_dir)
 
         # Load Data
-        loader = data_loader(**args)#['dataset'], args['batch_size'], args['load_type'])
+        loader = data_loader(**args)
 
         if args['load_type'] == 'train':
             trainloader = loader['train']
@@ -92,7 +92,6 @@ def train(**args):
                 optimizer.zero_grad()
 
                 outputs = model(x_input)
-                #loss    = nn.functional.mse_loss(outputs, y_label) #TODO: Replace with Losses class
                 loss = model_loss.loss(outputs, data)
 
                 loss.backward()
