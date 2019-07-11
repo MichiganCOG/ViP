@@ -37,8 +37,7 @@ class Parse():
         parser.add_argument('--save_dir',     type=str, help='Path to results directory')
         parser.add_argument('--exp',          type=str, help='Experiment name')
         parser.add_argument('--preproc',      type=str, help='Name of the preprocessing method to load')
-        parser.add_argument('--pretrained',   type=str, help='Load pretrained network')
-        parser.add_argument('--load_ckpt',    type=str, help='Path to a given checkpoint in results folder from which to continue training (String to file or 0)')
+        parser.add_argument('--pretrained',   type=str, help='Load pretrained network or continue training (0 to randomly init weights, 1 to load default weights, str(path.pkl) to load checkpoint weights')
         parser.add_argument('--subtract_mean',type=str, help='Subtract mean (R,G,B) from all frames during preprocessing')
         parser.add_argument('--resize_shape', nargs=2,  help='(Height, Width) to resize original data')
         parser.add_argument('--final_shape',  nargs=2,  help='(Height, Width) of input to be given to CNN')
@@ -71,7 +70,6 @@ class Parse():
             exp              = 'exp',
             preproc          = 'default',
             pretrained       = 0,
-            load_ckpt        = 0,
             subtract_mean    = '',
             clip_offset      = 0,
             random_offset    = 0,
@@ -95,10 +93,18 @@ class Parse():
     def get_args(self):
         yaml_keys = self.cfg_args.keys() 
 
+        # If pretrained is the string 0 or 1, set it to int, otherwise leave the path as a string
+        if 'pretrained' in yaml_keys:
+            v = self.cfg_args['pretrained']
+            if v=='0' or v=='1':
+                self.cfg_args['pretrained'] = int(v)
+
+
         for (k,v) in self.cmd_args.items():
             if (k == 'pretrained'):
                 if v=='0' or v=='1':
                     v = int(v)
+
             if v is not None:
                 self.cfg_args[k] = v
             else:

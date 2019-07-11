@@ -28,6 +28,5 @@ seed:            998                                    # Seed for reproducibili
 loss_type:       HGC_MSE                                # Loss class to be loaded
 verbose:         1                                      # Print status updates during runtime (1 true, 0 false)
 num_workers:     2                                      # Number of processing units used to load data
-pretrained:      0                                      # Load pretrained network 
 exp:             continue                                    # Experiment name
-load_ckpt:       'HGC3D/ImageNetVID_continue_20190711-115449/checkpoints/ImageNetVID_epoch0.pkl'     # continue training from this checkpoint (String containing path or 0)
+pretrained:       'HGC3D/ImageNetVID_continue_20190711-115449/checkpoints/ImageNetVID_epoch0.pkl'     # continue training from this checkpoint (String containing path or 0)
