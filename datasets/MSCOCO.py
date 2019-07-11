@@ -77,15 +77,17 @@ class MSCOCO(DetectionDataset):
         # Permute the PIL dimensions (Frame, Height, Width, Chan) to pytorch (Chan, frame, height, width) 
         vid_data = vid_data.permute(3, 0, 1, 2)
 
-        ret_dict = dict() 
-        ret_dict['data']       = vid_data 
-        ret_dict['xmin']       = xmin_data
-        ret_dict['ymin']       = ymin_data
-        ret_dict['xmax']       = xmax_data
-        ret_dict['ymax']       = ymax_data
-        ret_dict['bbox_data']  = bbox_data
-        ret_dict['labels']     = labels
-        ret_dict['iscrowds']   = iscrowds
+        ret_dict   = dict() 
+        annot_dict = dict()
+        annot_dict['xmin']       = xmin_data
+        annot_dict['ymin']       = ymin_data
+        annot_dict['xmax']       = xmax_data
+        annot_dict['ymax']       = ymax_data
+        annot_dict['bbox_data']  = bbox_data
+        annot_dict['labels']     = labels
+        annot_dict['iscrowds']   = iscrowds
+        ret_dict['annots']       = annot_dict
+        ret_dict['data']         = vid_data 
 
         return ret_dict
 
