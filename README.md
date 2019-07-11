@@ -1,4 +1,9 @@
-# Pytorch Video Platorm for Recognition and Detection
+# Video Platorm for Recognition and Detection in Pytorch
+
+A platform for quick and easy development of deep learning networks for recognition and detection in videos. Includes popular models like C3D, ResNet, and SSD.
+
+## Introduction and Setup
+
 
 # Updates
 - Basic training file for recognition is ready, next step is to work on data loader since that is the immediate function being loaded
