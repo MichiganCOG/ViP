@@ -38,6 +38,7 @@ class Parse():
         parser.add_argument('--exp',          type=str, help='Experiment name')
         parser.add_argument('--preproc',      type=str, help='Name of the preprocessing method to load')
         parser.add_argument('--pretrained',   type=str, help='Load pretrained network')
+        parser.add_argument('--load_ckpt',    type=str, help='Path to a given checkpoint in results folder from which to continue training (String to file or 0)')
         parser.add_argument('--subtract_mean',type=str, help='Subtract mean (R,G,B) from all frames during preprocessing')
         parser.add_argument('--resize_shape', nargs=2,  help='(Height, Width) to resize original data')
         parser.add_argument('--final_shape',  nargs=2,  help='(Height, Width) of input to be given to CNN')
@@ -50,6 +51,7 @@ class Parse():
         parser.add_argument('--num_clips',    type=int, help='Number clips to be generated from a video (<0: uniform sampling, 0: Divide entire video into clips, >0: Defines number of clips)')
 
         parser.add_argument('--verbose', type=int, help='Print status updates during runtime')
+        parser.add_argument('--debug',   type=int, help='Run an experiment but do not save any data or create any folders')
         parser.add_argument('--seed',    type=int, help='Seed for reproducibility')
 
         # Default dict, anything not present is required to exist as an argument or in yaml file
@@ -69,6 +71,7 @@ class Parse():
             exp              = 'exp',
             preproc          = 'default',
             pretrained       = 0,
+            load_ckpt        = 0,
             subtract_mean    = '',
             clip_offset      = 0,
             random_offset    = 0,
@@ -76,6 +79,7 @@ class Parse():
             crop_type        = None,
             num_clips        = 1,
             verbose          = 0,
+            debug            = 0,
             seed             = 0)                       
 
 
@@ -92,6 +96,8 @@ class Parse():
         yaml_keys = self.cfg_args.keys() 
 
         for (k,v) in self.cmd_args.items():
+            if (k == 'load_ckpt') and (v == '0'):
+                v = 0
             if v is not None:
                 self.cfg_args[k] = v
             else:

@@ -30,3 +30,4 @@ verbose:         1                                      # Print status updates d
 num_workers:     2                                      # Number of processing units used to load data
 pretrained:      0                                      # Load pretrained network 
 exp:             exp                                    # Experiment name
+load_ckpt:       'HGC3D/ImageNetVID_[exp]_20190710-172249/checkpoints/ImageNetVID_epoch0.pkl'     # continue training from this checkpoint (String containing path or 0)

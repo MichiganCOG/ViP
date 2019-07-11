@@ -33,15 +33,16 @@ def train(**args):
         log_dir    = os.path.join(result_dir, 'logs')
         save_dir   = os.path.join(result_dir, 'checkpoints')
 
-        os.makedirs(result_dir, exist_ok=True)
-        os.makedirs(log_dir, exist_ok=True) 
-        os.makedirs(save_dir, exist_ok=True) 
+        if not args['debug']:
+            os.makedirs(result_dir, exist_ok=True)
+            os.makedirs(log_dir, exist_ok=True) 
+            os.makedirs(save_dir, exist_ok=True) 
 
-        with open(os.path.join(result_dir, 'config.yaml'),'w') as outfile:
-            yaml.dump(args, outfile, default_flow_style=False)
+            with open(os.path.join(result_dir, 'config.yaml'),'w') as outfile:
+                yaml.dump(args, outfile, default_flow_style=False)
 
-        # Tensorboard Element
-        writer = SummaryWriter(log_dir)
+            # Tensorboard Element
+            writer = SummaryWriter(log_dir)
 
         # Load Data
         loader = data_loader(**args)
@@ -62,6 +63,10 @@ def train(**args):
         model = create_model_object(**args).to(device)
         if args['pretrained']:
                         model.load_state_dict(torch.load(args['pretrained']))
+
+        if args['load_ckpt']:
+            ckpt = load_checkpoint(args['load_ckpt'])
+            model.load_state_dict(ckpt)
 
         # Training Setup
         params     = [p for p in model.parameters() if p.requires_grad]
@@ -99,8 +104,9 @@ def train(**args):
     
                 running_loss += loss.item()
 
-                # Add Loss Element
-                writer.add_scalar(args['dataset']+'/'+args['model']+'/loss', loss.item(), epoch*len(trainloader) + step)
+                if not args['debug']:
+                    # Add Loss Element
+                    writer.add_scalar(args['dataset']+'/'+args['model']+'/loss', loss.item(), epoch*len(trainloader) + step)
 
                 if np.isnan(running_loss):
                     import pdb; pdb.set_trace()
@@ -109,9 +115,10 @@ def train(**args):
                     print('Epoch: ', epoch, '| train loss: %.4f' % (running_loss/100.))
                     running_loss = 0.0
 
-            # Save Current Model
-            save_path = os.path.join(save_dir, args['dataset']+'_epoch'+str(epoch)+'.pkl')
-            save_checkpoint(epoch, 0, model, optimizer, save_path)
+            if not args['debug']:
+                # Save Current Model
+                save_path = os.path.join(save_dir, args['dataset']+'_epoch'+str(epoch)+'.pkl')
+                save_checkpoint(epoch, 0, model, optimizer, save_path)
 
             scheduler.step()
 
@@ -120,12 +127,13 @@ def train(**args):
  
             #print('Accuracy of the network on the training set: %d %%\n' % (acc))
     
-        # Close Tensorboard Element
-        writer.close()
+        if not args['debug']:
+            # Close Tensorboard Element
+            writer.close()
 
-        # Save Final Model
-        save_checkpoint(epoch + 1, 0, model, optimizer, args['save_dir']+'/'+str(total_iteration)+'/final_model.pkl')
-        #avg_acc.append(100.*accuracy(model, testloader, device))
+            # Save Final Model
+            save_checkpoint(epoch + 1, 0, model, optimizer, args['save_dir']+'/'+str(total_iteration)+'/final_model.pkl')
+            #avg_acc.append(100.*accuracy(model, testloader, device))
     
     #print("Average training accuracy across %d runs is %f" %(args['rerun'], np.mean(avg_acc)))
 

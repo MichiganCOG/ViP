@@ -35,17 +35,18 @@ def train(**args):
         log_dir    = os.path.join(result_dir,       'logs')
         save_dir   = os.path.join(result_dir,       'checkpoints')
 
-        os.makedirs(result_dir, exist_ok=True)
-        os.makedirs(log_dir,    exist_ok=True) 
-        os.makedirs(save_dir,   exist_ok=True) 
+        if not args['debug']:
+            os.makedirs(result_dir, exist_ok=True)
+            os.makedirs(log_dir,    exist_ok=True) 
+            os.makedirs(save_dir,   exist_ok=True) 
 
-        # Save Copy of Config File
-        with open(os.path.join(result_dir, 'config.yaml'),'w') as outfile:
-            yaml.dump(args, outfile, default_flow_style=False)
+            # Save Copy of Config File
+            with open(os.path.join(result_dir, 'config.yaml'),'w') as outfile:
+                yaml.dump(args, outfile, default_flow_style=False)
 
 
-        # Tensorboard Element
-        writer = SummaryWriter(log_dir)
+            # Tensorboard Element
+            writer = SummaryWriter(log_dir)
 
         # Load Data
         loader = data_loader(**args)
@@ -70,6 +71,11 @@ def train(**args):
         model = create_model_object(**args).to(device)
         #if args['pretrained']:
         #    model.load_state_dict(torch.load(args['pretrained']))
+
+        if args['load_ckpt']:
+            ckpt = load_checkpoint(args['load_ckpt'])
+            model.load_state_dict(ckpt)
+
 
         # Training Setup
         params     = [p for p in model.parameters() if p.requires_grad]
@@ -118,12 +124,13 @@ def train(**args):
     
                 running_loss += loss.item()
 
-                # Add Learning Rate Element
-                for param_group in optimizer.param_groups:
-                    writer.add_scalar(args['dataset']+'/'+args['model']+'/learning_rate', param_group['lr'], epoch*len(train_loader) + step)
-
-                # Add Loss Element
-                writer.add_scalar(args['dataset']+'/'+args['model']+'/minibatch_loss', loss.item(), epoch*len(train_loader) + step)
+                if not args['debug']:
+                    # Add Learning Rate Element
+                    for param_group in optimizer.param_groups:
+                        writer.add_scalar(args['dataset']+'/'+args['model']+'/learning_rate', param_group['lr'], epoch*len(train_loader) + step)
+                
+                    # Add Loss Element
+                    writer.add_scalar(args['dataset']+'/'+args['model']+'/minibatch_loss', loss.item(), epoch*len(train_loader) + step)
 
                 if np.isnan(running_loss):
                     import pdb; pdb.set_trace()
@@ -134,9 +141,10 @@ def train(**args):
 
                 # END IF
 
-            # Save Current Model
-            save_path = os.path.join(save_dir, args['dataset']+'_epoch'+str(epoch)+'.pkl')
-            save_checkpoint(epoch, 0, model, optimizer, save_path)
+            if not args['debug']:
+                # Save Current Model
+                save_path = os.path.join(save_dir, args['dataset']+'_epoch'+str(epoch)+'.pkl')
+                save_checkpoint(epoch, 0, model, optimizer, save_path)
    
             # END FOR: Epoch
 
@@ -155,8 +163,9 @@ def train(**args):
 
     ############################################################################################################################################################################
 
-        # Close Tensorboard Element
-        writer.close()
+        if not args['debug']:
+            # Close Tensorboard Element
+            writer.close()
 
 def valid(valid_loader, running_acc, writer, model, device, acc_metric):
     model.eval()
