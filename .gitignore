@@ -10,3 +10,4 @@ runs/*
 *.pth.tar
 *.pkl
 *.npy
+config_*.yaml

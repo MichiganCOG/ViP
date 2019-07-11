@@ -3,12 +3,10 @@ import sys
 import datetime
 import yaml 
 import torch
-import torchvision
 
 import numpy             as np
 import torch.nn          as nn
 import torch.optim       as optim
-import torch.utils.data  as Data
 
 from torch.optim.lr_scheduler           import MultiStepLR
 from tensorboardX                       import SummaryWriter
@@ -67,13 +65,11 @@ def train(**args):
         # Check if GPU is available (CUDA)
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     
-        # Load Network # EDIT
+        # Load Network
         model = create_model_object(**args).to(device)
-        #if args['pretrained']:
-        #    model.load_state_dict(torch.load(args['pretrained']))
 
-        if args['load_ckpt']:
-            ckpt = load_checkpoint(args['load_ckpt'])
+        if isinstance(args['pretrained'], str):
+            ckpt = load_checkpoint(args['pretrained'])
             model.load_state_dict(ckpt)
 
 
@@ -93,7 +89,7 @@ def train(**args):
             
         scheduler  = MultiStepLR(optimizer, milestones=args['milestones'], gamma=args['gamma'])    
         model_loss = Losses(device=device, **args)
-        acc_metric = Metrics(**args)
+        #acc_metric = Metrics(**args)
 
     ############################################################################################################################################################################
 
@@ -110,14 +106,14 @@ def train(**args):
             for step, data in enumerate(train_loader):
 
                 # (True Batch, Augmented Batch, Sequence Length)
-                data = dict((k, v.to(device)) for k,v in data.items())
+                #data = dict((k, v.to(device)) for k,v in data.items())
                 x_input       = data['data'].to(device) 
-                y_label       = data['labels'].to(device) 
+                annotations   = data['annots'] 
 
                 optimizer.zero_grad()
 
                 outputs = model(x_input)
-                loss    = model_loss.loss(outputs, y_label)
+                loss    = model_loss.loss(outputs, annotations)
     
                 loss.backward()
                 optimizer.step()
@@ -129,8 +125,8 @@ def train(**args):
                     for param_group in optimizer.param_groups:
                         writer.add_scalar(args['dataset']+'/'+args['model']+'/learning_rate', param_group['lr'], epoch*len(train_loader) + step)
                 
-                    # Add Loss Element
-                    writer.add_scalar(args['dataset']+'/'+args['model']+'/minibatch_loss', loss.item(), epoch*len(train_loader) + step)
+                        # Add Loss Element
+                        writer.add_scalar(args['dataset']+'/'+args['model']+'/minibatch_loss', loss.item(), epoch*len(train_loader) + step)
 
                 if np.isnan(running_loss):
                     import pdb; pdb.set_trace()
@@ -144,7 +140,7 @@ def train(**args):
             if not args['debug']:
                 # Save Current Model
                 save_path = os.path.join(save_dir, args['dataset']+'_epoch'+str(epoch)+'.pkl')
-                save_checkpoint(epoch, 0, model, optimizer, save_path)
+                save_checkpoint(epoch, step, model, optimizer, save_path)
    
             # END FOR: Epoch
 

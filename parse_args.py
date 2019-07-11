@@ -96,8 +96,9 @@ class Parse():
         yaml_keys = self.cfg_args.keys() 
 
         for (k,v) in self.cmd_args.items():
-            if (k == 'load_ckpt') and (v == '0'):
-                v = 0
+            if (k == 'pretrained'):
+                if v=='0' or v=='1':
+                    v = int(v)
             if v is not None:
                 self.cfg_args[k] = v
             else:

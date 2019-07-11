@@ -55,9 +55,18 @@ class HGC_MSE(object):
         #plotabb(data['data'][0].permute(1,2,3,0).cpu(), xmin, xmax, ymin, ymax)
         input_shape = np.array(data['data'].size())[-3:]
         gtmap = self.gt_maps_square(xmin.cpu().numpy().astype(int), xmax.cpu().numpy().astype(int), ymin.cpu().numpy().astype(int), ymax.cpu().numpy().astype(int), input_shape, targets.cpu().numpy()[0].astype(int), self.num_classes)
+        import pdb; pdb.set_trace()
         targets = torch.tensor([gtmap[:,int(gtmap.shape[1]/2.)]]).float().to(self.device)
 
         return self.hgc_mse_loss(predictions, targets)
+
+    def visualize(self, preds, gtmap, inp):
+        preds = predictions.cpu().detach().numpy()[0]
+        inp = inp[0].cpu().numpy()
+        inp = inp.transpose(1,2,3,0)
+        import matplotlib.pyplot as plt
+        import pdb; pdb.set_trace()
+
 
     def gt_maps_square(self, xmin, xmax, ymin, ymax, img_shape, labels, dims):
         # Draw a white square for each bounding box and blur it

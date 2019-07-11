@@ -3,12 +3,10 @@ import sys
 import datetime
 import yaml
 import torch
-import torchvision
 
 import numpy                    as np
 import torch.nn                 as nn
 import torch.optim              as optim
-import torch.utils.data         as Data
 
 from torch.optim.lr_scheduler           import MultiStepLR
 from tensorboardX                       import SummaryWriter
@@ -23,8 +21,6 @@ from checkpoint                         import save_checkpoint, load_checkpoint
 def train(**args):
 
     print('Experimental Setup: ',args)
-
-    avg_acc = []
 
     for total_iteration in range(args['rerun']):
         d = datetime.datetime.today()
@@ -61,11 +57,9 @@ def train(**args):
     
         # Load Network
         model = create_model_object(**args).to(device)
-        if args['pretrained']:
-                        model.load_state_dict(torch.load(args['pretrained']))
 
-        if args['load_ckpt']:
-            ckpt = load_checkpoint(args['load_ckpt'])
+        if isinstance(args['pretrained'], str):
+            ckpt = load_checkpoint(args['pretrained'])
             model.load_state_dict(ckpt)
 
         # Training Setup
@@ -82,6 +76,8 @@ def train(**args):
 
         model_loss = Losses(device = device, **args)
 
+        #acc_metric = Metrics(**args)
+
         for epoch in range(args['epoch']):
             running_loss = 0.0
             print('Epoch: ', epoch)
@@ -90,14 +86,14 @@ def train(**args):
             model.train()
             for step, data in enumerate(trainloader):
                 # (True Batch, Augmented Batch, Sequence Length)
-                data = dict((k, v.to(device)) for k,v in data.items())
-                x_input       = data['data']
-                y_label       = data['labels'] 
+                #data = dict((k, v.to(device)) for k,v in data.items())
+                x_input       = data['data'].to(device)
+                annotations   = data['annots'] 
 
                 optimizer.zero_grad()
 
                 outputs = model(x_input)
-                loss = model_loss.loss(outputs, data)
+                loss = model_loss.loss(outputs, annotations)
 
                 loss.backward()
                 optimizer.step()
@@ -111,32 +107,22 @@ def train(**args):
                 if np.isnan(running_loss):
                     import pdb; pdb.set_trace()
    
-                if step % 100 == 0:
-                    print('Epoch: ', epoch, '| train loss: %.4f' % (running_loss/100.))
+                if (epoch*len(train_loader) + step) % 100 == 0:
+                    print('Epoch: {}/{}, step: {}/{} | train loss: {:.4f}'.format(epoch, args['epoch'], step, len(train_loader), running_loss/100.))
                     running_loss = 0.0
 
             if not args['debug']:
                 # Save Current Model
                 save_path = os.path.join(save_dir, args['dataset']+'_epoch'+str(epoch)+'.pkl')
-                save_checkpoint(epoch, 0, model, optimizer, save_path)
+                save_checkpoint(epoch, step, model, optimizer, save_path)
 
             scheduler.step()
 
-            #acc = 100*accuracy_action(model, testloader, device)
-            #writer.add_scalar(args['dataset']+'/'+args['model']+'/train_accuracy', acc, epoch)
- 
-            #print('Accuracy of the network on the training set: %d %%\n' % (acc))
-    
         if not args['debug']:
             # Close Tensorboard Element
             writer.close()
 
-            # Save Final Model
-            save_checkpoint(epoch + 1, 0, model, optimizer, args['save_dir']+'/'+str(total_iteration)+'/final_model.pkl')
-            #avg_acc.append(100.*accuracy(model, testloader, device))
     
-    #print("Average training accuracy across %d runs is %f" %(args['rerun'], np.mean(avg_acc)))
-
 if __name__ == '__main__':
 
     parse = Parse()
