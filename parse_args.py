@@ -49,7 +49,6 @@ class Parse():
         parser.add_argument('--crop_type',    type=str, help='Type of cropping operation (Random, Center and None)')
         parser.add_argument('--num_clips',    type=int, help='Number clips to be generated from a video (<0: uniform sampling, 0: Divide entire video into clips, >0: Defines number of clips)')
 
-        parser.add_argument('--verbose', type=int, help='Print status updates during runtime')
         parser.add_argument('--debug',   type=int, help='Run an experiment but do not save any data or create any folders')
         parser.add_argument('--seed',    type=int, help='Seed for reproducibility')
 
@@ -76,7 +75,6 @@ class Parse():
             clip_stride      = 0,
             crop_type        = None,
             num_clips        = 1,
-            verbose          = 0,
             debug            = 0,
             seed             = 0)                       
 
