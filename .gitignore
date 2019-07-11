@@ -11,3 +11,4 @@ runs/*
 *.pkl
 *.npy
 config_*.yaml
+models/HGC3D

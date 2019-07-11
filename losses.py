@@ -53,9 +53,8 @@ class HGC_MSE(object):
         xmax = bbox[0,:,:,2]
         ymax = bbox[0,:,:,3]
         #plotabb(data['data'][0].permute(1,2,3,0).cpu(), xmin, xmax, ymin, ymax)
-        input_shape = np.array(data['data'].size())[-3:]
+        input_shape = np.array(data['input_shape'])[-3:]
         gtmap = self.gt_maps_square(xmin.cpu().numpy().astype(int), xmax.cpu().numpy().astype(int), ymin.cpu().numpy().astype(int), ymax.cpu().numpy().astype(int), input_shape, targets.cpu().numpy()[0].astype(int), self.num_classes)
-        import pdb; pdb.set_trace()
         targets = torch.tensor([gtmap[:,int(gtmap.shape[1]/2.)]]).float().to(self.device)
 
         return self.hgc_mse_loss(predictions, targets)

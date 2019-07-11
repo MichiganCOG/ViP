@@ -130,10 +130,9 @@ def train(**args):
 
                 if np.isnan(running_loss):
                     import pdb; pdb.set_trace()
-   
-                if (epoch*len(train_loader) + step) % 100 == 0:
-                    print('Epoch: {}/{}, step: {}/{} | train loss: {:.4f}'.format(epoch, args['epoch'], step, len(train_loader), running_loss/100.))
-                    running_loss = 0.0
+
+                if ((epoch*len(train_loader) + step+1) % 100 == 0):
+                    print('Epoch: {}/{}, step: {}/{} | train loss: {:.4f}'.format(epoch, args['epoch'], step+1, len(train_loader), running_loss/float(step+1)))
 
                 # END IF
 

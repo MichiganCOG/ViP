@@ -101,14 +101,15 @@ class ImageNetVID(DetectionDataset):
         ret_dict = dict() 
         ret_dict['data']       = vid_data 
         annot_dict = dict()
-        annot_dict['xmin']       = xmin_data
-        annot_dict['ymin']       = ymin_data
-        annot_dict['xmax']       = xmax_data
-        annot_dict['ymax']       = ymax_data
-        annot_dict['bbox_data']  = bbox_data
-        annot_dict['labels']     = labels
-        annot_dict['occlusions'] = occlusions
-        ret_dict['annotations']     = annot_dict
+        annot_dict['xmin']        = xmin_data
+        annot_dict['ymin']        = ymin_data
+        annot_dict['xmax']        = xmax_data
+        annot_dict['ymax']        = ymax_data
+        annot_dict['bbox_data']   = bbox_data
+        annot_dict['labels']      = labels
+        annot_dict['occlusions']  = occlusions
+        annot_dict['input_shape'] = vid_data.size() 
+        ret_dict['annots']     = annot_dict
 
         return ret_dict
 
@@ -132,7 +133,7 @@ class PreprocessTrain(object):
         else:
             self.transforms.append(pt.CenterCropClip(**kwargs))
 
-        self.transforms.append(pt.RandomFlipClip(direction='h', p=1.0, **kwargs))
+        self.transforms.append(pt.RandomFlipClip(direction='h', p=0.5, **kwargs))
         self.transforms.append(pt.RandomRotateClip(**kwargs))
         self.transforms.append(pt.ToTensorClip(**kwargs))
 
