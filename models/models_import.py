@@ -14,7 +14,7 @@ def create_model_object(*args, **kwargs):
     """
     model_name = kwargs['model']
 
-    model_files = glob.glob('models/*.py')
+    model_files = glob.glob('models/'+model_name.lower()+'/*.py')
     ignore_files = ['__init__.py', 'models_import.py']
 
     for mf in model_files:

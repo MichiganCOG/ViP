@@ -17,7 +17,7 @@ A platform for quick and easy development of deep learning networks for recognit
 * (DONE) E Pretrained vs load\_ckpt. Remove load ckpt and make pretrained 0 = random init, pretrained 1 = default specified in model following c3d example, pretrained str = path to trained checkpoint
 * M/N/E Edit model __init__ to match kwarg type for pretrained
 * M/N/E Update all datasets to return ret\_dict with keys 'data' and 'annots' only
-* N/M Change recognition accuraccy to use XENTROPY and AP loss to use annot\_dict as input
+* N/M Change recognition accuracy to use XENTROPY and AP loss to use annot\_dict as input
 * (DONE) E Delete verbose
 * (DONE) E Reset running loss every epoch, remove reset every 100. Divide by size of step
 * M Save best checkpoint, based off of validation accuracy

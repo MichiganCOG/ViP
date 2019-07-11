@@ -13,7 +13,7 @@ gamma:           0.2                                 # Multiplier with which to 
 json_path:       /z/home/natlouis/data/VOC_2007      # Path to the json file for the given dataset
 labels:          21                                  # Number of total classes in the dataset
 load_type:       test                                # Environment selection, to include only training/training and validation/testing dataset
-loss:            todo                                # Loss function                                                                                                                    # TODO: Default needs to be specified
+loss_type:       todo                                # Loss function # TODO: Default needs to be specified
 lr:              0.001                               # Learning rate
 milestones:      [100, 150, 200]                     # Epoch values to change learning rate
 model:           SSD                                 # Name of model to be loaded
