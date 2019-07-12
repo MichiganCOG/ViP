@@ -7,3 +7,9 @@ wget -O ./weights/goturn.pth.tar https://umich.box.com/shared/static/src6rfm4lpn
 
 #SSD
 wget -O ./weights/ssd300_mAP_77.43_v2.pth https://umich.box.com/shared/static/jszcnnwcvscfyqe3o81xy8qzfbsc20vo.pth
+
+#C3D
+wget -O ./weights/c3d-pretrained.pth https://umich.box.com/shared/static/znmyt8uph3w7bjxoevg7pukfatyu3z6k.pth
+
+#C3D Mean
+wget -O ./weights/sport1m_train16_128_mean.npy https://umich.box.com/shared/static/ppbnldsa5rty615osdjh2yi8fqcx0a3b.npy 
