@@ -11,5 +11,5 @@ def save_checkpoint(epoch, step, model, optimizer, save_path):
     torch.save(state, save_path)
  
 def load_checkpoint(name, key_name='state_dict'):
-    checkpoint = torch.load(os.path.join('results',name))
+    checkpoint = torch.load(name)
     return checkpoint[key_name]

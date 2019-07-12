@@ -52,8 +52,12 @@ class HMDB51(RecognitionDataset):
         vid_data = vid_data.permute(3, 0, 1, 2)
 
         ret_dict           = dict() 
-        ret_dict['data']   = vid_data
-        ret_dict['labels'] = labels
+        ret_dict['data']   = vid_data 
+
+        annot_dict = dict()
+
+        annot_dict['labels'] = labels
+        ret_dict['annots']   = annot_dict
 
         if self.preprocess == 'rotation':
             ret_dict['labels'] = torch.from_numpy(np.hstack((np.zeros(16, dtype=int), np.zeros(16,dtype=int)+1,np.zeros(16,dtype=int)+2,np.zeros(16, dtype=int)+3)))

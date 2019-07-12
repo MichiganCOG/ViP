@@ -244,7 +244,7 @@ class AveragePrecision():
 
             #Sort predictions in descending order, by confidence value
             pred = predictions[:,c].contiguous().view(N*D,-1)
-            idx = pred[:,0].argsort(descending=True)
+            idx  = pred[:,0].argsort(descending=True)
             pred = pred[idx]
 
             img_labels = torch.arange(0,N).unsqueeze(1).repeat(1,D).view(N*D)
@@ -325,24 +325,24 @@ class SSD_AP(AveragePrecision):
                 - diff_labels: [N,T,D_], binary labels (True or False)
         """
 
-        gt = data['labels'].squeeze(1)
-        diff = data['diff_labels'].squeeze(1)
+        gt     = data['labels'].squeeze(1)
+        diff   = data['diff_labels'].squeeze(1)
         height = data['height']
-        width = data['width']
-        scale = torch.Tensor([1, height, width, height, width]) 
+        width  = data['width']
+        scale  = torch.Tensor([1, height, width, height, width]) 
 
         detections = detections.data
-        N,C,D,_ = detections.shape
-        _,D_,_ = gt.shape 
+        N,C,D,_    = detections.shape
+        _,D_,_     = gt.shape 
 
         if self.count == 0:
             self.predictions = -1*torch.ones(self.ndata,C,D,5)
-            self._targets     = -1*torch.ones(self.ndata,D_,5)
-            self._diff        = torch.zeros(self.ndata,D_, dtype=torch.long)
+            self._targets    = -1*torch.ones(self.ndata,D_,5)
+            self._diff       = torch.zeros(self.ndata,D_, dtype=torch.long)
 
         self.predictions[self.count:self.count+N] = detections * scale
-        self._targets[self.count:self.count+N] = gt 
-        self._diff[self.count:self.count+N] = diff
+        self._targets[self.count:self.count+N]    = gt 
+        self._diff[self.count:self.count+N]       = diff
 
         self.count += N
 
@@ -358,16 +358,6 @@ class SSD_AP(AveragePrecision):
 
                 if c != 0:
                     self.targets[n,c,d_] = trgt[d_,:4]
-
-        '''
-        torch.save({'predictions': self.predictions,
-                    '_targets': self._targets,
-                    'targets': self.targets},'time_skip.pth')
-        saved_dict = torch.load('time_skip.pth')
-        self.predictions = saved_dict['predictions']
-        self.targets = saved_dict['targets']
-        self._targets = saved_dict['_targets']
-        '''
 
         return super(SSD_AP,self).get_accuracy(self.predictions, self.targets)
 

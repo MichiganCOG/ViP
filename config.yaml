@@ -1,34 +1,34 @@
-rerun:           1                     # Number of trials to repeat an experiment
-dataset:         HMDB51                # Name of dataset 
-json_path:       /z/dat/HMDB51/        # Path to the json file for the given dataset
-batch_size:      10                    # Numbers of videos in a mini-batch 
-load_type:       train                 # Environment selection, to include only training/training and validation/testing dataset
-model:           C3D                   # Name of model to be loaded  
-labels:          51                    # Number of total classes in the dataset
-sample_size:     112                   # Height of frame to be provided as input to the model
-sample_duration: 16                    # Temporal size of video to be provided as input to the model 
-loss_type:       M_XENTROPY            # Loss function
 acc_metric:      Accuracy              # Accuracy metric 
-opt:             sgd                   # Name of optimizer
-lr:              0.0001                # Learning rate
-momentum:        0.9                   # Momentum value in optimizer
-weight_decay:    0.0005                # Weight decay
-milestones:      [10, 20]              # Epoch values to change learning rate     
-gamma:           0.1                   # Multiplier with which to change learning rate
-epoch:           30                    # Total number of epochs 
-save_dir:        './results'           # Path to results directory
-subtract_mean:   ''                    # Subtract mean (R,G,B) from all frames during preprocessing
-resize_shape:    [128,171]             # (Height, Width) to resize original data 
-final_shape:     [112,112]             # (Height, Width) of input to be given to CNN
+batch_size:      10                    # Numbers of videos in a mini-batch 
 clip_length:     16                    # Number of frames within a clip 
 clip_offset:     0                     # Frame offset between beginning of video and clip (1st clip only) 
-random_offset:   0                     # Boolean switch to generate a clip length sized clip from a video 
 clip_stride:     0                     # Frame offset between successive frames
 crop_shape:      [112,112]             # (Height, Width) of frame  
 crop_type:       Random                # Type of cropping operation (Random, Central and None)  
+dataset:         HMDB51                # Name of dataset 
+epoch:           30                    # Total number of epochs 
+exp:             exp                   # Experiment name
+final_shape:     [112,112]             # (Height, Width) of input to be given to CNN
+gamma:           0.1                   # Multiplier with which to change learning rate
+json_path:       /z/dat/HMDB51/        # Path to the json file for the given dataset
+labels:          51                    # Number of total classes in the dataset
+load_type:       train                 # Environment selection, to include only training/training and validation/testing dataset
+loss_type:       M_XENTROPY            # Loss function
+lr:              0.0001                # Learning rate
+milestones:      [10, 20]              # Epoch values to change learning rate     
+model:           C3D                   # Name of model to be loaded  
+momentum:        0.9                   # Momentum value in optimizer
 num_clips:       -1                    # Number clips to be generated from a video (<0: uniform sampling, 0: Divide entire video into clips, >0: Defines number of clips) 
-seed:            999                   # Seed for reproducibility 
-pretrained:      1                     # Load pretrained network 
-verbose:         1                     # Print status updates during runtime (1 true, 0 false)
-preprocess:      rotation              # String argument to select preprocessing type
 num_workers:     2                     # Number of CPU worker used to load data
+opt:             sgd                   # Name of optimizer
+preprocess:      default               # String argument to select preprocessing type
+pretrained:      1                     # Load pretrained network 
+random_offset:   0                     # Boolean switch to generate a clip length sized clip from a video 
+rerun:           1                     # Number of trials to repeat an experiment
+resize_shape:    [128,171]             # (Height, Width) to resize original data 
+sample_duration: 16                    # Temporal size of video to be provided as input to the model 
+sample_size:     112                   # Height of frame to be provided as input to the model
+save_dir:        './results'           # Path to results directory
+seed:            999                   # Seed for reproducibility 
+subtract_mean:   ''                    # Subtract mean (R,G,B) from all frames during preprocessing
+weight_decay:    0.0005                # Weight decay

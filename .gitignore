@@ -1,4 +1,5 @@
 pytorchenv/*
+models/weights/*
 results/*
 *.swp
 *.pyc
@@ -9,3 +10,5 @@ runs/*
 *.pth.tar
 *.pkl
 *.npy
+config_*.yaml
+models/HGC3D

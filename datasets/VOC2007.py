@@ -109,15 +109,18 @@ class VOC2007(DetectionDataset):
 
         ret_dict = dict() 
         ret_dict['data']       = vid_data 
-        ret_dict['height']     = torch.Tensor([vid_size[0]])
-        ret_dict['width']     = torch.Tensor([vid_size[1]])
-        ret_dict['xmin']       = xmin_data
-        ret_dict['ymin']       = ymin_data
-        ret_dict['xmax']       = xmax_data
-        ret_dict['ymax']       = ymax_data
-        ret_dict['bbox_data']  = bbox_data
-        ret_dict['labels']     = torch.cat((bbox_data, labels.unsqueeze(2)),2) #[xmin,ymin,xmax,ymax,class_id]
-        ret_dict['diff_labels'] = diff_labels 
+
+        annot_dict = dict()
+        annot_dict['height']     = torch.Tensor([vid_size[0]])
+        annot_dict['width']      = torch.Tensor([vid_size[1]])
+        annot_dict['xmin']       = xmin_data
+        annot_dict['ymin']       = ymin_data
+        annot_dict['xmax']       = xmax_data
+        annot_dict['ymax']       = ymax_data
+        annot_dict['bbox_data']  = bbox_data
+        annot_dict['labels']     = torch.cat((bbox_data, labels.unsqueeze(2)),2) #[xmin,ymin,xmax,ymax,class_id]
+        annot_dict['diff_labels'] = diff_labels 
+        ret_dict['annots'] = annot_dict
 
         return ret_dict
 

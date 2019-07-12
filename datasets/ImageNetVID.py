@@ -24,7 +24,7 @@ class ImageNetVID(DetectionDataset):
 
         # Maximum number of annotated object present in a single frame in entire dataset
         # Dictates the return size of annotations in __getitem__
-        self.max_objects = 22
+        self.max_objects = 38 
 
 
         if self.load_type=='train':
@@ -32,8 +32,6 @@ class ImageNetVID(DetectionDataset):
 
         else:
             self.transforms = PreprocessEval(**kwargs)
-
-        self.__getitem__(0)
 
     def __getitem__(self, idx):
         vid_info = self.samples[idx]
@@ -102,13 +100,16 @@ class ImageNetVID(DetectionDataset):
 
         ret_dict = dict() 
         ret_dict['data']       = vid_data 
-        ret_dict['xmin']       = xmin_data
-        ret_dict['ymin']       = ymin_data
-        ret_dict['xmax']       = xmax_data
-        ret_dict['ymax']       = ymax_data
-        ret_dict['bbox_data']  = bbox_data
-        ret_dict['labels']     = labels
-        ret_dict['occlusions'] = occlusions
+        annot_dict = dict()
+        annot_dict['xmin']        = xmin_data
+        annot_dict['ymin']        = ymin_data
+        annot_dict['xmax']        = xmax_data
+        annot_dict['ymax']        = ymax_data
+        annot_dict['bbox_data']   = bbox_data
+        annot_dict['labels']      = labels
+        annot_dict['occlusions']  = occlusions
+        annot_dict['input_shape'] = vid_data.size() 
+        ret_dict['annots']     = annot_dict
 
         return ret_dict
 
@@ -122,6 +123,8 @@ class PreprocessTrain(object):
         crop_type = kwargs['crop_type']
         self.transforms = []
         
+        self.transforms.append(pt.ResizeClip(**kwargs))
+
         if crop_type == 'Random':
             self.transforms.append(pt.RandomCropClip(**kwargs))
 
@@ -130,8 +133,7 @@ class PreprocessTrain(object):
         else:
             self.transforms.append(pt.CenterCropClip(**kwargs))
 
-        self.transforms.append(pt.ResizeClip(**kwargs))
-        self.transforms.append(pt.RandomFlipClip(direction='h', p=1.0, **kwargs))
+        self.transforms.append(pt.RandomFlipClip(direction='h', p=0.5, **kwargs))
         self.transforms.append(pt.RandomRotateClip(**kwargs))
         self.transforms.append(pt.ToTensorClip(**kwargs))
 

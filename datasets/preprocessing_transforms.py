@@ -7,6 +7,8 @@ Usage:
     from preprocessing_transforms import *
 
 clip: Input to __call__ of each transform is a list of PIL images
+
+All functions have an example in the TestPreproc class at the bottom of this file
 """
 
 import torch
@@ -32,12 +34,14 @@ class PreprocTransform(object):
         pass
 
     def _to_pil(self, clip):
-        # Must be of type uint8, int16, int32, or float32
+        # Must be of type uint8 if images have multiple channels, int16, int32, or float32 if there is only one channel
         if isinstance(clip[0], np.ndarray):
             if 'float' in str(clip[0].dtype):
                 clip = np.array(clip).astype('float32')
             if 'int64' == str(clip[0].dtype):
                 clip = np.array(clip).astype('int32')
+            if clip[0].ndim == 3:
+                clip = np.array(clip).astype('uint8')
 
         output=[]
         for frame in clip:
@@ -53,7 +57,11 @@ class PreprocTransform(object):
                 output = clip.numpy()
             else:
                 for frame in clip:
-                    output.append(frame.numpy())
+                    f_shape = frame.shape
+                    # Convert from torch's C, H, W to numpy H, W, C
+                    frame = frame.numpy().reshape(f_shape[1], f_shape[2], f_shape[0])
+
+                    output.append(frame)
             
 
         elif isinstance(clip[0], Image.Image):
@@ -72,7 +80,13 @@ class PreprocTransform(object):
 
 
     def _to_tensor(self, clip):
+        """
+        torchvision converts PIL images and numpy arrays that are uint8 0 to 255 to float 0 to 1
+        Converts numpy arrays that are float to float tensor
+        """
             
+        if isinstance(clip[0], torch.Tensor):
+            return clip
 
         output = []
         for frame in clip:
@@ -89,7 +103,7 @@ class ResizeClip(PreprocTransform):
         super(ResizeClip, self).__init__(*args, **kwargs)
         self.size_h, self.size_w = kwargs['resize_shape']
         
-    def resize_bbox(self, xmin, xmax, ymin, ymax, img_shape, resize_shape):
+    def resize_bbox(self, xmin, ymin, xmax, ymax, img_shape, resize_shape):
         # Resize a bounding box within a frame relative to the amount that the frame was resized
     
         img_h = img_shape[0]
@@ -107,7 +121,7 @@ class ResizeClip(PreprocTransform):
         ymin_new = int(ymin * frac_h)
         ymax_new = int(ymax * frac_h)
     
-        return xmin_new, xmax_new, ymin_new, ymax_new 
+        return xmin_new, ymin_new, xmax_new, ymax_new 
 
 
     def __call__(self, clip, bbox=[]):
@@ -152,7 +166,7 @@ class CropClip(PreprocTransform):
         self.bbox_ymax = ymax
 
 
-    def crop_bbox(self, xmin, xmax, ymin, ymax, crop_xmin, crop_xmax, crop_ymin, crop_ymax):
+    def crop_bbox(self, xmin, ymin, xmax, ymax, crop_xmin, crop_ymin, crop_xmax, crop_ymax):
         if (xmin >= crop_xmax) or (xmax <= crop_xmin) or (ymin >= crop_ymax) or (ymax <= crop_ymin):
             return -1, -1, -1, -1
     
@@ -176,7 +190,7 @@ class CropClip(PreprocTransform):
         else:
             xmin_new = xmin 
     
-        return xmin_new, xmax_new, ymin_new, ymax_new
+        return xmin_new-crop_xmin, ymin_new-crop_ymin, xmax_new-crop_xmin, ymax_new-crop_ymin
 
 
         
@@ -186,7 +200,7 @@ class CropClip(PreprocTransform):
 
         for frame_ind in range(len(clip)):
             frame = clip[frame_ind]
-            proc_frame = np.array(frame[self.bbox_xmin:self.bbox_xmax, self.bbox_ymin:self.bbox_ymax]) 
+            proc_frame = np.array(frame[self.bbox_ymin:self.bbox_ymax, self.bbox_xmin:self.bbox_xmax]) 
             out_clip.append(proc_frame)
 
             if bbox!=[]:
@@ -195,7 +209,7 @@ class CropClip(PreprocTransform):
                     if np.array_equal(bbox[frame_ind,class_ind],-1*np.ones(4)): #only annotated objects
                         continue
                     xmin, ymin, xmax, ymax = bbox[frame_ind, class_ind]
-                    proc_bbox = self.crop_bbox(xmin, ymin, xmax, ymax, self.bbox_xmin, self.bbox_xmax, self.bbox_ymin, self.bbox_ymax)
+                    proc_bbox = self.crop_bbox(xmin, ymin, xmax, ymax, self.bbox_xmin, self.bbox_ymin, self.bbox_xmax, self.bbox_ymax)
                     temp_bbox[class_ind,:] = proc_bbox
                 out_bbox.append(temp_bbox)
 
@@ -374,7 +388,7 @@ class RandomRotateClip(PreprocTransform):
         angle = np.deg2rad(angle)
         bboxes_shape = bboxes.shape
         output_bboxes = np.zeros(bboxes_shape)-1
-        frame_h, frame_w = frame_shape 
+        frame_h, frame_w = frame_shape[0], frame_shape[1] 
         half_h = frame_h/2. 
         half_w = frame_w/2. 
 
@@ -504,13 +518,13 @@ class ApplyToTensor(PreprocTransform):
     def __init__(self, **kwargs):
         super(ApplyToTensor, self).__init__(**kwargs)
         self.kwargs = kwargs
-        self.transform = kwargs['transform']
+        self.class_kwargs = kwargs['class_kwargs']
+        self.transform = kwargs['transform'](**self.class_kwargs)
 
     def __call__(self, clip, bbox=[]):
         if not isinstance(clip, torch.Tensor):
             clip = self._to_tensor(clip)
-            if self.kwargs['verbose']:
-                print("Clip has been converted to tensor from numpy or PIL.")
+
         output_clip = []
         for frame in clip:
             output_clip.append(self.transform(frame))
@@ -534,18 +548,17 @@ class ApplyOpenCV(PreprocTransform):
     def __init__(self, **kwargs):
         super(ApplyOpenCV, self).__init__(**kwargs)
         self.kwargs = kwargs
-        self.function = kwargs['function']
+        self.class_kwargs = kwargs['class_kwargs']
+        self.transform = kwargs['transform']
 
     def __call__(self, clip, bbox=[]):
         if not isinstance(clip, torch.Tensor):
-            clip = self._to_array(clip)
-            if self.kwargs['verbose']:
-                print("Clip has been converted to numpy from pytorch tensor or PIL.")
+            clip = self._to_numpy(clip)
+
         output_clip = []
         for frame in clip:
-            output_clip.append(self.function(frame))
+            output_clip.append(self.transform(frame, **self.class_kwargs))
 
-        output_clip = torch.stack(output_clip)
 
         if bbox!=[]:
             return output_clip, bbox
@@ -568,6 +581,9 @@ class TestPreproc(object):
         self.sub_mean = SubtractMeanClip(clip_mean=np.zeros(1))
         self.applypil = ApplyToPIL(transform=torchvision.transforms.ColorJitter, class_kwargs=dict(brightness=1))
         self.applypil2 = ApplyToPIL(transform=torchvision.transforms.FiveCrop, class_kwargs=dict(size=(64,64)))
+        self.applytensor = ApplyToTensor(transform=torchvision.transforms.Normalize, class_kwargs=dict(mean=torch.tensor([0.,0.,0.]), std=torch.tensor([1.,1.,1.])))
+        self.applycv = ApplyOpenCV(transform=cv2.threshold, class_kwargs=dict(thresh=100, maxval=100, type=cv2.THRESH_TRUNC))
+        self.preproc = PreprocTransform()
 
     def resize_test(self):
         inp = np.array([[[.1,.2,.3,.4],[.1,.2,.3,.4],[.1,.2,.3,.4]]]).astype(float)
@@ -675,12 +691,45 @@ class TestPreproc(object):
         out = self.applypil2(out1)
         assert (len(out)==2) and (len(out[0])==5) and (out[0][0].size==(64,64)) and (isinstance(out[0][0], Image.Image))
 
-#    def applytensor_test(self):
-#        inp = np.arange(112*112).reshape(112,112)
-#        size = [64,64]
-#        out = self.applypil([inp, inp])
-#        assert (len(out)==2) and (len(out[0])==5) and (out[0][0].size==(64,64)) and (isinstance(out[0][0], Image.Image))
+    def applytensor_test(self):
+        inp = np.arange(112*112*3).reshape(3,112,112).astype('float32')
+        inp = torch.from_numpy(inp)
+        out = self.applytensor([inp, inp])
+        assert False not in np.array(inp==out)
 
+
+    def applycv_test(self):
+        inp = np.arange(112*112).reshape(112,112).astype('float32')
+        out = self.applycv([inp])
+        assert (out[0][1].min()==0.0) and (out[0][1].max()==100.0) 
+
+
+    def to_numpy_test(self):
+        inp_torch = [torch.zeros((3,112,112))]
+        inp_pil = [Image.fromarray(np.zeros((112,112,3)).astype('uint8'))]
+        out_torch = self.preproc._to_numpy(inp_torch)
+        out_pil = self.preproc._to_numpy(inp_pil)
+
+        assert (False not in np.array(out_pil==out_torch))
+
+
+    def to_tensor_test(self):
+        inp_np_f = np.zeros((1,112,112,3)).astype('float')+201
+        inp_np = np.zeros((1,112,112,3)).astype('uint8')+1
+        inp_pil = [Image.fromarray(inp_np[0], mode='RGB')]
+        out_np_f = self.preproc._to_tensor(inp_np_f)
+        out_np = self.preproc._to_tensor(inp_np)
+        out_pil = self.preproc._to_tensor(inp_pil)
+        assert (False not in np.array(out_np[0]==out_pil[0])) and isinstance(out_np_f[0], torch.DoubleTensor)
+
+
+    def to_pil_test(self):
+        inp_np = [np.zeros((112,112,3)).astype('int32')]
+        inp_torch = [torch.zeros((3,112,112))]
+        out_np = self.preproc._to_pil(inp_np)
+        out_torch = self.preproc._to_pil(inp_torch)
+
+        assert (False not in np.array(np.array(out_np[0])==np.array(out_torch[0])))
 
 
     def run_tests(self):
@@ -690,6 +739,11 @@ class TestPreproc(object):
         self.rand_flip_test()
         self.rand_rot_test()
         self.applypil_test()
+        self.applytensor_test()
+        self.applycv_test()
+        self.to_tensor_test()
+        self.to_pil_test()
+        self.to_numpy_test()
         print("Tests passed")
         #self.rand_flip_vis()
         #self.rand_rot_vis()
