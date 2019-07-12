@@ -90,8 +90,8 @@ class HGC_MSE(object):
 
 class M_XENTROPY(object):
     def __init__(self, *args, **kwargs):
-        self.logsoftmax = nn.LogSoftmax()
+        self.logsoftmax = nn.LogSoftmax(dim=1)
 
-    def loss(self, predictions, targets):
+    def loss(self, predictions, data):
         targets = data['labels']
         return torch.mean(torch.sum(-targets * self.logsoftmax(predictions), dim=1))

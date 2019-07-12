@@ -359,16 +359,6 @@ class SSD_AP(AveragePrecision):
                 if c != 0:
                     self.targets[n,c,d_] = trgt[d_,:4]
 
-        '''
-        torch.save({'predictions': self.predictions,
-                    '_targets': self._targets,
-                    'targets': self.targets},'time_skip.pth')
-        saved_dict = torch.load('time_skip.pth')
-        self.predictions = saved_dict['predictions']
-        self.targets = saved_dict['targets']
-        self._targets = saved_dict['_targets']
-        '''
-
         return super(SSD_AP,self).get_accuracy(self.predictions, self.targets)
 
 class MAP():

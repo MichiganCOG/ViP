@@ -105,15 +105,13 @@ def train(**args):
             # Start: Epoch
             for step, data in enumerate(train_loader):
 
-                # (True Batch, Augmented Batch, Sequence Length)
-                #data = dict((k, v.to(device)) for k,v in data.items())
                 x_input       = data['data'].to(device) 
                 annotations   = data['annots'] 
 
                 optimizer.zero_grad()
 
                 outputs = model(x_input)
-                loss    = model_loss.loss(outputs, annotations)
+                loss    = model_loss.loss(outputs.to('cpu'), annotations)
     
                 loss.backward()
                 optimizer.step()

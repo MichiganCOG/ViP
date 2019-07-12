@@ -52,7 +52,10 @@ class HMDB51(RecognitionDataset):
 
         ret_dict           = dict() 
         ret_dict['data']   = vid_data 
-        ret_dict['labels'] = labels
+
+        annot_dict = dict()
+        annot_dict['labels'] = labels
+        ret_dict['annots'] = annot_dict
 
         return ret_dict
 
