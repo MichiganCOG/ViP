@@ -7,16 +7,16 @@ from scipy import ndimage
 class Losses(object):
     def __init__(self, *args, **kwargs): #loss_type, size_average=None, reduce=None, reduction='mean', *args, **kwargs):
         """
+        Class used to initialize and handle all available loss types in ViP
+
         Args: 
-            loss_type: String indicating which custom loss function is to be loaded.
+            loss_type (String): String indicating which custom loss function is to be loaded.
+
+        Return:
+            Loss object 
         """
 
-        self.loss_type = kwargs['loss_type']
-        #self.loss_type = loss_type
-        #self.size_average=size_average 
-        #self.reduce=reduce
-        #self.reduction=reduction
-
+        self.loss_type   = kwargs['loss_type']
         self.loss_object = None
 
         if self.loss_type == 'HGC_MSE':
@@ -31,9 +31,14 @@ class Losses(object):
 
     def loss(self, predictions, data, **kwargs):
         """
+        Function that calculates loss from selected loss type
+
         Args:
-            predictions: Tensor output by the network
-            target: Target tensor used with predictions to compute the loss
+            predictions (Tensor): Tensor output by the network
+            target      (Tensor): Target tensor used with predictions to compute the loss
+
+        Returns:
+            Calculated loss value
         """ 
         return self.loss_object.loss(predictions, data, **kwargs)
 
@@ -93,5 +98,12 @@ class M_XENTROPY(object):
         self.logsoftmax = nn.LogSoftmax(dim=1)
 
     def loss(self, predictions, data):
+        """
+        Function used to compute cross-entropy loss with a distribution of values, not just 1-hot vectors 
+
+        Return:
+            Compute loss value 
+        """
+
         targets = data['labels']
         return torch.mean(torch.sum(-targets * self.logsoftmax(predictions), dim=1))

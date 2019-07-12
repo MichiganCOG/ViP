@@ -5,7 +5,11 @@ class Metrics(object):
     def __init__(self, *args, **kwargs):
         """
         Compute accuracy metrics from this Metrics class
-
+        Args:
+            acc_metric (String): String used to indicate selected accuracy metric 
+    
+        Return:
+            None
         """
         self.metric_type = kwargs['acc_metric'] 
 

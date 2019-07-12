@@ -8,6 +8,15 @@ class C3D(nn.Module):
     """
 
     def __init__(self, **kwargs):
+    """
+    Initialize C3D model  
+    Args:
+        labels     (Int):    Total number of classes in the dataset
+        pretrained (Int/String): Initialize with random (0) or pretrained (1) weights 
+
+    Return:
+        None
+    """
         super(C3D, self).__init__()
         self.conv1 = nn.Conv3d(3, 64, kernel_size=(3, 3, 3), padding=(1, 1, 1))
         self.pool1 = nn.MaxPool3d(kernel_size=(1, 2, 2), stride=(1, 2, 2))
@@ -36,7 +45,8 @@ class C3D(nn.Module):
         self.relu = nn.ReLU()
 
         self.__init_weight()
-        if kwargs['pretrained']:
+
+        if isinstance(args['pretrained'], int) and args['pretrained']:
             self.__load_pretrained_weights()
 
     def forward(self, x, labels=False):
@@ -109,7 +119,7 @@ class C3D(nn.Module):
                         "classifier.3.bias": "fc7.bias",
                         }
 
-        p_dict = torch.load('models/weights/c3d-pretrained.pth')
+        p_dict = torch.load('weights/c3d-pretrained.pth')
         s_dict = self.state_dict()
         for name in p_dict:
             if name not in corresp_name:

@@ -19,6 +19,26 @@ from metrics                            import Metrics
 from checkpoint                         import save_checkpoint, load_checkpoint
 
 def train(**args):
+    """
+    Evaluate selected model 
+    Args:
+        rerun        (Int):        Integer indicating number of repetitions for the select experiment 
+        seed         (Int):        Integer indicating set seed for random state
+        save_dir     (String):     Top level directory to generate results folder
+        model        (String):     Name of selected model 
+        dataset      (String):     Name of selected dataset  
+        exp          (String):     Name of experiment 
+        debug        (Int):        Debug state to avoid saving variables 
+        load_type    (String):     Keyword indicator to evaluate the testing or validation set
+        pretrained   (Int/String): Int/String indicating loading of random, pretrained or saved weights
+        opt          (String):     Int/String indicating loading of random, pretrained or saved weights
+        lr           (Float):      Learning rate 
+        momentum     (Float):      Momentum in optimizer 
+        weight_decay (Float):      Weight_decay value 
+        
+    Return:
+        None
+    """
 
     print("\n############################################################################\n")
     print("Experimental Setup: ", args)
@@ -104,16 +124,6 @@ def train(**args):
 
             # Start: Epoch
             for step, data in enumerate(train_loader):
-
-<<<<<<< HEAD:train_recognition.py
-                # (True Batch, Augmented Batch, Sequence Length)
-                #data = dict((k, v.to(device)) for k,v in data.items())
-                # Self-supervised
-                #x_input       = data['data']
-                #import pdb; pdb.set_trace()
-                #x_input1       = x_input.view(args['batch_size']*4, 3, args['sample_duration'], args['final_shape'][0], args['final_shape'][1])
-=======
->>>>>>> 5f37cbaab4e1a8f71132931cb962cc1bf1e2866c:train.py
                 x_input       = data['data'].to(device) 
                 annotations   = data['annots'] 
 

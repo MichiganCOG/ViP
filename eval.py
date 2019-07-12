@@ -18,18 +18,34 @@ from metrics                            import Metrics
 from checkpoint                         import load_checkpoint
 
 def eval(**args):
+    """
+    Evaluate selected model 
+    Args:
+        seed       (Int):        Integer indicating set seed for random state
+        save_dir   (String):     Top level directory to generate results folder
+        model      (String):     Name of selected model 
+        dataset    (String):     Name of selected dataset  
+        exp        (String):     Name of experiment 
+        load_type  (String):     Keyword indicator to evaluate the testing or validation set
+        pretrained (Int/String): Int/String indicating loading of random, pretrained or saved weights
+        
+    Return:
+        None
+    """
 
-    print('Experimental Setup: ',args)
+    print("\n############################################################################\n")
+    print("Experimental Setup: ", args)
+    print("\n############################################################################\n")
 
-    d = datetime.datetime.today()
-    date = d.strftime('%Y%m%d-%H%M%S')
-    result_dir = os.path.join(args['save_dir'], args['model'], '_'.join((args['dataset'],'[exp]',date)))
+    d          = datetime.datetime.today()
+    date       = d.strftime('%Y%m%d-%H%M%S')
+    result_dir = os.path.join(args['save_dir'], args['model'], '_'.join((args['dataset'],args['exp'],date)))
     log_dir    = os.path.join(result_dir, 'logs')
     save_dir   = os.path.join(result_dir, 'checkpoints')
 
     os.makedirs(result_dir, exist_ok=True)
-    os.makedirs(log_dir, exist_ok=True) 
-    os.makedirs(save_dir, exist_ok=True) 
+    os.makedirs(log_dir,    exist_ok=True) 
+    os.makedirs(save_dir,   exist_ok=True) 
 
     with open(os.path.join(result_dir, 'config.yaml'),'w') as outfile:
         yaml.dump(args, outfile, default_flow_style=False)
@@ -38,7 +54,7 @@ def eval(**args):
     writer = SummaryWriter()
 
     # Load Data
-    loader = data_loader(**args)#['dataset'], args['batch_size'], args['load_type'])
+    loader = data_loader(**args)
 
     if args['load_type'] == 'valid':
         eval_loader = loader['valid']
