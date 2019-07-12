@@ -316,19 +316,19 @@ class SSD_AP(AveragePrecision):
         self.ndata = kwargs['ndata']
         self.count = 0
 
-    def get_accuracy(self, detections, annotations):
+    def get_accuracy(self, detections, data):
         """
         Args:
             detections: shape [N,C,D,5], each item [confidence, x1, y1, x2, y2]
-            annotations: dictionary
+            data: dictionary
                 - gt: shape [N,T,D_,5], each item [x1, y1, x2, y3, class] 
                 - diff_labels: [N,T,D_], binary labels (True or False)
         """
 
-        gt     = annotations['labels'].squeeze(1)
-        diff   = annotations['diff_labels'].squeeze(1)
-        height = annotations['height']
-        width  = annotations['width']
+        gt     = data['labels'].squeeze(1)
+        diff   = data['diff_labels'].squeeze(1)
+        height = data['height']
+        width  = data['width']
         scale  = torch.Tensor([1, height, width, height, width]) 
 
         detections = detections.data
