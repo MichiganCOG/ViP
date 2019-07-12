@@ -104,7 +104,11 @@ def train(**args):
             for step, data in enumerate(train_loader):
 
                 # (True Batch, Augmented Batch, Sequence Length)
-                data = dict((k, v.to(device)) for k,v in data.items())
+                #data = dict((k, v.to(device)) for k,v in data.items())
+                # Self-supervised
+                #x_input       = data['data']
+                #import pdb; pdb.set_trace()
+                #x_input1       = x_input.view(args['batch_size']*4, 3, args['sample_duration'], args['final_shape'][0], args['final_shape'][1])
                 x_input       = data['data'].to(device) 
                 y_label       = data['labels'].to(device) 
 

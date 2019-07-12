@@ -30,5 +30,5 @@ num_clips:       -1                    # Number clips to be generated from a vid
 seed:            999                   # Seed for reproducibility 
 pretrained:      1                     # Load pretrained network 
 verbose:         1                     # Print status updates during runtime (1 true, 0 false)
-preprocess:      default               # String argument to select preprocessing type
+preprocess:      rotation              # String argument to select preprocessing type
 num_workers:     2                     # Number of CPU worker used to load data
