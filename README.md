@@ -16,8 +16,8 @@ A platform for quick and easy development of deep learning networks for recognit
 * M/N/E Function descriptions include what the function does, arguments used, and return arguments (ex: Name (type): description). The first line following description should be input arguments from kwargs
 * (DONE) E Pretrained vs load\_ckpt. Remove load ckpt and make pretrained 0 = random init, pretrained 1 = default specified in model following c3d example, pretrained str = path to trained checkpoint
 * M/N/E Edit model __init__ to match kwarg type for pretrained
-* M/N/E Update all datasets to return ret\_dict with keys 'data' and 'annots' only
-* N/M Change recognition accuracy to use XENTROPY and AP loss to use annot\_dict as input
+* (DONE) M/N/E Update all datasets to return ret\_dict with keys 'data' and 'annots' only
+* (DONE) N/M Change recognition accuracy to use XENTROPY and AP loss to use annot\_dict as input
 * (DONE) E Delete verbose
 * (DONE) E Reset running loss every epoch, remove reset every 100. Divide by size of step
 * M Save best checkpoint, based off of validation accuracy
