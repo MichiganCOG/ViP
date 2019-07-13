@@ -28,5 +28,5 @@ sample_duration: 16                                  # Temporal size of video to
 sample_size:     112                                 # Height of frame to be provided as input to the model
 save_dir:        './results'                         # Path to results directory
 seed:            999                                 # Seed for reproducibility
-subtract_mean:   ''                                  # Subtract mean (R,G,B) from all frames during preprocessing
+subtract_mean:   [123,117,104]                       # Subtract mean (R,G,B) from all frames during preprocessing
 weight_decay:    0.0005                              # Weight decay

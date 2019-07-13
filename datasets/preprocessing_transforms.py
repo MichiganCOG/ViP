@@ -472,6 +472,28 @@ class SubtractMeanClip(PreprocTransform):
         else:
             return clip
 
+class SubtractRGBMean(PreprocTransform):
+    def __init__(self, **kwargs):
+        super(SubtractRGBMean, self).__init__(**kwargs)
+        self.rgb_mean = kwargs['subtract_mean']
+    
+    def __call__(self, clip, bbox=[]):
+
+        clip = self._to_numpy(clip)
+        out_clip = []
+        out_bbox = []
+
+        for frame_ind in range(len(clip)):
+            frame = clip[frame_ind]
+
+            proc_frame = frame - self.rgb_mean
+            out_clip.append(proc_frame)
+
+        if bbox != []:
+            return out_clip, bbox
+        else:
+            return out_clip
+
 
 class ApplyToPIL(PreprocTransform):
     """

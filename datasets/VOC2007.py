@@ -74,25 +74,12 @@ class VOC2007(DetectionDataset):
                 labels[frame_ind, trackid]       = label 
                 diff_labels[frame_ind, trackid]  = difficult 
 
-            input_data.append(cv2.imread(os.path.join(base_path, frame_path), cv2.IMREAD_COLOR))
+            #Read each image and change from BGR to RGB
+            input_data.append(cv2.imread(os.path.join(base_path, frame_path), cv2.IMREAD_COLOR)[:,:,(2,1,0)])
 
-        #vid_data, bbox_data = self.transforms(input_data, bbox_data)
-        ####
-        vid_data = torch.zeros((1,300,300,3))
-        mean = np.array((104, 117, 123), dtype=np.float32) #assuming BGR channel order
-
-        for i,pil_img in enumerate(input_data):
-            cv2_img = np.array(pil_img)
-
-            x = cv2.resize(cv2_img, (300, 300)).astype(np.float32)
-            x -= mean
-            x = x.astype(np.float32)[:, :, (2,1,0)] #BGR to RGB
-
-            vid_data[i] = torch.Tensor(x)
-        
+        vid_data = self.transforms(input_data) #preprocess frames
+        #vid_data = vid_data[:,:,:,(2,1,0)] #Switch channels from BGR back to RGB
         bbox_data = torch.Tensor(bbox_data)
-
-        ####
 
         bbox_data   = bbox_data.type(torch.LongTensor)
         xmin_data   = bbox_data[:,:,0]
@@ -102,8 +89,6 @@ class VOC2007(DetectionDataset):
         labels      = torch.from_numpy(labels).type(torch.LongTensor)
         diff_labels = torch.from_numpy(diff_labels).type(torch.LongTensor)
 
-        #mean = torch.Tensor([[[[104, 117, 123]]]]) 
-        #vid_data = vid_data - mean
         # Permute the vid dimensions (Frame, Height, Width, Chan) to PyTorch (Chan, Frame, Height, Width) 
         vid_data = vid_data.permute(3, 0, 1, 2)
 
@@ -135,16 +120,17 @@ class PreprocessTrain(object):
         self.transforms = []
 
         if crop_type == 'Random':
-            self.transforms.append(pt.RandomCropClip(*crop_shape))
+            self.transforms.append(pt.RandomCropClip(**kwargs))
         elif crop_type == 'Center':
-            self.transforms.append(pt.CenterCropClip(*crop_shape))
+            self.transforms.append(pt.CenterCropClip(**kwargs))
 
         self.transforms.append(pt.ResizeClip(*resize_shape))
         #self.transforms.append(pt.RandomFlipClip(direction='h', p=1.0))
-        #self.transforms.append(pt.RandomRotateClip())
+        #self.transforms.append(pt.RandomRotateClip(**kwargs))
+        self.transforms.append(pt.SubtractRGBMean(**kwargs))
         self.transforms.append(pt.ToTensorClip())
 
-    def __call__(self, input_data, bbox_data):
+    def __call__(self, input_data, bbox_data=[]):
         """
         Preprocess the clip and the bbox data accordingly
         Args:
@@ -155,10 +141,16 @@ class PreprocessTrain(object):
             input_data: Pytorch tensor containing the processed clip data 
             bbox_data:  Numpy tensor containing the augmented bbox coordinates
         """
-        for transform in self.transforms:
-            input_data, bbox_data = transform(input_data, bbox_data)
+        if bbox_data == []:
+            for transform in self.transforms:
+                input_data = transform(input_data)
             
-        return input_data, bbox_data
+            return input_data
+        else:
+            for transform in self.transforms:
+                input_data, bbox_data = transform(input_data)
+
+            return input_data, bbox_data
 
 class PreprocessEval(object):
     """
@@ -176,11 +168,12 @@ class PreprocessEval(object):
             self.transforms.append(pt.CenterCropClip(*crop_shape))
 
         self.transforms.append(pt.ResizeClip(**kwargs))
+        self.transforms.append(pt.SubtractRGBMean(**kwargs))
         self.transforms.append(pt.ToTensorClip())
 
 
 
-    def __call__(self, input_data, bbox_data):
+    def __call__(self, input_data, bbox_data=[]):
         """
         Preprocess the clip and the bbox data accordingly
         Args:
@@ -191,10 +184,16 @@ class PreprocessEval(object):
             input_data: Pytorch tensor containing the processed clip data 
             bbox_data:  Numpy tensor containing the augmented bbox coordinates
         """
-        for transform in self.transforms:
-            input_data, bbox_data = transform(input_data, bbox_data)
+        if bbox_data == []:
+            for transform in self.transforms:
+                input_data = transform(input_data)
+            
+            return input_data
+        else:
+            for transform in self.transforms:
+                input_data, bbox_data = transform(input_data)
 
-        return input_data, bbox_data
+            return input_data, bbox_data
 
 
 
