@@ -158,6 +158,8 @@ class CropClip(PreprocTransform):
         self.bbox_ymin = ymin
         self.bbox_ymax = ymax
 
+        self.crop_h, self.crop_w = kwargs['crop_shape']
+
 
     def _update_bbox(self, xmin, xmax, ymin, ymax):
         self.bbox_xmin = xmin
@@ -200,8 +202,13 @@ class CropClip(PreprocTransform):
 
         for frame_ind in range(len(clip)):
             frame = clip[frame_ind]
-            proc_frame = np.array(frame[self.bbox_ymin:self.bbox_ymax, self.bbox_xmin:self.bbox_xmax]) 
+            if bbox != []:
+                proc_frame = np.array(frame[self.bbox_ymin:self.bbox_ymax, self.bbox_xmin:self.bbox_xmax]) 
+            else:
+                proc_frame = np.array(frame[self.bbox_xmin:self.bbox_xmax, self.bbox_ymin:self.bbox_ymax]) 
             out_clip.append(proc_frame)
+
+            assert(proc_frame.shape[:2] == (self.crop_h, self.crop_w))
 
             if bbox!=[]:
                 temp_bbox = np.zeros(bbox[frame_ind].shape)-1 
@@ -224,7 +231,7 @@ class RandomCropClip(PreprocTransform):
         super(RandomCropClip, self).__init__(*args, **kwargs)
         self.crop_h, self.crop_w = kwargs['crop_shape']
 
-        self.crop_transform = CropClip(0, 0, self.crop_w, self.crop_h)
+        self.crop_transform = CropClip(0, 0, self.crop_w, self.crop_h, **kwargs)
 
         self.xmin = None
         self.xmax = None
