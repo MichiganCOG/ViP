@@ -72,26 +72,24 @@ class Accuracy(object):
 
 class IOU():
     """
-    Intersection-over-union between prediction and ground truth bounding boxes
+    Intersection-over-union between one prediction bounding box 
+    and plausible ground truth bounding boxes
 
-    Args:
-        average: if False, return all iou values rather than the arthimetic mean 
     """
-    def __init__(self, average=True, *args, **kwargs):
-        
-        self.average = average
+    def __init__(self, *args, **kwargs):
+        pass        
 
     def intersect(self, box_p, box_t):
         """
-        Intersection area between predicted bounding box and all 
-        ground truth bounding boxes
+        Intersection area between predicted bounding box and 
+        all ground truth bounding boxes
 
         Args:
-            box_p: prediction bounding box, shape [4]
-            box_t: target bounding boxes, shape [N,4]
+            box_p (Tensor, shape [4]): prediction bounding box, coordinate format [x1, y1, x2, y2]
+            box_t (Tensor, shape [N,4]): target bounding boxes
 
         Return:
-            intersect area, shape [N,1]
+            intersect area (Tensor, shape [N]): intersect_area for all target bounding boxes
         """
         x_left = torch.max(box_p[0], box_t[:,0])
         y_top = torch.max(box_p[1], box_t[:,1])
@@ -107,13 +105,15 @@ class IOU():
 
     def iou(self, box_p, box_t):
         """
+        Performs intersection-over-union 
+
         Args:
-            box_p: prediction bounding box, shape [4], coordinate format [x1, y1, x2, y2]
-            box_t: target bounding boxes, shape [N,4]
+            box_p (Tensor, shape [4]): prediction bounding box, coordinate format [x1, y1, x2, y2]
+            box_t (Tensor, shape [N,4]): target bounding boxes
 
         Return:
-            overlap: max overlap
-            ind: index of bounding box with largest overlap
+            overlap (Tensor, shape [1]): max overlap
+            ind     (Tensor, shape [1]): index of bounding box with largest overlap
         """
         
         intersect_area = self.intersect(box_p, box_t)
@@ -121,7 +121,6 @@ class IOU():
         box_p_area = (box_p[2] - box_p[0]) * (box_p[3] - box_p[1])
         box_t_area = (box_t[:,2] - box_t[:,0]) * (box_t[:,3] - box_t[:,1])
         union = box_p_area + box_t_area - intersect_area 
-        
         overlap = torch.max(intersect_area/union)
         ind     = torch.argmax(intersect_area/union)
 
@@ -130,31 +129,19 @@ class IOU():
         
         return overlap, ind
 
-    def get_accuracy(self, predictions, targets):
+    def get_accuracy(self, prediction, targets):
         """
         Args:
-            predictions: shape [4], coordinate format [x1, y1, x2, y2]
-            targets: shape [N,4]
+            prediction (Tensor, shape [4]): prediction bounding box, coordinate format [x1, y1, x2, y2]
+            targets    (Tensor, shape [N,4]): target bounding boxes
 
         Return:
-            iou: scalar or shape [N,C]
+            iou (Tensor, shape[1]): Highest iou amongst target bounding boxes
+            ind (Tensor, shape[1]): Index of target bounding box with highest score
         """
 
-        if len(predictions.shape) > 2:
-            n,c,_ = predictions.shape
-            iou_scores = torch.zeros((n,c))
-
-            assert c == targets.shape[1]
-            
-            for cls in range(c):
-                iou_scores[:,cls] = self.iou(predictions[:,cls,:],targets[:,cls,:])
-        else:
-            iou_scores, ind = self.iou(predictions, targets)
-
-        if self.average:
-            return torch.mean(iou_scores)
-        else:
-            return iou_scores, ind
+        iou_score, ind = self.iou(prediction, targets)
+        return iou_score, ind
 
 class Precision():
 
@@ -166,8 +153,11 @@ class Precision():
     def get_precision(self, scores, targets_mask):
         """
         Args:
-            scores: confidence score (or iou) per prediction, shape [N] 
-            targets_mask: binary mask, shape [N]
+            scores       (Tensor, shape[N]): iou scores per prediction  
+            targets_mask (Tensor, shape[N]): binary mask, positive class (1) negative class (0)
+
+        Return:
+            precision (Tensor, shape[1]): output precision
         """
 
         TP = torch.sum((scores * targets_mask) >= self.threshold).float()
@@ -178,13 +168,22 @@ class Precision():
     def get_accuracy(self, predictions, targets):
         """
         Args:
-            predictions: shape [N,4], coordinate format [x1, y1, x2, y2]
-            targets: shape [N,4]
+            (assuming N predictions for N targets)
+            predictions (Tensor, shape [N,4]): prediction bounding box, coordinate format [x1, y1, x2, y2]
+            targets     (Tensor, shape [N,4]): target bounding boxes
+
+        Return:
+            precision   (Tensor, shape [1]): precision for predictions 
         """
 
         n,_ = targets.shape 
         targets_mask = torch.ones(n)
-        scores = self.IOU.get_accuracy(predictions, targets) 
+        scores = torch.zeros(n)
+
+        for i in enumerate(scores):
+            scores[i] = self.IOU.get_accuracy(predictions[i], targets[i].unsqueeze(0)) 
+            if torch.equal(targets[i], torch.Tensor([-1,-1,-1,-1])):
+                targets_mask[i] = 0
 
         return self.get_precision(scores, targets_mask)
 
@@ -198,8 +197,11 @@ class AveragePrecision():
         """
         Compute Average Precision (AP)
         Args:
-            threshold: (scalar) 
-            num_points: number of points to average for the interpolated AP calculation
+            threshold  (scalar): iou threshold 
+            num_points (scalar): number of points to average for the interpolated AP calculation
+
+        Return:
+            None 
         """
 
         self.threshold = threshold 
@@ -212,10 +214,14 @@ class AveragePrecision():
     def get_average_precision(self, tp, fp, npos):
         """
         Args:
-            scores: confidence scores (or iou) for all detections [N*D] 
-            targets_mask: binary mask, shape [N*D]
-        """
+            tp   (Tensor, shape [N*D]): cumulative sum of true positive detections 
+            fp   (Tensor, shape [N*D]): cumulative sum of false positive detections 
+            npos (Tensor, scalar): actual positives (from ground truth)
 
+        Return:
+            ap (Tensor, scalar): average precision calculation
+        """
+        
         #Values for precision-recall curve
         rc = tp/npos
         pr = tp / torch.clamp(tp + fp, min=torch.finfo(torch.float).eps)
@@ -235,8 +241,14 @@ class AveragePrecision():
     def get_accuracy(self, predictions, targets):
         """
         Args:
-            predictions: shape [N,C,D,5], coordinate format [x1, y1, x2, y2, c]
-            targets: shape [N,C,D_,4]
+            predictions (Tensor, shape [N,C,D,5]): prediction bounding boxes, coordinate format [confidence, x1, y1, x2, y2]
+            targets     (Tensor, shape [N,C,D_,4]): ground truth bounding boxes 
+            C:  num of classes
+            D:  predicted detections
+            D_: ground truth detections 
+
+        Return:
+            avg_ap (Tensor, scalar): mean ap across all classes 
         """
 
         N,C,D,_ = predictions.shape
@@ -309,13 +321,17 @@ class SSD_AP(AveragePrecision):
         """
         Compute Average Precision (AP)
         Args:
-            threshold: (scalar) 
-            num_points: number of points to average for the interpolated AP calculation
+            threshold    (scalar): iou threshold 
+            num_points   (scalar): number of points to average for the interpolated AP calculation
+            result_dir   (String): save detections to this location
+            ndata        (scalar): total number of datapoints in dataset 
+
+        Return:
+            None 
         """
         super(SSD_AP, self).__init__(threshold=threshold, num_points=num_points)
 
         self.result_dir = kwargs['result_dir']
-        resize_shape = kwargs['resize_shape']
 
         self.ndata = kwargs['ndata']
         self.count = 0
@@ -323,10 +339,13 @@ class SSD_AP(AveragePrecision):
     def get_accuracy(self, detections, data):
         """
         Args:
-            detections: shape [N,C,D,5], each item [confidence, x1, y1, x2, y2]
+            detections (Tensor, shape [N,C,D,5]): predicted detections, each item [confidence, x1, y1, x2, y2]
             data: dictionary
-                - gt: shape [N,T,D_,5], each item [x1, y1, x2, y3, class] 
-                - diff_labels: [N,T,D_], binary labels (True or False)
+                - gt          (Tensor, shape [N,T,D_,5]):, each item [x1, y1, x2, y3, class] 
+                - diff_labels (Tensor, shape [N,T,D_]):, difficult labels, each item (True or False)
+
+        Return:
+           Average Precision for SSD model  
         """
 
         gt     = data['labels'].squeeze(1)
@@ -372,8 +391,8 @@ class MAP():
         Mean average precision
 
         Args:
-            threshold: Calculate AP at each of these threshold values
-            num_points: number of points to average for the interpolated AP calculation
+            threshold  (Tensor, shape[10]): Calculate AP at each of these threshold values
+            num_points (scalar): number of points to average for the interpolated AP calculation
         """
 
         self.threshold = threshold
@@ -383,8 +402,14 @@ class MAP():
     def get_mAP(self, predictions, targets):
         """
         Args:
-            predictions: shape [N,C,4], coordinate format [x1, y1, x2, y2]
-            targets: shape [N,C,4]
+            predictions (Tensor, shape [N,C,D,5]): prediction bounding boxes, coordinate format [confidence, x1, y1, x2, y2]
+            targets (Tensor, shape [N,C,D_,4]): ground truth bounding boxes
+            C:  num of classes
+            D:  predicted detections
+            D_: ground truth detections 
+
+        Return:
+            Returns mAP score 
         """
 
         AP_scores = torch.zeros(self.threshold.shape)
@@ -398,8 +423,14 @@ class MAP():
     def get_accuracy(self, predictions, targets):
         """
         Args:
-            predictions: shape [N,C,4], coordinate format [x1, y1, x2, y2]
-            targets: shape [N,C,4]
+            predictions (Tensor, shape [N,C,D,5]): prediction bounding boxes, coordinate format [confidence, x1, y1, x2, y2]
+            targets (Tensor, shape [N,C,D_,4]): ground truth bounding boxes
+            C:  num of classes
+            D:  predicted detections
+            D_: ground truth detections 
+
+        Return:
+            Returns mAP score 
         """
 
         return self.get_mAP(predictions, targets)
@@ -413,8 +444,11 @@ class Recall():
     def get_recall(self, scores, targets_mask):
         """
         Args:
-            scores: confidence scores per prediction, shape [N]
-            targets_mask: binary mask, shape [N]
+            scores       (Tensor, shape[N]): iou scores per prediction 
+            targets_mask (Tensor, shape[N]): binary mask, postive class (1) negative class (0)
+        
+        Return:
+            recall (Tensor, shape[1]): output recall
         """
         TP = torch.sum((scores * targets_mask) >= self.threshold).float()
         FN = torch.sum((scores * targets_mask) < self.threshold).float()
@@ -424,8 +458,13 @@ class Recall():
     def get_accuracy(self, predictions, targets):
         """
         Args:
-            predictions: shape [N,4], coordinate format [x1, y1, x2, y2]
-            targets: shape [N,4]
+            (assuming N predictions for targets)
+            predictions (Tensor, shape [N,4]): prediction bounding box, coordinate format [x1, y1, x2, y2]
+            targets     (Tensor, shape [N,4]): target bounding boxes
+        
+        Return:
+            recall   (Tensor, shape [1]): recall for predictions 
+
         """
         n,c,_ = targets.shape 
         targets_mask = torch.ones((n,c))

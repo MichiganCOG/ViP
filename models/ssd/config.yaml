@@ -21,12 +21,12 @@ momentum:        0.9                                 # Momentum value in optimiz
 num_clips:       -1                                  # Number clips to be generated from a video (<0: uniform sampling, 0: Divide entire video into clips, >0: Defines number of clips)
 num_workers:     0                                   # Number of subprocesses for dataloading
 opt:             sgd                                 # Name of optimizer
-pretrained:      './weights/ssd300_mAP_77.43_v2.pth' # Load pretrained network
+pretrained:      './weights/ssd300_mAP_77.43_v2.pkl' # Load pretrained network
 rerun:           1                                   # Number of trials to repeat an experiment
 resize_shape:    [300,300]                           # (Height, Width) to resize original data
 sample_duration: 16                                  # Temporal size of video to be provided as input to the model
 sample_size:     112                                 # Height of frame to be provided as input to the model
 save_dir:        './results'                         # Path to results directory
 seed:            999                                 # Seed for reproducibility
-subtract_mean:   ''                                  # Subtract mean (R,G,B) from all frames during preprocessing
+subtract_mean:   [123,117,104]                       # Subtract mean (R,G,B) from all frames during preprocessing
 weight_decay:    0.0005                              # Weight decay

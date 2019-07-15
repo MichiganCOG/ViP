@@ -24,15 +24,14 @@ def save_checkpoint(epoch, step, model, optimizer, save_path):
     torch.save(state, save_path)
  
 def load_checkpoint(name, key_name='state_dict'):
-        """
-        Load checkpoint pickle file and return selected element from pickle file
-        Args:
-            name     (String): Full path, including pickle file name, to load 
-            key_name (String): Key name to return from saved pickle file 
+    """
+    Load checkpoint pickle file and return selected element from pickle file
+    Args:
+        name     (String): Full path, including pickle file name, to load 
+        key_name (String): Key name to return from saved pickle file 
 
-        Return:
-            Selected element from loaded checkpoint pickle file
-        """
-
+    Return:
+        Selected element from loaded checkpoint pickle file
+    """
     checkpoint = torch.load(name)
     return checkpoint[key_name]
