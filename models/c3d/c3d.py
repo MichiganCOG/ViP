@@ -46,7 +46,7 @@ class C3D(nn.Module):
 
         self.__init_weight()
 
-        if isinstance(args['pretrained'], int) and args['pretrained']:
+        if isinstance(kwargs['pretrained'], int) and kwargs['pretrained']:
             self.__load_pretrained_weights()
 
     def forward(self, x, labels=False):
