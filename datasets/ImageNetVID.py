@@ -127,10 +127,9 @@ class PreprocessTrain(object):
 
         if crop_type == 'Random':
             self.transforms.append(pt.RandomCropClip(**kwargs))
-
         elif crop_type=='RandomFrame':
             self.transforms.append(pt.ApplyToClip(transform=torchvision.transforms.RandomCrop(**kwargs)))
-        else:
+        elif crop_type == 'Center':
             self.transforms.append(pt.CenterCropClip(**kwargs))
 
         self.transforms.append(pt.RandomFlipClip(direction='h', p=0.5, **kwargs))
@@ -170,7 +169,7 @@ class PreprocessEval(object):
 
         if crop_type == 'Random':
             self.transforms.append(pt.RandomCropClip(*crop_shape))
-        else:
+        elif crop_type == 'Center':
             self.transforms.append(pt.CenterCropClip(*crop_shape))
 
         self.transforms.append(pt.ResizeClip(*resize_shape))

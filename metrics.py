@@ -52,7 +52,8 @@ class Accuracy(object):
         self.correct = 0.
         self.total   = 0. 
 
-    def get_accuracy(self, predictions, targets):
+    def get_accuracy(self, predictions, annotations):
+        targets = annotations['labels']
         assert (predictions.shape[0] == targets.shape[0])
 
         targets     = targets.detach().cpu().numpy()

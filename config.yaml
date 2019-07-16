@@ -4,7 +4,7 @@ clip_length:     16                    # Number of frames within a clip
 clip_offset:     0                     # Frame offset between beginning of video and clip (1st clip only) 
 clip_stride:     0                     # Frame offset between successive frames
 crop_shape:      [112,112]             # (Height, Width) of frame  
-crop_type:       Random                # Type of cropping operation (Random, Central and None)  
+crop_type:       Random                # Type of cropping operation (Random, Center and None)  
 dataset:         HMDB51                # Name of dataset 
 epoch:           30                    # Total number of epochs 
 exp:             exp                   # Experiment name
