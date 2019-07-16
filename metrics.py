@@ -243,7 +243,7 @@ class AveragePrecision():
         Args:
             predictions (Tensor, shape [N,C,D,5]): prediction bounding boxes, coordinate format [confidence, x1, y1, x2, y2]
             targets     (Tensor, shape [N,C,D_,4]): ground truth bounding boxes 
-            C:  num of classes
+            C:  num of classes + 1 (0th class is background class, not included in calculation)
             D:  predicted detections
             D_: ground truth detections 
 
@@ -404,7 +404,7 @@ class MAP():
         Args:
             predictions (Tensor, shape [N,C,D,5]): prediction bounding boxes, coordinate format [confidence, x1, y1, x2, y2]
             targets (Tensor, shape [N,C,D_,4]): ground truth bounding boxes
-            C:  num of classes
+            C:  num of classes + 1 (0th class is background class, not included in calculation)
             D:  predicted detections
             D_: ground truth detections 
 
@@ -425,7 +425,7 @@ class MAP():
         Args:
             predictions (Tensor, shape [N,C,D,5]): prediction bounding boxes, coordinate format [confidence, x1, y1, x2, y2]
             targets (Tensor, shape [N,C,D_,4]): ground truth bounding boxes
-            C:  num of classes
+            C:  num of classes + 1 (0th class is background class, not included in calculation)
             D:  predicted detections
             D_: ground truth detections 
 

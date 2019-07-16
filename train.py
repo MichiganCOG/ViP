@@ -130,7 +130,7 @@ def train(**args):
                 optimizer.zero_grad()
 
                 outputs = model(x_input)
-                loss    = model_loss.loss(outputs.to('cpu'), annotations)
+                loss    = model_loss.loss(outputs, annotations)
     
                 loss.backward()
                 optimizer.step()
