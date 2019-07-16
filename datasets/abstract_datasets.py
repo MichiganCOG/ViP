@@ -200,6 +200,7 @@ class DetectionDataset(VideoDataset):
     __metaclass__ = ABCMeta
     def __init__(self, *args, **kwargs):
         super(DetectionDataset, self).__init__(*args, **kwargs)
+        self.load_type = kwargs['load_type']
 
     def _getClips(self):
         """
@@ -208,7 +209,7 @@ class DetectionDataset(VideoDataset):
             Dict{
             'frame_size' (int,int): Width, Height for all frames in video
             'base_path' (str): The path to the folder containing frame images for the video
-            'frame' (List of dicts): A list with annotation dicts per frame
+            'frames' (List of dicts): A list with annotation dicts per frame
                 Dict{
                 'img_path' (Str): File name of the image corresponding to the frame annotations
                 'objs' (List of dicts): A list of dicts containing annotations for each object in the frame  
@@ -223,13 +224,12 @@ class DetectionDataset(VideoDataset):
             }
             
         
-        Ex: coordinates = dataset[vid_index]['frame'][frame_index]['objs'][obj_index]['bbox']
+        Ex: coordinates = dataset[vid_index]['frames'][frame_index]['objs'][obj_index]['bbox']
         """
 
         # Load all video paths into the samples array to be loaded by __getitem__ 
 
         self.samples   = []
-        self.load_type = 'train'
         
         if self.load_type == 'train':
             full_json_path = os.path.join(self.json_path, 'train.json')
@@ -243,7 +243,7 @@ class DetectionDataset(VideoDataset):
 
         # Load the information for each video and process it into clips
         for video_info in json_data:
-            clips = self._extractClips(video_info['frame'])
+            clips = self._extractClips(video_info['frames'])
 
             # Each clip is a list of dictionaries per frame containing information
             # Example info: object bbox annotations, object classes, frame img path
