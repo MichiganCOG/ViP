@@ -35,6 +35,7 @@ def train(**args):
         lr           (Float):      Learning rate 
         momentum     (Float):      Momentum in optimizer 
         weight_decay (Float):      Weight_decay value 
+        final_shape  ([Int, Int]): Shape of data when passed into network
         
     Return:
         None
@@ -129,6 +130,7 @@ def train(**args):
 
                 optimizer.zero_grad()
 
+                assert args['final_shape']==list(x_input.size()[-2:]), "Input to model does not match final_shape argument"
                 outputs = model(x_input)
                 loss    = model_loss.loss(outputs, annotations)
     
@@ -153,12 +155,14 @@ def train(**args):
 
                 # END IF
 
+            # END FOR: Epoch
+
             if not args['debug']:
                 # Save Current Model
                 save_path = os.path.join(save_dir, args['dataset']+'_epoch'+str(epoch)+'.pkl')
                 save_checkpoint(epoch, step, model, optimizer, save_path)
    
-            # END FOR: Epoch
+            # END IF: Debug
 
             scheduler.step()
 
