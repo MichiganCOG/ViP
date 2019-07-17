@@ -200,6 +200,7 @@ class DetectionDataset(VideoDataset):
     __metaclass__ = ABCMeta
     def __init__(self, *args, **kwargs):
         super(DetectionDataset, self).__init__(*args, **kwargs)
+        self.load_type = kwargs['load_type']
 
     def _getClips(self):
         """
@@ -229,7 +230,6 @@ class DetectionDataset(VideoDataset):
         # Load all video paths into the samples array to be loaded by __getitem__ 
 
         self.samples   = []
-        self.load_type = 'train'
         
         if self.load_type == 'train':
             full_json_path = os.path.join(self.json_path, 'train.json')

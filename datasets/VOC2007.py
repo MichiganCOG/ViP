@@ -124,7 +124,7 @@ class PreprocessTrain(object):
         elif crop_type == 'Center':
             self.transforms.append(pt.CenterCropClip(**kwargs))
 
-        self.transforms.append(pt.ResizeClip(*resize_shape))
+        self.transforms.append(pt.ResizeClip(**kwargs))
         #self.transforms.append(pt.RandomFlipClip(direction='h', p=1.0))
         #self.transforms.append(pt.RandomRotateClip(**kwargs))
         self.transforms.append(pt.SubtractRGBMean(**kwargs))
@@ -163,9 +163,9 @@ class PreprocessEval(object):
         self.transforms = []
 
         if crop_type == 'Random':
-            self.transforms.append(pt.RandomCropClip(*crop_shape))
+            self.transforms.append(pt.RandomCropClip(**kwargs))
         elif crop_type == 'Center':
-            self.transforms.append(pt.CenterCropClip(*crop_shape))
+            self.transforms.append(pt.CenterCropClip(**kwargs))
 
         self.transforms.append(pt.ResizeClip(**kwargs))
         self.transforms.append(pt.SubtractRGBMean(**kwargs))

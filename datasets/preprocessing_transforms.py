@@ -260,7 +260,7 @@ class CenterCropClip(PreprocTransform):
         super(CenterCropClip, self).__init__(*args, **kwargs)
         self.crop_h, self.crop_w = kwargs['crop_shape']
 
-        self.crop_transform = CropClip(0, 0, self.crop_w, self.crop_h)
+        self.crop_transform = CropClip(0, 0, self.crop_w, self.crop_h, **kwargs)
 
     def _calculate_center(self, frame_w, frame_h):
         xmin = int(frame_w/2 - self.crop_w/2)

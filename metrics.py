@@ -52,7 +52,8 @@ class Accuracy(object):
         self.correct = 0.
         self.total   = 0. 
 
-    def get_accuracy(self, predictions, targets):
+    def get_accuracy(self, predictions, annotations):
+        targets = annotations['labels']
         assert (predictions.shape[0] == targets.shape[0])
 
         targets     = targets.detach().cpu().numpy()
@@ -340,7 +341,7 @@ class SSD_AP(AveragePrecision):
         """
         Args:
             detections (Tensor, shape [N,C,D,5]): predicted detections, each item [confidence, x1, y1, x2, y2]
-            data: dictionary
+            data:      (dictionary)
                 - gt          (Tensor, shape [N,T,D_,5]):, each item [x1, y1, x2, y3, class] 
                 - diff_labels (Tensor, shape [N,T,D_]):, difficult labels, each item (True or False)
 
