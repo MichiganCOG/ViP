@@ -88,11 +88,6 @@ def train(**args):
         # Load Network
         model = create_model_object(**args).to(device)
 
-        if isinstance(args['pretrained'], str):
-            ckpt = load_checkpoint(args['pretrained'])
-            model.load_state_dict(ckpt)
-
-
         # Training Setup
         params     = [p for p in model.parameters() if p.requires_grad]
 
@@ -106,8 +101,25 @@ def train(**args):
             sys.exit('Unsupported optimizer selected. Exiting')
 
         # END IF
+
+        scheduler  = MultiStepLR(optimizer, milestones=args['milestones'], gamma=args['gamma'])
+
+        if isinstance(args['pretrained'], str):
+            ckpt = load_checkpoint(args['pretrained'])
+            model.load_state_dict(ckpt)
+            start_epoch = load_checkpoint(args['pretrained'], key_name='epoch') + 1
+            optimizer.load_state_dict(load_checkpoint(args['pretrained'], key_name='optimizer'))
+
+            for quick_looper in range(start_epoch):
+                scheduler.step()
+
+            # END FOR
+
+        else:
+            start_epoch = 0
+
+        # END IF
             
-        scheduler  = MultiStepLR(optimizer, milestones=args['milestones'], gamma=args['gamma'])    
         model_loss = Losses(device=device, **args)
         #acc_metric = Metrics(**args)
 
@@ -115,7 +127,7 @@ def train(**args):
 
 
         # Start: Training Loop
-        for epoch in range(args['epoch']):
+        for epoch in range(start_epoch, args['epoch']):
             running_loss = 0.0
             print('Epoch: ', epoch)
 
@@ -202,6 +214,6 @@ if __name__ == "__main__":
     # For reproducibility
     torch.backends.cudnn.deterministic = True
     torch.manual_seed(args['seed'])
-    np.random.seed(args['seed'])
+    #np.random.seed(args['seed']+1)
 
     train(**args)
