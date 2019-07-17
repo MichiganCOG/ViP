@@ -341,7 +341,7 @@ class SSD_AP(AveragePrecision):
         """
         Args:
             detections (Tensor, shape [N,C,D,5]): predicted detections, each item [confidence, x1, y1, x2, y2]
-            data: dictionary
+            data:      (dictionary)
                 - gt          (Tensor, shape [N,T,D_,5]):, each item [x1, y1, x2, y3, class] 
                 - diff_labels (Tensor, shape [N,T,D_]):, difficult labels, each item (True or False)
 
