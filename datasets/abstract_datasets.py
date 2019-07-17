@@ -209,7 +209,7 @@ class DetectionDataset(VideoDataset):
             Dict{
             'frame_size' (int,int): Width, Height for all frames in video
             'base_path' (str): The path to the folder containing frame images for the video
-            'frames' (List of dicts): A list with annotation dicts per frame
+            'frame' (List of dicts): A list with annotation dicts per frame
                 Dict{
                 'img_path' (Str): File name of the image corresponding to the frame annotations
                 'objs' (List of dicts): A list of dicts containing annotations for each object in the frame  
@@ -224,7 +224,7 @@ class DetectionDataset(VideoDataset):
             }
             
         
-        Ex: coordinates = dataset[vid_index]['frames'][frame_index]['objs'][obj_index]['bbox']
+        Ex: coordinates = dataset[vid_index]['frame'][frame_index]['objs'][obj_index]['bbox']
         """
 
         # Load all video paths into the samples array to be loaded by __getitem__ 
@@ -243,7 +243,7 @@ class DetectionDataset(VideoDataset):
 
         # Load the information for each video and process it into clips
         for video_info in json_data:
-            clips = self._extractClips(video_info['frames'])
+            clips = self._extractClips(video_info['frame'])
 
             # Each clip is a list of dictionaries per frame containing information
             # Example info: object bbox annotations, object classes, frame img path
