@@ -129,6 +129,7 @@ def train(**args):
                 annotations   = data['annots'] 
 
                 optimizer.zero_grad()
+                
 
                 assert args['final_shape']==list(x_input.size()[-2:]), "Input to model does not match final_shape argument"
                 outputs = model(x_input)

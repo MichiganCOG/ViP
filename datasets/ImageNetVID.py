@@ -101,6 +101,7 @@ class ImageNetVID(DetectionDataset):
         ret_dict = dict() 
         ret_dict['data']       = vid_data 
         annot_dict = dict()
+        annot_dict['data'] = vid_data #TODO: Delete once done debugging
         annot_dict['xmin']        = xmin_data
         annot_dict['ymin']        = ymin_data
         annot_dict['xmax']        = xmax_data
@@ -133,7 +134,7 @@ class PreprocessTrain(object):
             self.transforms.append(pt.CenterCropClip(**kwargs))
 
         self.transforms.append(pt.RandomFlipClip(direction='h', p=0.5, **kwargs))
-        self.transforms.append(pt.RandomRotateClip(**kwargs))
+        #self.transforms.append(pt.RandomRotateClip(**kwargs))
         self.transforms.append(pt.ToTensorClip(**kwargs))
 
 
