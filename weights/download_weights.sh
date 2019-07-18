@@ -6,7 +6,7 @@
 wget -O ./weights/goturn.pth.tar https://umich.box.com/shared/static/src6rfm4lpn0v3t4l26d6u0v4ixdwem5.tar
 
 #SSD
-wget -O ./weights/ssd300_mAP_77.43_v2.pth https://umich.box.com/shared/static/jszcnnwcvscfyqe3o81xy8qzfbsc20vo.pkl
+wget -O ./weights/ssd300_mAP_77.43_v2.pkl https://umich.box.com/shared/static/jszcnnwcvscfyqe3o81xy8qzfbsc20vo.pkl
 
 #C3D
 wget -O ./weights/c3d-pretrained.pth https://umich.box.com/shared/static/znmyt8uph3w7bjxoevg7pukfatyu3z6k.pth
