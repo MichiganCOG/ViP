@@ -37,7 +37,7 @@ cd ViP
 
 ## Quick Start
 Eval.py and train.py are the two programs that will test and train any implemented model.
-Each model has specific parameters specified within the [config.yaml](https://github.com/MichiganCOG/ViP/blob/master/models/ssd/config.yaml) files in it's repsective folder.
+Each model has specific parameters specified within the [config.yaml](https://github.com/MichiganCOG/ViP/blob/master/models/ssd/config.yaml) files in its repsective folder.
 All parameters can also be modified using command line arguments.
 
 ### Testing
