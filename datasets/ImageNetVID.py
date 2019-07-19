@@ -7,7 +7,6 @@ import os
 import numpy as np
 import json
 import datasets.preprocessing_transforms as pt
-import matplotlib.pyplot as plt
 
 class ImageNetVID(DetectionDataset):
     def __init__(self, *args, **kwargs):
@@ -75,9 +74,6 @@ class ImageNetVID(DetectionDataset):
             input_data.append(cv2.imread(os.path.join(base_path, frame_path))[...,::-1]/255.)
 
         vid_data, bbox_data = self.transforms(input_data, bbox_data)
-        def plotim(ind):
-            plt.imshow(np.array(input_data[ind])); plt.show()
-            plt.imshow(np.array(vid_data[ind])/255.); plt.show()
 
         bbox_data = bbox_data.type(torch.LongTensor)
         #bbox_data = bbox_data.astype(int)

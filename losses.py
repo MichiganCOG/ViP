@@ -19,10 +19,7 @@ class Losses(object):
         self.loss_type   = kwargs['loss_type']
         self.loss_object = None
 
-        if self.loss_type == 'MSE':
-            self.loss_object = MSE(*args, **kwargs)
-
-        elif self.loss_type == 'HGC_MSE':
+        if self.loss_type == 'HGC_MSE':
             self.loss_object = HGC_MSE(*args, **kwargs)
 
         elif self.loss_type == 'M_XENTROPY':
@@ -45,35 +42,6 @@ class Losses(object):
         """ 
         return self.loss_object.loss(predictions, data, **kwargs)
 
-class MSE():
-    def __init__(self, *args, **kwargs):
-        """
-        Mean squared error (squared L2 norm) between predictions and target
-
-        Args:
-            reduction (String): 'none', 'mean', 'sum' (see PyTorch Docs). Default: 'mean'
-            device    (String): 'cpu' or 'cuda'
-
-        Returns:
-            None 
-        """
-
-        reduction = 'mean' if 'reduction' not in kwargs else kwargs['reduction']
-        self.device = kwargs['device']
-
-        self.mse_loss = torch.nn.MSELoss(reduction=reduction)
-
-    def loss(self, predictions, data):
-        """
-        Args:
-            predictions  (Tensor): Output by the network
-            data         (dictionary)
-                - labels (Tensor):  Targets from ground truth data
-        """
-
-        targets = data['labels'].to(self.device)
-
-        return self.mse_loss(predictions, targets)
 
 class HGC_MSE(object):
     def __init__(self, *args, **kwargs):
@@ -101,7 +69,7 @@ class HGC_MSE(object):
         input_shape = np.array(torch.stack(data['input_shape']))[-3:, 0]
         gtmap = self.gt_map_square(xmin.cpu().numpy().astype(int), xmax.cpu().numpy().astype(int), ymin.cpu().numpy().astype(int), ymax.cpu().numpy().astype(int), input_shape, self.num_classes)
         targets = torch.tensor(gtmap[:, :,int(gtmap.shape[1]/2.)]).float().to(self.device)
-        self.visualize(predictions, data, gtmap)
+        #self.visualize(predictions, data, gtmap)
 
         return self.hgc_mse_loss(predictions, targets)
 
@@ -119,7 +87,7 @@ class HGC_MSE(object):
         #plotabb(data['data'][0].permute(1,2,3,0).cpu(), xmin, xmax, ymin, ymax)
         input_shape = np.array(data['input_shape'])[-3:]
         gtmap = self.gt_maps_square(xmin.cpu().numpy().astype(int), xmax.cpu().numpy().astype(int), ymin.cpu().numpy().astype(int), ymax.cpu().numpy().astype(int), input_shape, targets.cpu().numpy()[0].astype(int), self.num_classes)
-        self.visualize(predictions, data, gtmap)
+        #self.visualize(predictions, data, gtmap)
         targets = torch.tensor([gtmap[:,int(gtmap.shape[1]/2.)]]).float().to(self.device)
         #self.visualize(predictions, gtmap)
 
