@@ -122,7 +122,7 @@ def train(**args):
         # END IF
             
         model_loss = Losses(device=device, **args)
-        #acc_metric = Metrics(**args)
+        acc_metric = Metrics(**args)
 
     ############################################################################################################################################################################
 
@@ -180,13 +180,11 @@ def train(**args):
             scheduler.step()
 
             ## START FOR: Validation Accuracy
-            #model.eval()
-
-            #running_acc = []
-            #running_acc = valid(valid_loader, running_acc, writer, model, device, acc_metric)
+            running_acc = []
+            running_acc = valid(valid_loader, running_acc, writer, model, device, acc_metric)
             #
-            #writer.add_scalar(args['dataset']+'/'+args['model']+'/validation_accuracy', 100.*running_acc[-1], epoch*len(train_loader) + step)
-            #print('Accuracy of the network on the validation set: %f %%\n' % (100.*running_acc[-1]))
+            writer.add_scalar(args['dataset']+'/'+args['model']+'/validation_accuracy', 100.*running_acc[-1], epoch*len(train_loader) + step)
+            print('Accuracy of the network on the validation set: %f %%\n' % (100.*running_acc[-1]))
 
         # END FOR: Training Loop
 
@@ -199,12 +197,13 @@ def train(**args):
 def valid(valid_loader, running_acc, writer, model, device, acc_metric):
     model.eval()
     
-    for step, data in enumerate(valid_loader):
-        x_input = data['data'].to(device)
-        y_label = data['labels'] 
-        outputs = model(x_input)
-    
-        running_acc.append(acc_metric.get_accuracy(outputs.detach().cpu().numpy(), y_label.numpy()))
+    with torch.no_grad():
+        for step, data in enumerate(valid_loader):
+            x_input = data['data'].to(device)
+            annotations   = data['annots'] 
+            outputs = model(x_input)
+        
+            running_acc.append(acc_metric.get_accuracy(outputs, annotations))
     
     # END FOR: Validation Accuracy
 

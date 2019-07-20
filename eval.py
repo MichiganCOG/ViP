@@ -86,16 +86,17 @@ def eval(**args):
     # Setup Model To Evaluate 
     model.eval()
 
-    for step, data in enumerate(eval_loader):
-        x_input     = data['data'].to(device)
-        annotations = data['annots']
+    with torch.no_grad():
+        for step, data in enumerate(eval_loader):
+            x_input     = data['data'].to(device)
+            annotations = data['annots']
 
-        outputs = model(x_input)
+            outputs = model(x_input)
 
-        acc = acc_metric.get_accuracy(outputs, annotations)
+            acc = acc_metric.get_accuracy(outputs, annotations)
 
-        if step % 100 == 0:
-            print('Step: {}/{} | {} acc: {:.4f}'.format(step, len(eval_loader), args['load_type'], acc))
+            if step % 100 == 0:
+                print('Step: {}/{} | {} acc: {:.4f}'.format(step, len(eval_loader), args['load_type'], acc))
 
     writer.add_scalar(args['dataset']+'/'+args['model']+'/'+args['load_type']+'_accuracy', acc)
     print('Accuracy of the network on the {} set: {:.3f} %\n'.format(args['load_type'], 100.*acc))
