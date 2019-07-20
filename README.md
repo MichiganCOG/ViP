@@ -1,4 +1,4 @@
-# Video Platorm for Recognition and Detection in Pytorch
+# Video Platform for Recognition and Detection in Pytorch
 
 A platform for quick and easy development of deep learning networks for recognition and detection in videos. Includes popular models like C3D, ResNet, and SSD.
 
