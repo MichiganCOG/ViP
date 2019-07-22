@@ -77,9 +77,7 @@ class VOC2007(DetectionDataset):
             #Read each image and change from BGR to RGB
             input_data.append(cv2.imread(os.path.join(base_path, frame_path), cv2.IMREAD_COLOR)[:,:,(2,1,0)])
 
-        vid_data = self.transforms(input_data) #preprocess frames
-        #vid_data = vid_data[:,:,:,(2,1,0)] #Switch channels from BGR back to RGB
-        bbox_data = torch.Tensor(bbox_data)
+        vid_data, bbox_data = self.transforms(input_data, bbox_data) #preprocess frames
 
         bbox_data   = bbox_data.type(torch.LongTensor)
         xmin_data   = bbox_data[:,:,0]
@@ -148,7 +146,7 @@ class PreprocessTrain(object):
             return input_data
         else:
             for transform in self.transforms:
-                input_data, bbox_data = transform(input_data)
+                input_data, bbox_data = transform(input_data, bbox_data)
 
             return input_data, bbox_data
 
@@ -191,7 +189,7 @@ class PreprocessEval(object):
             return input_data
         else:
             for transform in self.transforms:
-                input_data, bbox_data = transform(input_data)
+                input_data, bbox_data = transform(input_data, bbox_data)
 
             return input_data, bbox_data
 

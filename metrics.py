@@ -324,6 +324,7 @@ class SSD_AP(AveragePrecision):
         Args:
             threshold    (scalar): iou threshold 
             num_points   (scalar): number of points to average for the interpolated AP calculation
+            final_shape  (list) : [height, width] of input given to CNN
             result_dir   (String): save detections to this location
             ndata        (scalar): total number of datapoints in dataset 
 
@@ -333,6 +334,7 @@ class SSD_AP(AveragePrecision):
         super(SSD_AP, self).__init__(threshold=threshold, num_points=num_points)
 
         self.result_dir = kwargs['result_dir']
+        self.final_shape = kwargs['final_shape']
 
         self.ndata = kwargs['ndata']
         self.count = 0
@@ -351,9 +353,7 @@ class SSD_AP(AveragePrecision):
 
         gt     = data['labels'].squeeze(1)
         diff   = data['diff_labels'].squeeze(1)
-        height = data['height']
-        width  = data['width']
-        scale  = torch.Tensor([1, height, width, height, width]) 
+        scale = torch.Tensor([1, self.final_shape[0], self.final_shape[1], self.final_shape[0], self.final_shape[1]]) #[1, height, width, height, width]
 
         detections = detections.data
         N,C,D,_    = detections.shape
