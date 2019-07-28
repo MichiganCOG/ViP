@@ -165,7 +165,7 @@ class RecognitionDataset(VideoDataset):
         
              }) End Video List in Dataset
         
-        Eg: action_label = dataset[vid_index]['frames'][frame_index]['actoins'][action_index]['action_class']
+        Eg: action_label = dataset[vid_index]['frames'][frame_index]['actions'][action_index]['action_class']
         """
 
         self.samples   = []
@@ -175,6 +175,10 @@ class RecognitionDataset(VideoDataset):
 
         elif self.load_type == 'val':
             full_json_path = os.path.join(self.json_path, 'val.json') 
+
+            #If val.json doesn't exist, it will default to test.json
+            if not os.path.exists(full_json_path):
+                full_json_path = os.path.join(self.json_path, 'test.json')
 
         else:
             full_json_path = os.path.join(self.json_path, 'test.json')
@@ -234,8 +238,15 @@ class DetectionDataset(VideoDataset):
         if self.load_type == 'train':
             full_json_path = os.path.join(self.json_path, 'train.json')
 
-        else:
+        elif self.load_type == 'val':
             full_json_path = os.path.join(self.json_path, 'val.json') 
+
+            #If val.json doesn't exist, it will default to test.json
+            if not os.path.exists(full_json_path):
+                full_json_path = os.path.join(self.json_path, 'test.json')
+
+        else:
+            full_json_path = os.path.join(self.json_path, 'test.json')
 
         json_file = open(full_json_path,'r')
         json_data = json.load(json_file) 

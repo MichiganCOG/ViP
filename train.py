@@ -182,8 +182,8 @@ def train(**args):
             ## START FOR: Validation Accuracy
             running_acc = []
             running_acc = valid(valid_loader, running_acc, writer, model, device, acc_metric)
-            #
-            writer.add_scalar(args['dataset']+'/'+args['model']+'/validation_accuracy', 100.*running_acc[-1], epoch*len(train_loader) + step)
+            if not args['debug']:
+                writer.add_scalar(args['dataset']+'/'+args['model']+'/validation_accuracy', 100.*running_acc[-1], epoch*len(train_loader) + step)
             print('Accuracy of the network on the validation set: %f %%\n' % (100.*running_acc[-1]))
 
         # END FOR: Training Loop
@@ -194,7 +194,7 @@ def train(**args):
             # Close Tensorboard Element
             writer.close()
 
-def valid(valid_loader, running_acc, writer, model, device, acc_metric):
+def valid(valid_loader, running_acc, model, device, acc_metric):
     model.eval()
     
     with torch.no_grad():
