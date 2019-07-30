@@ -46,15 +46,15 @@ def data_loader(**kwargs):
 
     load_type = kwargs['load_type']
     if load_type == 'train_val':
-        kwargs['load_type'] = 'train' #overload load_type
+        kwargs['load_type'] = 'train'
         train_data = create_dataset_object(**kwargs) 
         kwargs['load_type'] = 'val' 
         val_data   = create_dataset_object(**kwargs) 
         kwargs['load_type'] = load_type 
 
-        trainloader = torch.utils.data.DataLoader(dataset=train_data, batch_size=kwargs['batch_size'], shuffle=True, num_workers=kwargs['num_workers'])
+        trainloader = torch.utils.data.DataLoader(dataset=train_data, batch_size=kwargs['batch_size'], shuffle=True,  num_workers=kwargs['num_workers'])
         valloader   = torch.utils.data.DataLoader(dataset=val_data,   batch_size=kwargs['batch_size'], shuffle=False, num_workers=kwargs['num_workers'])
-        ret_dict = dict(train=trainloader, valid=valloader)
+        ret_dict    = dict(train=trainloader, valid=valloader)
 
     elif load_type == 'train':
         data = create_dataset_object(**kwargs)

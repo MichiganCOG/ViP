@@ -4,7 +4,6 @@ from PIL import Image
 import cv2
 import os
 import numpy as np
-import datasets.preprocessing_transforms as pt
 from torchvision import transforms
 
 class HMDB51(RecognitionDataset):
@@ -30,10 +29,10 @@ class HMDB51(RecognitionDataset):
         self.preprocess   = kwargs['preprocess']
         
         if self.load_type=='train':
-            self.transforms = PreprocessTrainC3D(**kwargs)
+            self.transforms = kwargs['model_obj'].train_transforms
 
         else:
-            self.transforms = PreprocessEvalC3D(**kwargs)
+            self.transforms = kwargs['model_obj'].test_transforms
 
 
     def __getitem__(self, idx):
@@ -71,81 +70,6 @@ class HMDB51(RecognitionDataset):
         ret_dict['annots']   = annot_dict
 
         return ret_dict
-
-
-class PreprocessTrainC3D(object):
-    """
-    Container for all transforms used to preprocess clips for training in this dataset.
-    """
-    def __init__(self, **kwargs):
-        """
-        Initialize preprocessing class for training set
-        Args:
-            preprocess (String): Keyword to select different preprocessing types            
-            crop_type  (String): Select random or central crop 
-
-        Return:
-            None
-        """
-
-        self.transforms  = []
-        self.transforms1 = []
-        self.preprocess  = kwargs['preprocess']
-        crop_type        = kwargs['crop_type']
-
-        self.clip_mean  = np.load('weights/sport1m_train16_128_mean.npy')[0]
-        self.clip_mean  = np.transpose(self.clip_mean, (1,2,3,0))
-
-        self.transforms.append(pt.ResizeClip(**kwargs))
-        self.transforms.append(pt.SubtractMeanClip(clip_mean=self.clip_mean, **kwargs))
-        
-        if crop_type == 'Random':
-            self.transforms.append(pt.RandomCropClip(**kwargs))
-
-        else:
-            self.transforms.append(pt.CenterCropClip(**kwargs))
-
-        self.transforms.append(pt.RandomFlipClip(direction='h', p=0.5, **kwargs))
-        self.transforms.append(pt.ToTensorClip(**kwargs))
-
-    def __call__(self, input_data):
-        for transform in self.transforms:
-            input_data = transform(input_data)
-
-        return input_data
-
-
-class PreprocessEvalC3D(object):
-    """
-    Container for all transforms used to preprocess clips for training in this dataset.
-    """
-    def __init__(self, **kwargs):
-        """
-        Initialize preprocessing class for training set
-        Args:
-            preprocess (String): Keyword to select different preprocessing types            
-            crop_type  (String): Select random or central crop 
-
-        Return:
-            None
-        """
-
-        self.transforms = []
-        self.clip_mean  = np.load('weights/sport1m_train16_128_mean.npy')[0]
-        self.clip_mean  = np.transpose(self.clip_mean, (1,2,3,0))
-
-        self.transforms.append(pt.ResizeClip(**kwargs))
-        self.transforms.append(pt.SubtractMeanClip(clip_mean=self.clip_mean, **kwargs))
-        self.transforms.append(pt.CenterCropClip(**kwargs))
-        self.transforms.append(pt.ToTensorClip(**kwargs))
-
-
-    def __call__(self, input_data):
-        for transform in self.transforms:
-            input_data = transform(input_data)
-
-        return input_data
-
 
 
 #dataset = HMDB51(json_path='/z/dat/HMDB51', dataset_type='train', clip_length=100, num_clips=0)

@@ -67,8 +67,14 @@ def train(**args):
             # Tensorboard Element
             writer = SummaryWriter(log_dir)
 
+        # Check if GPU is available (CUDA)
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    
+        # Load Network
+        model = create_model_object(**args).to(device)
+
         # Load Data
-        loader = data_loader(**args)
+        loader = data_loader(**args, model_obj=model)
 
         if args['load_type'] == 'train':
             train_loader = loader['train']
@@ -83,12 +89,6 @@ def train(**args):
 
         # END IF
     
-        # Check if GPU is available (CUDA)
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    
-        # Load Network
-        model = create_model_object(**args).to(device)
-
         # Training Setup
         params     = [p for p in model.parameters() if p.requires_grad]
 
@@ -123,6 +123,7 @@ def train(**args):
             
         model_loss = Losses(device=device, **args)
         acc_metric = Metrics(**args)
+        best_val_acc = 0.0
 
     ############################################################################################################################################################################
 
@@ -181,10 +182,23 @@ def train(**args):
 
             ## START FOR: Validation Accuracy
             running_acc = []
-            running_acc = valid(valid_loader, running_acc, writer, model, device, acc_metric)
+            running_acc = valid(train_loader, running_acc, model, device, acc_metric)
             if not args['debug']:
                 writer.add_scalar(args['dataset']+'/'+args['model']+'/validation_accuracy', 100.*running_acc[-1], epoch*len(train_loader) + step)
             print('Accuracy of the network on the validation set: %f %%\n' % (100.*running_acc[-1]))
+
+            # Save Best Validation Accuracy Model Separately
+            if best_val_acc < running_acc[-1]:
+                best_val_acc = running_acc[-1]
+
+                if not args['debug']:
+                    # Save Current Model
+                    save_path = os.path.join(save_dir, args['dataset']+'_best_model.pkl')
+                    save_checkpoint(epoch, step, model, optimizer, save_path)
+
+                # END IF
+
+            # END IF
 
         # END FOR: Training Loop
 
@@ -199,13 +213,13 @@ def valid(valid_loader, running_acc, model, device, acc_metric):
     
     with torch.no_grad():
         for step, data in enumerate(valid_loader):
-            x_input = data['data'].to(device)
-            annotations   = data['annots'] 
-            outputs = model(x_input)
+            x_input     = data['data'].to(device)
+            annotations = data['annots'] 
+            outputs     = model(x_input)
         
             running_acc.append(acc_metric.get_accuracy(outputs, annotations))
     
-    # END FOR: Validation Accuracy
+        # END FOR: Validation Accuracy
 
     return running_acc
 

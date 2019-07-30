@@ -254,7 +254,7 @@ class DetectionDataset(VideoDataset):
 
         # Load the information for each video and process it into clips
         for video_info in json_data:
-            clips = self._extractClips(video_info['frame'])
+            clips = self._extractClips(video_info['frames'])
 
             # Each clip is a list of dictionaries per frame containing information
             # Example info: object bbox annotations, object classes, frame img path

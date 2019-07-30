@@ -1,6 +1,8 @@
 import torch
-import torch.nn            as nn
-import torch.nn.functional as F
+import numpy                             as np
+import torch.nn                          as nn
+import torch.nn.functional               as F
+import datasets.preprocessing_transforms as pt
 
 class C3D(nn.Module):
     """
@@ -18,6 +20,10 @@ class C3D(nn.Module):
             None
         """
         super(C3D, self).__init__()
+
+        self.train_transforms = PreprocessTrainC3D(**kwargs)
+        self.test_transforms  = PreprocessEvalC3D(**kwargs)
+
         self.conv1 = nn.Conv3d(3, 64, kernel_size=(3, 3, 3), padding=(1, 1, 1))
         self.pool1 = nn.MaxPool3d(kernel_size=(1, 2, 2), stride=(1, 2, 2))
 
@@ -136,6 +142,79 @@ class C3D(nn.Module):
             elif isinstance(m, nn.BatchNorm3d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
+
+class PreprocessTrainC3D(object):
+    """
+    Container for all transforms used to preprocess clips for training in this dataset.
+    """
+    def __init__(self, **kwargs):
+        """
+        Initialize preprocessing class for training set
+        Args:
+            preprocess (String): Keyword to select different preprocessing types            
+            crop_type  (String): Select random or central crop 
+
+        Return:
+            None
+        """
+
+        self.transforms  = []
+        self.transforms1 = []
+        self.preprocess  = kwargs['preprocess']
+        crop_type        = kwargs['crop_type']
+
+        self.clip_mean  = np.load('weights/sport1m_train16_128_mean.npy')[0]
+        self.clip_mean  = np.transpose(self.clip_mean, (1,2,3,0))
+
+        self.transforms.append(pt.ResizeClip(**kwargs))
+        self.transforms.append(pt.SubtractMeanClip(clip_mean=self.clip_mean, **kwargs))
+        
+        if crop_type == 'Random':
+            self.transforms.append(pt.RandomCropClip(**kwargs))
+
+        else:
+            self.transforms.append(pt.CenterCropClip(**kwargs))
+
+        self.transforms.append(pt.RandomFlipClip(direction='h', p=0.5, **kwargs))
+        self.transforms.append(pt.ToTensorClip(**kwargs))
+
+    def __call__(self, input_data):
+        for transform in self.transforms:
+            input_data = transform(input_data)
+
+        return input_data
+
+
+class PreprocessEvalC3D(object):
+    """
+    Container for all transforms used to preprocess clips for training in this dataset.
+    """
+    def __init__(self, **kwargs):
+        """
+        Initialize preprocessing class for training set
+        Args:
+            preprocess (String): Keyword to select different preprocessing types            
+            crop_type  (String): Select random or central crop 
+
+        Return:
+            None
+        """
+
+        self.transforms = []
+        self.clip_mean  = np.load('weights/sport1m_train16_128_mean.npy')[0]
+        self.clip_mean  = np.transpose(self.clip_mean, (1,2,3,0))
+
+        self.transforms.append(pt.ResizeClip(**kwargs))
+        self.transforms.append(pt.SubtractMeanClip(clip_mean=self.clip_mean, **kwargs))
+        self.transforms.append(pt.CenterCropClip(**kwargs))
+        self.transforms.append(pt.ToTensorClip(**kwargs))
+
+
+    def __call__(self, input_data):
+        for transform in self.transforms:
+            input_data = transform(input_data)
+
+        return input_data
 
 def get_1x_lr_params(model):
     """
