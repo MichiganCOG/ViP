@@ -144,28 +144,32 @@ class ResizeClip(PreprocTransform):
                     temp_bbox[class_ind,:] = proc_bbox
                 out_bbox.append(temp_bbox)
 
+        out_clip = np.array(out_clip)
+
+        assert(out_clip.shape[1:3] == (self.size_h, self.size_w)), 'Proc frame: {} Crop h,w: {},{}'.format(out_clip.shape,self.size_h,self.size_w)
+
         if bbox!=[]:
-            return np.array(out_clip), np.array(out_bbox)
+            return out_clip, np.array(out_bbox)
         else:
-            return np.array(out_clip)
+            return out_clip
 
 
 class CropClip(PreprocTransform):
     def __init__(self, xmin, xmax, ymin, ymax, *args, **kwargs):
         super(CropClip, self).__init__(*args, **kwargs)
-        self.bbox_xmin = xmin
-        self.bbox_xmax = xmax
-        self.bbox_ymin = ymin
-        self.bbox_ymax = ymax
+        self.crop_xmin = xmin
+        self.crop_xmax = xmax
+        self.crop_ymin = ymin
+        self.crop_ymax = ymax
 
         self.crop_h, self.crop_w = kwargs['crop_shape']
 
 
     def _update_bbox(self, xmin, xmax, ymin, ymax):
-        self.bbox_xmin = xmin
-        self.bbox_xmax = xmax
-        self.bbox_ymin = ymin
-        self.bbox_ymax = ymax
+        self.crop_xmin = xmin
+        self.crop_xmax = xmax
+        self.crop_ymin = ymin
+        self.crop_ymax = ymax
 
 
     def crop_bbox(self, xmin, ymin, xmax, ymax, crop_xmin, crop_ymin, crop_xmax, crop_ymax):
@@ -202,13 +206,10 @@ class CropClip(PreprocTransform):
 
         for frame_ind in range(len(clip)):
             frame = clip[frame_ind]
-            if bbox != []:
-                proc_frame = np.array(frame[self.bbox_ymin:self.bbox_ymax, self.bbox_xmin:self.bbox_xmax]) 
-            else:
-                proc_frame = np.array(frame[self.bbox_xmin:self.bbox_xmax, self.bbox_ymin:self.bbox_ymax]) 
+            proc_frame = np.array(frame[self.crop_ymin:self.crop_ymax, self.crop_xmin:self.crop_xmax]) 
             out_clip.append(proc_frame)
 
-            assert(proc_frame.shape[:2] == (self.crop_h, self.crop_w))
+            assert(proc_frame.shape[:2] == (self.crop_h, self.crop_w)), 'Frame shape: {}, Proc frame: {} Crop h,w: {},{}'.format(frame.shape, proc_frame.shape,self.crop_h,self.crop_w)
 
             if bbox!=[]:
                 temp_bbox = np.zeros(bbox[frame_ind].shape)-1 
@@ -216,7 +217,7 @@ class CropClip(PreprocTransform):
                     if np.array_equal(bbox[frame_ind,class_ind],-1*np.ones(4)): #only annotated objects
                         continue
                     xmin, ymin, xmax, ymax = bbox[frame_ind, class_ind]
-                    proc_bbox = self.crop_bbox(xmin, ymin, xmax, ymax, self.bbox_xmin, self.bbox_ymin, self.bbox_xmax, self.bbox_ymax)
+                    proc_bbox = self.crop_bbox(xmin, ymin, xmax, ymax, self.crop_xmin, self.crop_ymin, self.crop_xmax, self.crop_ymax)
                     temp_bbox[class_ind,:] = proc_bbox
                 out_bbox.append(temp_bbox)
 
@@ -227,7 +228,7 @@ class CropClip(PreprocTransform):
 
 
 class RandomCropClip(PreprocTransform):
-    def __init__(self, *  args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(RandomCropClip, self).__init__(*args, **kwargs)
         self.crop_h, self.crop_w = kwargs['crop_shape']
 
@@ -239,10 +240,19 @@ class RandomCropClip(PreprocTransform):
         self.ymax = None
 
 
-    def _update_random_sample(self, frame_w, frame_h):
-        self.xmin = np.random.randint(0, frame_w-self.crop_w)
+    def _update_random_sample(self, frame_h, frame_w):
+        if frame_w == self.crop_w:
+            self.xmin = 0
+        else:
+            self.xmin = np.random.randint(0, frame_w-self.crop_w)   
+
         self.xmax = self.xmin + self.crop_w
-        self.ymin = np.random.randint(0, frame_h-self.crop_h)
+
+        if frame_h == self.crop_h:
+            self.ymin = 0
+        else:
+            self.ymin = np.random.randint(0, frame_h-self.crop_h)
+        
         self.ymax = self.ymin + self.crop_h
 
     def get_random_sample(self):
@@ -252,8 +262,12 @@ class RandomCropClip(PreprocTransform):
         frame_shape = clip[0].shape
         self._update_random_sample(frame_shape[0], frame_shape[1])
         self.crop_transform._update_bbox(self.xmin, self.xmax, self.ymin, self.ymax) 
-        return self.crop_transform(clip, bbox)
-
+        proc_clip = self.crop_transform(clip, bbox)
+        if isinstance(proc_clip, tuple):
+            assert(proc_clip[0].shape[1:3] == (self.crop_h, self.crop_w)), 'Proc frame: {} Crop h,w: {},{}'.format(proc_clip[0].shape,self.crop_h,self.crop_w)
+        else:
+            assert(proc_clip.shape[1:3] == (self.crop_h, self.crop_w)), 'Proc frame: {} Crop h,w: {},{}'.format(proc_clip.shape,self.crop_h,self.crop_w)
+        return proc_clip 
 
 class CenterCropClip(PreprocTransform):
     def __init__(self, *args, **kwargs):
@@ -262,7 +276,7 @@ class CenterCropClip(PreprocTransform):
 
         self.crop_transform = CropClip(0, 0, self.crop_w, self.crop_h, **kwargs)
 
-    def _calculate_center(self, frame_w, frame_h):
+    def _calculate_center(self, frame_h, frame_w):
         xmin = int(frame_w/2 - self.crop_w/2)
         xmax = int(frame_w/2 + self.crop_w/2)
         ymin = int(frame_h/2 - self.crop_h/2)
@@ -273,7 +287,12 @@ class CenterCropClip(PreprocTransform):
         frame_shape = clip[0].shape
         xmin, xmax, ymin, ymax = self._calculate_center(frame_shape[0], frame_shape[1])
         self.crop_transform._update_bbox(xmin, xmax, ymin, ymax) 
-        return self.crop_transform(clip, bbox)
+        proc_clip =  self.crop_transform(clip, bbox)
+        if isinstance(proc_clip, tuple):
+            assert(proc_clip[0].shape[1:3] == (self.crop_h, self.crop_w)), 'Proc frame: {} Crop h,w: {},{}'.format(proc_clip[0].shape,self.crop_h,self.crop_w)
+        else:
+            assert(proc_clip.shape[1:3] == (self.crop_h, self.crop_w)), 'Proc frame: {} Crop h,w: {},{}'.format(proc_clip.shape,self.crop_h,self.crop_w)
+        return proc_clip
 
 
 class RandomFlipClip(PreprocTransform):
@@ -336,11 +355,15 @@ class RandomFlipClip(PreprocTransform):
         
 
     def __call__(self, clip, bbox=[]):
+        input_shape = np.array(clip).shape
         flip = self._random_flip()
         out_clip = clip
         out_bbox = bbox
         if flip:
             out_clip, out_bbox = self._flip_data(clip, bbox)
+
+        out_clip = np.array(out_clip)
+        assert(input_shape == out_clip.shape), "Input shape {}, output shape {}".format(input_shape, out_clip.shape)
 
         if bbox!=[]:
             return out_clip, out_bbox
@@ -601,7 +624,7 @@ class ApplyOpenCV(PreprocTransform):
 class TestPreproc(object):
     def __init__(self):
         self.resize = ResizeClip(resize_shape = [2,2])
-        self.crop = CropClip(0,0,0,0)
+        self.crop = CropClip(0,0,0,0, crop_shape=[2,2])
         self.rand_crop = RandomCropClip(crop_shape=[2,2])
         self.cent_crop = CenterCropClip(crop_shape=[2,2])
         self.rand_flip_h = RandomFlipClip(direction='h', p=1.0)
@@ -625,7 +648,7 @@ class TestPreproc(object):
         
         bbox = np.array([[[0,0,3,3]]]).astype(float)
         _, bbox_out = self.resize(inp, bbox)
-        exp_bbox = np.array([[[0,0,2,2]]])
+        exp_bbox = np.array([[[0,0,1,2]]])
         assert (False not in np.isclose(bbox_out, exp_bbox))
 
     def crop_test(self):
@@ -640,6 +663,13 @@ class TestPreproc(object):
         inp = np.array([[[.1,.2,.3,.4],[.1,.2,.3,.4],[.1,.2,.3,.4],[.1,.2,.3,.4]]]).astype(float)
         exp_out = np.array([[[.2,.3],[.2,.3]]]).astype(float)
         out = self.cent_crop(inp)
+        assert (False not in np.isclose(out, exp_out))
+
+    def rand_crop_test(self):
+        inp = np.array([[[.1,.2,.3,.4],[.3,.4,.5,.6],[.2,.3,.4,.5],[.1,.2,.3,.4]]]).astype(float)
+        out = self.rand_crop(inp)
+        coords = self.rand_crop.get_random_sample()
+        exp_out = np.array(inp[:, coords[2]:coords[3], coords[0]:coords[1]]).astype(float)
         assert (False not in np.isclose(out, exp_out))
 
     def rand_flip_test(self):
@@ -765,6 +795,7 @@ class TestPreproc(object):
         self.resize_test()
         self.crop_test()
         self.cent_crop_test()
+        self.rand_crop_test()
         self.rand_flip_test()
         self.rand_rot_test()
         self.applypil_test()

@@ -18,7 +18,7 @@ class Losses(object):
 
         self.loss_type   = kwargs['loss_type']
         self.loss_object = None
-
+        
         if self.loss_type == 'MSE':
             self.loss_object = MSE(*args, **kwargs)
 
@@ -80,8 +80,35 @@ class HGC_MSE(object):
         self.hgc_mse_loss = torch.nn.MSELoss() 
         self.device = kwargs['device']
         self.num_classes = kwargs['labels']
+        self.HGC_loss = kwargs['HGC_loss']
+        self.batch_size = kwargs['batch_size']
 
     def loss(self, predictions, data):
+        if self.HGC_loss == 'multi':
+            return self.multi_map_loss(predictions, data)
+        elif self.HGC_loss == 'single':
+            return self.single_map_loss(predictions, data)
+
+    def single_map_loss(self, predictions, data):
+        bbox = data['bbox_data']
+        targets = data['labels']
+        #play(np.array(data['data'][0].permute(1,2,3,0).cpu()))
+        xmin = bbox[:,:,:,0]
+        ymin = bbox[:,:,:,1]
+        xmax = bbox[:,:,:,2]
+        ymax = bbox[:,:,:,3]
+        #plotabb(data['data'][0].permute(1,2,3,0).cpu(), xmin, xmax, ymin, ymax)
+        input_shape = np.array(torch.stack(data['input_shape']))[-3:, 0]
+        gtmap = self.gt_map_square(xmin.cpu().numpy().astype(int), xmax.cpu().numpy().astype(int), ymin.cpu().numpy().astype(int), ymax.cpu().numpy().astype(int), input_shape, self.num_classes)
+        targets = torch.tensor(gtmap[:, :,int(gtmap.shape[1]/2.)]).float().to(self.device)
+        #self.visualize(predictions, data, gtmap)
+
+        return self.hgc_mse_loss(predictions, targets)
+
+    
+
+    def multi_map_loss(self, predictions, data):
+        import matplotlib.pyplot as plt
         bbox = data['bbox_data']
         targets = data['labels']
         #play(np.array(data['data'][0].permute(1,2,3,0).cpu()))
@@ -92,17 +119,44 @@ class HGC_MSE(object):
         #plotabb(data['data'][0].permute(1,2,3,0).cpu(), xmin, xmax, ymin, ymax)
         input_shape = np.array(data['input_shape'])[-3:]
         gtmap = self.gt_maps_square(xmin.cpu().numpy().astype(int), xmax.cpu().numpy().astype(int), ymin.cpu().numpy().astype(int), ymax.cpu().numpy().astype(int), input_shape, targets.cpu().numpy()[0].astype(int), self.num_classes)
+        #self.visualize(predictions, data, gtmap)
         targets = torch.tensor([gtmap[:,int(gtmap.shape[1]/2.)]]).float().to(self.device)
+        #self.visualize(predictions, gtmap)
 
         return self.hgc_mse_loss(predictions, targets)
 
-    def visualize(self, preds, gtmap, inp):
-        preds = predictions.cpu().detach().numpy()[0]
-        inp = inp[0].cpu().numpy()
-        inp = inp.transpose(1,2,3,0)
+    def visualize(self, predictions, data, gtmap):
         import matplotlib.pyplot as plt
-        import pdb; pdb.set_trace()
+        plt.imshow(data['data'].cpu().detach().numpy()[0,:,8].transpose(1,2,0)); plt.show()
+        plt.imshow(predictions.cpu().detach().numpy()[0][-1]); plt.show()
+        plt.imshow(gtmap[0][0][8]); plt.show()
 
+        
+    def gt_map_square(self, bxmin, bxmax, bymin, bymax, img_shape, dims):
+        # Draw a white square for each bounding box and blur it
+        # Returns all classes put together in one map
+        batch_size = bxmin.shape[0]
+        output = np.zeros([batch_size,1]+list(img_shape))
+        
+        for batch in range(batch_size):
+            xmax = bxmax[batch]
+            xmin = bxmin[batch]
+            ymax = bymax[batch]
+            ymin = bymin[batch]
+
+            if (xmax[0,0]-xmin[0,0])*(ymax[0,0]-ymin[0,0]) < img_shape[1]*img_shape[2]/50.:
+                sigma = 2
+            else:
+                sigma = 3
+            for f_ind in range(xmin.shape[0]):
+                for c_ind in range(xmin.shape[1]):
+                    cxmin = xmin[f_ind, c_ind]
+                    cxmax = xmax[f_ind, c_ind]
+                    cymin = ymin[f_ind, c_ind]
+                    cymax = ymax[f_ind, c_ind]
+                    output[batch, 0, f_ind, cymin:cymax, cxmin:cxmax] = 1
+                output[batch, 0, f_ind] = ndimage.gaussian_filter(output[batch, 0, f_ind], sigma=(sigma), order=0)
+        return output
 
     def gt_maps_square(self, xmin, xmax, ymin, ymax, img_shape, labels, dims):
         # Draw a white square for each bounding box and blur it

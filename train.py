@@ -35,6 +35,7 @@ def train(**args):
         lr           (Float):      Learning rate 
         momentum     (Float):      Momentum in optimizer 
         weight_decay (Float):      Weight_decay value 
+        final_shape  ([Int, Int]): Shape of data when passed into network
         
     Return:
         None
@@ -121,7 +122,7 @@ def train(**args):
         # END IF
             
         model_loss = Losses(device=device, **args)
-        #acc_metric = Metrics(**args)
+        acc_metric = Metrics(**args)
 
     ############################################################################################################################################################################
 
@@ -140,7 +141,9 @@ def train(**args):
                 annotations   = data['annots'] 
 
                 optimizer.zero_grad()
+                
 
+                assert args['final_shape']==list(x_input.size()[-2:]), "Input to model does not match final_shape argument"
                 outputs = model(x_input)
                 loss    = model_loss.loss(outputs, annotations)
     
@@ -165,23 +168,23 @@ def train(**args):
 
                 # END IF
 
+            # END FOR: Epoch
+
             if not args['debug']:
                 # Save Current Model
                 save_path = os.path.join(save_dir, args['dataset']+'_epoch'+str(epoch)+'.pkl')
                 save_checkpoint(epoch, step, model, optimizer, save_path)
    
-            # END FOR: Epoch
+            # END IF: Debug
 
             scheduler.step()
 
             ## START FOR: Validation Accuracy
-            #model.eval()
-
-            #running_acc = []
-            #running_acc = valid(valid_loader, running_acc, writer, model, device, acc_metric)
-            #
-            #writer.add_scalar(args['dataset']+'/'+args['model']+'/validation_accuracy', 100.*running_acc[-1], epoch*len(train_loader) + step)
-            #print('Accuracy of the network on the validation set: %f %%\n' % (100.*running_acc[-1]))
+            running_acc = []
+            running_acc = valid(valid_loader, running_acc, writer, model, device, acc_metric)
+            if not args['debug']:
+                writer.add_scalar(args['dataset']+'/'+args['model']+'/validation_accuracy', 100.*running_acc[-1], epoch*len(train_loader) + step)
+            print('Accuracy of the network on the validation set: %f %%\n' % (100.*running_acc[-1]))
 
         # END FOR: Training Loop
 
@@ -191,15 +194,16 @@ def train(**args):
             # Close Tensorboard Element
             writer.close()
 
-def valid(valid_loader, running_acc, writer, model, device, acc_metric):
+def valid(valid_loader, running_acc, model, device, acc_metric):
     model.eval()
     
-    for step, data in enumerate(valid_loader):
-        x_input = data['data'].to(device)
-        y_label = data['labels'] 
-        outputs = model(x_input)
-    
-        running_acc.append(acc_metric.get_accuracy(outputs.detach().cpu().numpy(), y_label.numpy()))
+    with torch.no_grad():
+        for step, data in enumerate(valid_loader):
+            x_input = data['data'].to(device)
+            annotations   = data['annots'] 
+            outputs = model(x_input)
+        
+            running_acc.append(acc_metric.get_accuracy(outputs, annotations))
     
     # END FOR: Validation Accuracy
 
