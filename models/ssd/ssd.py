@@ -6,6 +6,7 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from models.ssd.ssd_utils import *
 import os
+import datasets.preprocessing_transforms as pt
 
 __all__ = [
         'SSD'
@@ -31,6 +32,10 @@ class SSD(nn.Module):
 
     def __init__(self, **kwargs):
         super(SSD, self).__init__()
+
+        self.train_transforms = PreprocessTrainSSD(**kwargs)
+        self.test_transforms  = PreprocessEvalSSD(**kwargs)
+
         self.load_type = kwargs['load_type']
         self.num_classes = kwargs['labels']
         #self.cfg = (coco, voc)[num_classes == 21]
@@ -206,3 +211,87 @@ def multibox(vgg, extra_layers, cfg, num_classes):
         conf_layers += [nn.Conv2d(v.out_channels, cfg[k]
                                   * num_classes, kernel_size=3, padding=1)]
     return vgg, extra_layers, (loc_layers, conf_layers)
+
+class PreprocessTrainSSD(object):
+    """
+    Container for all transforms used to preprocess clips for training in this dataset.
+    """
+    def __init__(self, **kwargs):
+        crop_shape = kwargs['crop_shape']
+        crop_type = kwargs['crop_type']
+        resize_shape = kwargs['resize_shape']
+        self.transforms = []
+
+        if crop_type == 'Random':
+            self.transforms.append(pt.RandomCropClip(**kwargs))
+        elif crop_type == 'Center':
+            self.transforms.append(pt.CenterCropClip(**kwargs))
+
+        self.transforms.append(pt.ResizeClip(**kwargs))
+        self.transforms.append(pt.SubtractRGBMean(**kwargs))
+        self.transforms.append(pt.ToTensorClip())
+
+    def __call__(self, input_data, bbox_data=[]):
+        """
+        Preprocess the clip and the bbox data accordingly
+        Args:
+            input_data: List of PIL images containing clip frames 
+            bbox_data:  Numpy array containing bbox coordinates per object per frame 
+
+        Return:
+            input_data: Pytorch tensor containing the processed clip data 
+            bbox_data:  Numpy tensor containing the augmented bbox coordinates
+        """
+        if bbox_data == []:
+            for transform in self.transforms:
+                input_data = transform(input_data)
+
+            return input_data
+        else:
+            for transform in self.transforms:
+                input_data, bbox_data = transform(input_data, bbox_data)
+
+            return input_data, bbox_data
+
+class PreprocessEvalSSD(object):
+    """
+    Container for all transforms used to preprocess clips for evaluation in this dataset.
+    """
+    def __init__(self, **kwargs):
+        crop_shape = kwargs['crop_shape']
+        crop_type = kwargs['crop_type']
+        resize_shape = kwargs['resize_shape']
+        self.transforms = []
+
+        if crop_type == 'Random':
+            self.transforms.append(pt.RandomCropClip(**kwargs))
+        elif crop_type == 'Center':
+            self.transforms.append(pt.CenterCropClip(**kwargs))
+
+        self.transforms.append(pt.ResizeClip(**kwargs))
+        self.transforms.append(pt.SubtractRGBMean(**kwargs))
+        self.transforms.append(pt.ToTensorClip())
+
+
+    def __call__(self, input_data, bbox_data=[]):
+        """
+        Preprocess the clip and the bbox data accordingly
+        Args:
+            input_data: List of PIL images containing clip frames 
+            bbox_data:  Numpy array containing bbox coordinates per object per frame 
+
+        Return:
+            input_data: Pytorch tensor containing the processed clip data 
+            bbox_data:  Numpy tensor containing the augmented bbox coordinates
+        """
+        if bbox_data == []:
+            for transform in self.transforms:
+                input_data = transform(input_data)
+
+            return input_data
+        else:
+            for transform in self.transforms:
+                input_data, bbox_data = transform(input_data, bbox_data)
+
+            return input_data, bbox_data
+

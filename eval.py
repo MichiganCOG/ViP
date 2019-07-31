@@ -53,8 +53,14 @@ def eval(**args):
     # Tensorboard Element
     writer = SummaryWriter()
 
+    # Check if GPU is available (CUDA)
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    # Load Network
+    model = create_model_object(**args).to(device)
+
     # Load Data
-    loader = data_loader(**args)
+    loader = data_loader(**args, model_obj=model)
 
     if args['load_type'] == 'valid':
         eval_loader = loader['valid']
@@ -66,12 +72,6 @@ def eval(**args):
         sys.exit('load_type must be valid or test for eval, exiting')
 
     # END IF
-
-    # Check if GPU is available (CUDA)
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-    # Load Network
-    model = create_model_object(**args).to(device)
 
     if isinstance(args['pretrained'], str):
         ckpt = load_checkpoint(args['pretrained'])

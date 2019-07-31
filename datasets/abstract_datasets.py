@@ -228,7 +228,7 @@ class DetectionDataset(VideoDataset):
             }
             
         
-        Ex: coordinates = dataset[vid_index]['frame'][frame_index]['objs'][obj_index]['bbox']
+        Ex: coordinates = dataset[vid_index]['frames'][frame_index]['objs'][obj_index]['bbox']
         """
 
         # Load all video paths into the samples array to be loaded by __getitem__ 
