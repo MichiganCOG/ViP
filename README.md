@@ -45,7 +45,7 @@ All parameters can also be modified using command line arguments.
 Run `eval.py` with the argument `--cfg_file` pointing to the desired model config yaml file.
 
 
-Ex: From the root directory of ViP, evaluate the object detection network SSD on VOC2007
+Ex: From the root directory of ViP, evaluate the action recognition network C3D on HMDB51
 ```
 python eval.py --cfg_file models/c3d/config_test.py
 ```
@@ -64,16 +64,23 @@ New models and datasets can be added without needing to rewrite any training, ev
 
 ### Add a Model
 
-To add a new model, the only requirement for the user is to add a new folder to `ViP/models/`. 
-Within this folder you will specify the desired `model.py` as well as the `config_train.yaml` and `config_test.yaml` for the new model.
+To add a new model:
+1. Create a new folder in `ViP/models/custom_model_name` 
+2. Create a model class in `ViP/models/custom_model_name/custom_model_name.py`
+	* Complete `__init__`, `forward`, and (optional) `__load_pretrained_weights` functions
+3. Add PreprocessTrain and PreprocessEval classes within `custom_model_name.py`
+4. Create `config_train.yaml` and `config_test.yaml` files for the new model
+
 Examples of previously implemented models can be found [here](https://github.com/MichiganCOG/ViP/tree/master/models).
 
 ### Add a Dataset
 
-To add a new dataset, the user must only create a single file `ViP/datasets/custom_dataset_name.py`.
-Within this file, the user must specify the dataset dataloader class containing `__init__` and `__getitem__` methods. 
-This class must inherit from `DetectionDataset` or `RecognitionDataset` in `ViP/abstract_datasets.py` .
-Within `__getitem__`.
+To add a new dataset:
+1. Convert annotation data to our JSON format, the JSON skeleton templates can be found [here](https://github.com/MichiganCOG/ViP/tree/master/datasets/templates)
+	* Existing scripts for datasets can be found [here](https://github.com/MichiganCOG/ViP/tree/master/datasets/scripts)
+2. Create a dataset class in `ViP/datasets/custom_dataset_name.py`.
+	* Inherit `DetectionDataset` or `RecognitionDataset` from `ViP/abstract_dataset.py`
+	* Complete `__init__` and `__getitem__` functions
 
 ## Version History
 
