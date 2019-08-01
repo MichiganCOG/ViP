@@ -1,0 +1,19 @@
+[
+    {
+        "frames (list)": [
+            {
+                "frame_size (int, int)": "(HEIGHT,WIDTH)",
+                "img_path (str)": "FRAME_PATH",
+                "objs (list)": [
+                    {
+                        "trackid (int)": "TRACK_ID",
+                        "c (str or int)": "CLASS_ID",
+                        "bbox (int,int,int,int)": "(xmin, ymin, xmax, ymax)",
+                        "(Optional) occ (int)": "Indicating if object is occluded in current frame"
+                    }
+                ]
+            }
+        ],
+        "base_path (str)": "BASE_VID_PATH"
+    }
+]
