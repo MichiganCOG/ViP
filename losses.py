@@ -37,8 +37,8 @@ class Losses(object):
         Function that calculates loss from selected loss type
 
         Args:
-            predictions (Tensor): Tensor output by the network
-            target      (Tensor): Target tensor used with predictions to compute the loss
+            predictions (Tensor, shape [N,*]): Tensor output by the network
+            target      (Tensor, shape [N,*]): Target tensor used with predictions to compute the loss
 
         Returns:
             Calculated loss value
@@ -66,9 +66,12 @@ class MSE():
     def loss(self, predictions, data):
         """
         Args:
-            predictions  (Tensor): Output by the network
+            predictions  (Tensor, shape [N,*]): Output by the network
             data         (dictionary)
-                - labels (Tensor):  Targets from ground truth data
+                - labels (Tensor, shape [N,*]):  Targets from ground truth data
+
+        Returns:
+            Return mean squared error loss
         """
 
         targets = data['labels'].to(self.device)
@@ -181,14 +184,26 @@ class HGC_MSE(object):
 
 class M_XENTROPY(object):
     def __init__(self, *args, **kwargs):
+        """
+        Cross-entropy Loss with a distribution of values, not just 1-hot vectors 
+
+        Args:
+            dim (integer): Dimension to reduce 
+
+        Returns:
+            None 
+        """
         self.logsoftmax = nn.LogSoftmax(dim=1)
 
     def loss(self, predictions, data):
         """
-        Function used to compute cross-entropy loss with a distribution of values, not just 1-hot vectors 
-
+        Args:
+            predictions  (Tensor, shape [N,*]): Output by the network
+            data         (dictionary)
+                - labels (Tensor, shape [N,*]):  Targets from ground truth data
+                
         Return:
-            Compute loss value 
+            Cross-entropy loss  
         """
 
         targets = data['labels']
