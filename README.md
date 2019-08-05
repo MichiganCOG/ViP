@@ -47,7 +47,7 @@ Run `eval.py` with the argument `--cfg_file` pointing to the desired model confi
 
 Ex: From the root directory of ViP, evaluate the action recognition network C3D on HMDB51
 ```
-python eval.py --cfg_file models/c3d/config_test.py
+python eval.py --cfg_file models/c3d/config_test.yaml
 ```
 
 ### Training
@@ -56,7 +56,7 @@ Run `train.py` with the argument `--cfg_file` pointing to the desired model conf
 
 Ex: From the root directory of ViP, train the action recognition network C3D on HMDB51
 ```
-python train.py --cfg_file models/c3d/config_train.py
+python train.py --cfg_file models/c3d/config_train.yaml
 ```
 ## Development
 
