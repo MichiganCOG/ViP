@@ -47,7 +47,7 @@ Run `eval.py` with the argument `--cfg_file` pointing to the desired model confi
 
 Ex: From the root directory of ViP, evaluate the action recognition network C3D on HMDB51
 ```
-python eval.py --cfg_file models/c3d/config_test.py
+python eval.py --cfg_file models/c3d/config_test.yaml
 ```
 
 ### Training
@@ -56,7 +56,7 @@ Run `train.py` with the argument `--cfg_file` pointing to the desired model conf
 
 Ex: From the root directory of ViP, train the action recognition network C3D on HMDB51
 ```
-python train.py --cfg_file models/c3d/config_train.py
+python train.py --cfg_file models/c3d/config_train.yaml
 ```
 ## Development
 
@@ -82,6 +82,7 @@ To add a new dataset:
 2. Create a dataset class in `ViP/datasets/custom_dataset_name.py`.
 	* Inherit `DetectionDataset` or `RecognitionDataset` from `ViP/abstract_dataset.py`
 	* Complete `__init__` and `__getitem__` functions
+	* Example skeleton dataset can be found [here](https://github.com/MichiganCOG/ViP/blob/master/datasets/templates/dataset_template.py)
 
 ## Version History
 

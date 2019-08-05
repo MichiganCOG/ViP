@@ -377,13 +377,24 @@ class ToTensorClip(PreprocTransform):
     def __init__(self, *args, **kwargs):
         super(ToTensorClip, self).__init__(*args, **kwargs)
 
+        self.transform = torchvision.transforms.ToTensor()
+
     def __call__(self, clip, bbox=[]):
-        clip = torch.from_numpy(np.array(clip)).float()
+        
+        if isinstance(clip[0], Image.Image):
+            # a little round-about but it maintains consistency
+            temp_clip = []
+            for c in clip:
+                temp_clip.append(np.array(c))
+            clip = temp_clip 
+
+        output_clip = torch.from_numpy(np.array(clip)).float() #Numpy array to Tensor
+
         if bbox!=[]:
             bbox = torch.from_numpy(np.array(bbox))
-            return clip, bbox
+            return output_clip, bbox
         else:
-            return clip
+            return output_clip
         
 
 class RandomRotateClip(PreprocTransform):
@@ -523,7 +534,6 @@ class SubtractRGBMean(PreprocTransform):
             return out_clip, bbox
         else:
             return out_clip
-
 
 class ApplyToPIL(PreprocTransform):
     """
