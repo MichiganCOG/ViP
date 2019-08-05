@@ -12,3 +12,4 @@ runs/*
 *.npy
 config_*.yaml
 models/HGC3D
+*.json

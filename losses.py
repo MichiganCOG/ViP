@@ -2,6 +2,8 @@ import torch
 import torch.nn    as nn
 import numpy as np
 from scipy import ndimage
+import os
+import cv2
 
 
 class Losses(object):
@@ -85,6 +87,7 @@ class HGC_MSE(object):
         self.num_classes = kwargs['labels']
         self.HGC_loss = kwargs['HGC_loss']
         self.batch_size = kwargs['batch_size']
+        self.numsaved = 0
 
     def loss(self, predictions, data):
         if self.HGC_loss == 'multi':
@@ -104,7 +107,7 @@ class HGC_MSE(object):
         input_shape = np.array(torch.stack(data['input_shape']))[-3:, 0]
         gtmap = self.gt_map_square(xmin.cpu().numpy().astype(int), xmax.cpu().numpy().astype(int), ymin.cpu().numpy().astype(int), ymax.cpu().numpy().astype(int), input_shape, self.num_classes)
         targets = torch.tensor(gtmap[:, :,int(gtmap.shape[1]/2.)]).float().to(self.device)
-        #self.visualize(predictions, data, gtmap)
+        self.visualize(predictions, data, gtmap)
 
         return self.hgc_mse_loss(predictions, targets)
 
@@ -130,9 +133,16 @@ class HGC_MSE(object):
 
     def visualize(self, predictions, data, gtmap):
         import matplotlib.pyplot as plt
-        plt.imshow(data['data'].cpu().detach().numpy()[0,:,8].transpose(1,2,0)); plt.show()
-        plt.imshow(predictions.cpu().detach().numpy()[0][-1]); plt.show()
-        plt.imshow(gtmap[0][0][8]); plt.show()
+        #plt.imshow(data['data'].cpu().detach().numpy()[0,:,8].transpose(1,2,0))
+        #cv2.imwrite(os.path.join('/z/home/erichof/ViP_Git/ViP/results/HGC3D/figures/', str(self.numsaved)+'_data.png'), data['data'].cpu().detach().numpy()[0,:,8].transpose(1,2,0)[...,::-1]*255)
+        #plt.show()
+        #plt.imshow(predictions.cpu().detach().numpy()[0][-1])
+        cv2.imwrite(os.path.join('/z/home/erichof/ViP_Git/ViP/results/HGC3D/figures/', str(self.numsaved)+'_output.png'), (predictions.cpu().detach().numpy()[0][-1].clip(0.35)-0.35)*3*255)
+        #plt.show()
+        #plt.imshow(gtmap[0][0][8])
+        #cv2.imwrite(os.path.join('/z/home/erichof/ViP_Git/ViP/results/HGC3D/figures/', str(self.numsaved)+'_gt.png'), gtmap[0][0][8]*255)
+        #plt.show()
+        self.numsaved += 1
 
         
     def gt_map_square(self, bxmin, bxmax, bymin, bymax, img_shape, dims):

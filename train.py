@@ -13,7 +13,7 @@ from tensorboardX                       import SummaryWriter
 
 from parse_args                         import Parse
 from models.models_import               import create_model_object
-from datasets                           import data_loader 
+from datasets.loading_function          import data_loader 
 from losses                             import Losses
 from metrics                            import Metrics
 from checkpoint                         import save_checkpoint, load_checkpoint
@@ -74,7 +74,7 @@ def train(**args):
         model = create_model_object(**args).to(device)
 
         # Load Data
-        loader = data_loader(**args, model_obj=model)
+        loader = data_loader(model_obj=model, **args)
 
         if args['load_type'] == 'train':
             train_loader = loader['train']
