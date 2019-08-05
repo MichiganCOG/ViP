@@ -82,6 +82,7 @@ To add a new dataset:
 2. Create a dataset class in `ViP/datasets/custom_dataset_name.py`.
 	* Inherit `DetectionDataset` or `RecognitionDataset` from `ViP/abstract_dataset.py`
 	* Complete `__init__` and `__getitem__` functions
+	* Example skeleton dataset can be found [here](https://github.com/MichiganCOG/ViP/blob/master/datasets/templates/dataset_template.py)
 
 ## Version History
 
