@@ -8,13 +8,15 @@ import glob
 import xml.etree.ElementTree as ET
 
 
+# Download the dataset from here: http://bvisionweb1.cs.unc.edu/ilsvrc2015/download-videos-3j16.php
+
 label_mappings = {"n02374451": "horse", "n02691156": "airplane", "n02062744": "whale", "n01503061": "bird", "n03790512": "motorcycle ", "n02402425": "cattle", "n02342885": "hamster", "n04530566": "watercraft ", "n02958343": "car", "n02510455": "giant panda", "n02129165": "lion", "n02503517": "elephant", "n02129604": "tiger", "n02419796": "antelope", "n02391049": "zebra", "n02131653": "bear ", "n01674464": "lizard", "n04468005": "train", "n02509815": "red panda", "n02834778": "bicycle", "n02484322": "monkey", "n01726692": "snake", "n02084071": "dog", "n02324045": "rabbit", "n02924116": "bus", "n02118333": "fox", "n02355227": "squirrel", "n01662784": "turtle", "n02121808": "domestic cat", "n02411705": "sheep"}
 
 def gen_label_keys():
     json.dump(label_mappings, open('labels_number_keys.json', 'w'))
 
 def gen_json(load_type):
-    VID_base_path = '/y/datasets/ILSVRC2015/'
+    VID_base_path = '/path/to/datasets/ILSVRC2015/' ###### REPLACE with the path to ImageNetVID
     ann_base_path = join(VID_base_path, 'Annotations/VID', load_type)
     img_base_path = join(VID_base_path, 'Data/VID', load_type)
     

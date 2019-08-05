@@ -5,9 +5,8 @@ import os
 def save_json(load_type):
 
     # Define path to mscoco images data
-    # base_path = '/path/to/mscoco/images/'
-    base_img_path = '/z/dat/mscoco/images/'
-    base_annot_path = '/z/dat/mscoco/annotations/'
+    base_img_path = '/path/to/mscoco/images/'       ###### REPLACE with path to dataset
+    base_annot_path = '/path/to/mscoco/annotations/'###### REPLACE with path to dataset
 
     f = open(os.path.join(base_annot_path,'instances_'+load_type+'2014.json'),'r')
     x = json.load(f)
@@ -37,7 +36,7 @@ def save_json(load_type):
         if count%1000==0:
             print(count)
     
-    writef = open(load_type+'_script_test.json', 'w')
+    writef = open('mscoco_'+load_type+'.json', 'w')
     json.dump(dd.values(), writef)
     writef.close()
     
