@@ -207,9 +207,9 @@ def train(**args):
 
             ## START FOR: Validation Accuracy
             running_acc = []
-            running_acc = valid(train_loader, running_acc, model, device, acc_metric)
+            running_acc = valid(valid_loader, running_acc, model, device, acc_metric)
             if not args['debug']:
-                writer.add_scalar(args['dataset']+'/'+args['model']+'/validation_accuracy', 100.*running_acc[-1], epoch*len(train_loader) + step)
+                writer.add_scalar(args['dataset']+'/'+args['model']+'/validation_accuracy', 100.*running_acc[-1], epoch*len(valid_loader) + step)
             print('Accuracy of the network on the validation set: %f %%\n' % (100.*running_acc[-1]))
 
             # Save Best Validation Accuracy Model Separately
