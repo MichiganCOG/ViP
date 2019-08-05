@@ -62,7 +62,7 @@ def eval(**args):
     # Load Data
     loader = data_loader(**args, model_obj=model)
 
-    if args['load_type'] == 'valid':
+    if args['load_type'] == 'train_val':
         eval_loader = loader['valid']
 
     elif args['load_type'] == 'test':

@@ -1,8 +1,10 @@
 import os
+import gc
 import sys 
 import datetime
 import yaml 
 import torch
+import psutil
 
 import numpy             as np
 import torch.nn          as nn
@@ -17,6 +19,21 @@ from datasets                           import data_loader
 from losses                             import Losses
 from metrics                            import Metrics
 from checkpoint                         import save_checkpoint, load_checkpoint
+
+def memReport():
+    for obj in gc.get_objects():
+        if torch.is_tensor(obj):
+            print(type(obj), obj.size())
+    
+def cpuStats():
+        print(sys.version)
+        print(psutil.cpu_percent())
+        print(psutil.virtual_memory())  # physical memory usage
+        pid = os.getpid()
+        py = psutil.Process(pid)
+        memoryUse = py.memory_info()[0] / 2. ** 30  # memory use in GB...I think
+        print('memory GB:', memoryUse)
+
 
 def train(**args):
     """
@@ -138,34 +155,42 @@ def train(**args):
 
             # Start: Epoch
             for step, data in enumerate(train_loader):
+                if step% args['pseudo_batch_loop'] == 0:
+                    loss = 0.0
+
+                # END IF
+
+                optimizer.zero_grad()
                 x_input       = data['data'].to(device) 
                 annotations   = data['annots'] 
 
-                optimizer.zero_grad()
-                
-
                 assert args['final_shape']==list(x_input.size()[-2:]), "Input to model does not match final_shape argument"
+
+                #import pdb; pdb.set_trace()
                 outputs = model(x_input)
-                loss    = model_loss.loss(outputs, annotations)
-    
+                loss   = (1/args['pseudo_batch_loop'])*model_loss.loss(outputs, annotations)
                 loss.backward()
-                optimizer.step()
+
+                if step % args['pseudo_batch_loop'] == 0 and step > 0:
+                    optimizer.step()
+
+                    if not args['debug']:
+                        # Add Learning Rate Element
+                        for param_group in optimizer.param_groups:
+                            writer.add_scalar(args['dataset']+'/'+args['model']+'/learning_rate', param_group['lr'], epoch*len(train_loader) + step)
+                    
+                        # Add Loss Element
+                        writer.add_scalar(args['dataset']+'/'+args['model']+'/minibatch_loss', loss.item(), epoch*len(train_loader) + step)
+                        if ((epoch*len(train_loader) + step+1) % 100 == 0):
+                            print('Epoch: {}/{}, step: {}/{} | train loss: {:.4f}'.format(epoch, args['epoch'], step+1, len(train_loader), running_loss/float(step+1)))
+
+                # END IF
     
                 running_loss += loss.item()
 
-                if not args['debug']:
-                    # Add Learning Rate Element
-                    for param_group in optimizer.param_groups:
-                        writer.add_scalar(args['dataset']+'/'+args['model']+'/learning_rate', param_group['lr'], epoch*len(train_loader) + step)
-                
-                        # Add Loss Element
-                        writer.add_scalar(args['dataset']+'/'+args['model']+'/minibatch_loss', loss.item(), epoch*len(train_loader) + step)
 
                 if np.isnan(running_loss):
                     import pdb; pdb.set_trace()
-
-                if ((epoch*len(train_loader) + step+1) % 100 == 0):
-                    print('Epoch: {}/{}, step: {}/{} | train loss: {:.4f}'.format(epoch, args['epoch'], step+1, len(train_loader), running_loss/float(step+1)))
 
                 # END IF
 
