@@ -12,7 +12,7 @@ class ImageNetVID(DetectionDataset):
         super(ImageNetVID, self).__init__(*args, **kwargs)
 
         # Get model object in case preprocessing other than default is used
-        self.model_object   = kwargs['model_object']
+        self.model_object   = kwargs['model_obj']
         self.load_type = kwargs['load_type']
         self.json_path = kwargs['json_path']
         lab_file = open(os.path.join(self.json_path, 'labels_number_keys.json'), 'r')
@@ -27,11 +27,7 @@ class ImageNetVID(DetectionDataset):
         self.max_objects = 38 
 
 
-        if self.load_type=='train':
-            self.transforms = PreprocessTrain(**kwargs)
-
-        else:
-            self.transforms = PreprocessEval(**kwargs)
+        self.transforms = self.model_object.get_transforms()
 
     def __getitem__(self, idx):
         vid_info = self.samples[idx]
