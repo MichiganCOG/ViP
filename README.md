@@ -24,7 +24,7 @@ A platform for quick and easy development of deep learning networks for recognit
 
 ```
 # Set up Python3 virtual environment
-virtualenv -p python3.6 vip
+virtualenv -p python3.6 --no-site-packages vip
 source vip/bin/activate
 
 # Clone ViP repository
