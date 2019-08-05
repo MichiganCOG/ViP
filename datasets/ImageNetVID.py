@@ -1,7 +1,6 @@
 import torch
 import torchvision
 from .abstract_datasets import DetectionDataset 
-#from PIL import Image
 import cv2
 import os
 import numpy as np
@@ -68,28 +67,16 @@ class ImageNetVID(DetectionDataset):
                 labels[frame_ind, trackid]       = label 
                 occlusions[frame_ind, trackid]   = occlusion
 
-            # Load frame image data, preprocess image, and augment bounding boxes accordingly
-            # TODO: Augment bounding boxes according to frame augmentations 
-            # vid_data[frame_ind], bbox_data[frame_ind] = self._preprocFrame(os.path.join(base_path, frame_path), bbox_data[frame_ind])
-            #input_data.append(Image.open(os.path.join(base_path, frame_path)))
             # Load frame, convert to RGB from BGR and normalize from 0 to 1
             input_data.append(cv2.imread(os.path.join(base_path, frame_path))[...,::-1]/255.)
 
         vid_data, bbox_data = self.transforms(input_data, bbox_data)
 
         bbox_data = bbox_data.type(torch.LongTensor)
-        #bbox_data = bbox_data.astype(int)
-
-        #import pdb; pdb.set_trace()
-        #xmin_data  = torch.from_numpy(bbox_data[:,:,0])
-        #ymin_data  = torch.from_numpy(bbox_data[:,:,1])
-        #xmax_data  = torch.from_numpy(bbox_data[:,:,2])
-        #ymax_data  = torch.from_numpy(bbox_data[:,:,3])
         xmin_data  = bbox_data[:,:,0]
         ymin_data  = bbox_data[:,:,1]
         xmax_data  = bbox_data[:,:,2]
         ymax_data  = bbox_data[:,:,3]
-        #vid_data   = torch.from_numpy(vid_data)
         labels     = torch.from_numpy(labels)
         occlusions = torch.from_numpy(occlusions)
 
@@ -195,6 +182,4 @@ class PreprocessEval(object):
 
 
 
-#dataset = ImageNetVID(json_path='/z/home/erichof/datasets/ILSVRC2015', dataset_type='train')
-#dat = dataset.__getitem__(0)
-#import pdb; pdb.set_trace()
+
