@@ -51,7 +51,7 @@ def eval(**args):
         yaml.dump(args, outfile, default_flow_style=False)
 
     # Tensorboard Element
-    writer = SummaryWriter(logdir)
+    writer = SummaryWriter(log_dir)
 
     # Check if GPU is available (CUDA)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

@@ -1,0 +1,38 @@
+# Preprocessing
+clip_length:       1                                   # Number of frames within a clip 
+clip_offset:       0                                   # Frame offset between beginning of video and clip (1st clip only) 
+clip_stride:       0                                   # Frame offset between successive frames
+crop_shape:        [112,112]                           # (Height, Width) of frame  
+crop_type:         None                                # Type of cropping operation (Random, Central and None)  
+final_shape:       [300,300]                           # (Height, Width) of input to be given to CNN
+num_clips:         -1                                  # Number clips to be generated from a video (<0: uniform sampling, 0: Divide entire video into clips, >0: Defines number of clips) 
+random_offset:     0                                   # Boolean switch to generate a clip length sized clip from a video 
+resize_shape:      [300,300]                           # (Height, Width) to resize original data 
+sample_duration:   16                                  # Temporal size of video to be provided as input to the model 
+sample_size:       112                                 # Height of frame to be provided as input to the model
+subtract_mean:     [123,117,104]                       # Subtract mean (R,G,B) from all frames during preprocessing
+
+# Experiment Setup 
+acc_metric:        SSD_AP                              # Accuracy metric 
+batch_size:        1                                   # Numbers of videos in a mini-batch 
+pseudo_batch_loop: 1                                   # Pseudo-batch size multiplier to mimic large minibatches 
+dataset:           VOC2007                             # Name of dataset 
+epoch:             10                                  # Total number of epochs 
+exp:               evaluation                          # Experiment name
+gamma:             0.2                                 # Multiplier with which to change learning rate
+json_path:         /z/home/natlouis/data/VOC_2007      # Path to the json file for the given dataset
+labels:            21                                  # Number of total classes in the dataset
+load_type:         test                                # Environment selection, to include only training/training and validation/testing dataset
+loss_type:         todo                                # Loss function
+lr:                0.001                               # Learning rate
+milestones:        [10, 20]                            # Epoch values to change learning rate     
+model:             SSD                                 # Name of model to be loaded  
+momentum:          0.9                                 # Momentum value in optimizer
+num_workers:       2                                   # Number of CPU worker used to load data
+opt:               sgd                                 # Name of optimizer
+preprocess:        default                             # String argument to select preprocessing type
+pretrained:        './weights/ssd300_mAP_77.43_v2.pkl' # Load pretrained network 
+rerun:             1                                   # Number of trials to repeat an experiment
+save_dir:          './results'                         # Path to results directory
+seed:              999                                 # Seed for reproducibility 
+weight_decay:      0.0005                              # Weight decay
