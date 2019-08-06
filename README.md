@@ -1,6 +1,6 @@
 # Video Platform for Recognition and Detection in Pytorch
 
-A platform for quick and easy development of deep learning networks for recognition and detection in videos. Includes popular models like C3D, ResNet, and SSD.
+A platform for quick and easy development of deep learning networks for recognition and detection in videos. Includes popular models like C3D and SSD.
 
 # Implemented Models and their performance
 
@@ -101,7 +101,7 @@ To add a new dataset:
 - Config and argument reader
 - Checkpoint saving and loading
 - Implemented datasets: HMDB51, ImageNetVID, MSCOCO, VOC2007
-- Implemented recognition models: C3D, ResNet3D
+- Implemented recognition models: C3D
 - Implemented detection models: SSD
 - Implemented metrics: Recognition accuracy, IOU, mAP, Precision, Recall
 - Implemented losses: MSE, Cross entropy

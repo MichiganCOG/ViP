@@ -51,7 +51,7 @@ def eval(**args):
         yaml.dump(args, outfile, default_flow_style=False)
 
     # Tensorboard Element
-    writer = SummaryWriter()
+    writer = SummaryWriter(log_dir)
 
     # Check if GPU is available (CUDA)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -98,11 +98,12 @@ def eval(**args):
             if step % 100 == 0:
                 print('Step: {}/{} | {} acc: {:.4f}'.format(step, len(eval_loader), args['load_type'], acc))
 
-    writer.add_scalar(args['dataset']+'/'+args['model']+'/'+args['load_type']+'_accuracy', acc)
     print('Accuracy of the network on the {} set: {:.3f} %\n'.format(args['load_type'], 100.*acc))
-    
-    # Close Tensorboard Element
-    writer.close()
+
+    if not args['debug']:
+        writer.add_scalar(args['dataset']+'/'+args['model']+'/'+args['load_type']+'_accuracy', 100.*acc)
+        # Close Tensorboard Element
+        writer.close()
 
 if __name__ == '__main__':
 
