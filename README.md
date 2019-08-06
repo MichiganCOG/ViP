@@ -2,6 +2,15 @@
 
 A platform for quick and easy development of deep learning networks for recognition and detection in videos. Includes popular models like C3D, ResNet, and SSD.
 
+# Implemented Models and their performance
+
+## Recognition
+|  Model Architecture  |      Dataset       |    ViP Accuracy (%)   |  
+|:--------------------:|:------------------:|:---------------------:|
+|        C3D           |  HMDB51 (Split 1)  |    50.14 ± 0.777      |
+|        C3D           |  UCF101 (Split 1)  |    80.40 ± 0.399      |
+
+
 ## Table of Contents
 
 * [Requirements](#requirements)
