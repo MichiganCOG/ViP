@@ -43,15 +43,17 @@ def eval(**args):
     log_dir    = os.path.join(result_dir, 'logs')
     save_dir   = os.path.join(result_dir, 'checkpoints')
 
-    os.makedirs(result_dir, exist_ok=True)
-    os.makedirs(log_dir,    exist_ok=True) 
-    os.makedirs(save_dir,   exist_ok=True) 
+    if not args['debug']:
+        os.makedirs(result_dir, exist_ok=True)
+        os.makedirs(log_dir,    exist_ok=True) 
+        os.makedirs(save_dir,   exist_ok=True) 
 
-    with open(os.path.join(result_dir, 'config.yaml'),'w') as outfile:
-        yaml.dump(args, outfile, default_flow_style=False)
+        # Save copy of config file
+        with open(os.path.join(result_dir, 'config.yaml'),'w') as outfile:
+            yaml.dump(args, outfile, default_flow_style=False)
 
-    # Tensorboard Element
-    writer = SummaryWriter(log_dir)
+        # Tensorboard Element
+        writer = SummaryWriter(log_dir)
 
     # Check if GPU is available (CUDA)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

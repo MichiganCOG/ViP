@@ -59,7 +59,7 @@ def train(**args):
             os.makedirs(log_dir,    exist_ok=True) 
             os.makedirs(save_dir,   exist_ok=True) 
 
-            # Save Copy of Config File
+            # Save copy of config file
             with open(os.path.join(result_dir, 'config.yaml'),'w') as outfile:
                 yaml.dump(args, outfile, default_flow_style=False)
 
