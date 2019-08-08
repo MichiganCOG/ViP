@@ -2,15 +2,18 @@
 
 A platform for quick and easy development of deep learning networks for recognition and detection in videos. Includes popular models like C3D and SSD.
 
-# Implemented Models and their performance
+## Implemented Models and their performance
 
-## Recognition
+### Recognition
 |  Model Architecture  |      Dataset       |    ViP Accuracy (%)   |  
 |:--------------------:|:------------------:|:---------------------:|
 |        C3D           |  HMDB51 (Split 1)  |    50.14 ± 0.777      |
 |        C3D           |  UCF101 (Split 1)  |    80.40 ± 0.399      |
 
-
+### Object Detection
+|  Model Architecture  |      Dataset       |    ViP Accuracy (%)   | 
+|:--------------------:|:------------------:|:---------------------:|
+|        [SSD300](https://github.com/amdegroot/ssd.pytorch)        |  VOC2007  |    76.58      |
 ## Table of Contents
 
 * [Requirements](#requirements)
