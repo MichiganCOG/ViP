@@ -30,14 +30,14 @@ class Parse():
         parser.add_argument('--lr',           type=float, help='Learning rate')
         parser.add_argument('--momentum',     type=float, help='Momentum value in optimizer')
         parser.add_argument('--weight_decay', type=float, help='Weight decay')
-        parser.add_argument('--milestones',   nargs='+',  help='Epoch values to change learning rate')
+        parser.add_argument('--milestones',   type=int,   nargs='+',  help='Epoch values to change learning rate')
         parser.add_argument('--gamma',        type=float, help='Multiplier with which to change learning rate')
         parser.add_argument('--epoch',        type=int,   help='Total number of epochs')
 
         parser.add_argument('--json_path',    type=str, help='Path to train and test json files')
         parser.add_argument('--save_dir',     type=str, help='Path to results directory')
         parser.add_argument('--exp',          type=str, help='Experiment name')
-        parser.add_argument('--preproc',      type=str, help='Name of the preprocessing method to load')
+        parser.add_argument('--preprocess',   type=str, help='Name of the preprocessing method to load')
         parser.add_argument('--pretrained',   type=str, help='Load pretrained network or continue training (0 to randomly init weights, 1 to load default weights, str(path.pkl) to load checkpoint weights')
         parser.add_argument('--subtract_mean',type=str, help='Subtract mean (R,G,B) from all frames during preprocessing')
         parser.add_argument('--resize_shape', type=int, nargs=2,  help='(Height, Width) to resize original data')
@@ -68,7 +68,7 @@ class Parse():
             epoch            = 10,
             save_dir         = './results',
             exp              = 'exp',
-            preproc          = 'default',
+            preprocess       = 'default',
             pretrained       = 0,
             subtract_mean    = '',
             clip_offset      = 0,

@@ -57,7 +57,7 @@ class MSE():
             None 
         """
 
-        reduction = 'mean' if 'reduction' not in kwargs else kwargs['reduction']
+        reduction = 'sum' if 'reduction' not in kwargs else kwargs['reduction']
         self.device = kwargs['device']
 
         self.mse_loss = torch.nn.MSELoss(reduction=reduction)
@@ -106,4 +106,4 @@ class M_XENTROPY(object):
         one_hot[np.arange(targets.shape[0]), targets.cpu().numpy().astype('int32')[:, -1]] = 1
         one_hot = torch.Tensor(one_hot).cuda()
 
-        return torch.mean(torch.sum(-one_hot * self.logsoftmax(predictions), dim=1))
+        return torch.sum(torch.sum(-one_hot * self.logsoftmax(predictions), dim=1))
