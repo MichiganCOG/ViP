@@ -13,13 +13,14 @@ class Parse():
         parser.add_argument('--cfg_file', type=str, default='config.yaml', help='Configuration file with experiment parameters')
 
         #Command-line arguments will override any config file arguments
-        parser.add_argument('--rerun',           type=int, help='Number of trials to repeat an experiment')
-        parser.add_argument('--dataset',         type=str, help='Name of dataset')
-        parser.add_argument('--batch_size',      type=int, help='Numbers of videos in a mini-batch')
-        parser.add_argument('--num_workers',     type=int, help='Number of subprocesses for dataloading')
-        parser.add_argument('--load_type',       type=str, help='Environment selection, to include only training/training and validation/testing dataset (train, train_val, test)')
-        parser.add_argument('--model',           type=str, help='Name of model to be loaded')
-        parser.add_argument('--labels',          type=int, help='Number of total classes in the dataset')
+        parser.add_argument('--rerun',             type=int, help='Number of trials to repeat an experiment')
+        parser.add_argument('--dataset',           type=str, help='Name of dataset')
+        parser.add_argument('--batch_size',        type=int, help='Numbers of videos in a mini-batch')
+        parser.add_argument('--pseudo_batch_loop', type=int, help='Number of loops for mini-batch')
+        parser.add_argument('--num_workers',       type=int, help='Number of subprocesses for dataloading')
+        parser.add_argument('--load_type',         type=str, help='Environment selection, to include only training/training and validation/testing dataset (train, train_val, test)')
+        parser.add_argument('--model',             type=str, help='Name of model to be loaded')
+        parser.add_argument('--labels',            type=int, help='Number of total classes in the dataset')
 
         parser.add_argument('--loss_type',    type=str,   help='Loss function')
         parser.add_argument('--acc_metric',   type=str,   help='Accuracy metric')
@@ -27,14 +28,14 @@ class Parse():
         parser.add_argument('--lr',           type=float, help='Learning rate')
         parser.add_argument('--momentum',     type=float, help='Momentum value in optimizer')
         parser.add_argument('--weight_decay', type=float, help='Weight decay')
-        parser.add_argument('--milestones',   nargs='+',  help='Epoch values to change learning rate')
+        parser.add_argument('--milestones',   type=int,   nargs='+',  help='Epoch values to change learning rate')
         parser.add_argument('--gamma',        type=float, help='Multiplier with which to change learning rate')
         parser.add_argument('--epoch',        type=int,   help='Total number of epochs')
 
         parser.add_argument('--json_path',    type=str, help='Path to train and test json files')
         parser.add_argument('--save_dir',     type=str, help='Path to results directory')
         parser.add_argument('--exp',          type=str, help='Experiment name')
-        parser.add_argument('--preproc',      type=str, help='Name of the preprocessing method to load')
+        parser.add_argument('--preprocess',   type=str, help='Name of the preprocessing method to load')
         parser.add_argument('--pretrained',   type=str, help='Load pretrained network or continue training (0 to randomly init weights, 1 to load default weights, str(path.pkl) to load checkpoint weights')
         parser.add_argument('--subtract_mean',type=str, help='Subtract mean (R,G,B) from all frames during preprocessing')
         parser.add_argument('--resize_shape', type=int, nargs=2,  help='(Height, Width) to resize original data')
@@ -54,6 +55,7 @@ class Parse():
         self.defaults = dict(
             rerun            = 5,
             batch_size       = 1,
+            pseudo_batch_loop= 1
             num_workers      = 1,
             acc_metric       = None,
             opt              = 'sgd',
@@ -65,7 +67,7 @@ class Parse():
             epoch            = 10,
             save_dir         = './results',
             exp              = 'exp',
-            preproc          = 'default',
+            preprocess       = 'default',
             pretrained       = 0,
             subtract_mean    = '',
             clip_offset      = 0,

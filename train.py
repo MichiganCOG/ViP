@@ -59,7 +59,7 @@ def train(**args):
             os.makedirs(log_dir,    exist_ok=True) 
             os.makedirs(save_dir,   exist_ok=True) 
 
-            # Save Copy of Config File
+            # Save copy of config file
             with open(os.path.join(result_dir, 'config.yaml'),'w') as outfile:
                 yaml.dump(args, outfile, default_flow_style=False)
 
@@ -127,7 +127,6 @@ def train(**args):
 
     ############################################################################################################################################################################
 
-
         # Start: Training Loop
         for epoch in range(start_epoch, args['epoch']):
             running_loss = 0.0
@@ -138,36 +137,52 @@ def train(**args):
 
             # Start: Epoch
             for step, data in enumerate(train_loader):
+                if step% args['pseudo_batch_loop'] == 0:
+                    loss = 0.0
+                    optimizer.zero_grad()
+
+                # END IF
+
                 x_input       = data['data'].to(device) 
                 annotations   = data['annots'] 
-
-                optimizer.zero_grad()
-                
 
                 assert args['final_shape']==list(x_input.size()[-2:]), "Input to model does not match final_shape argument"
                 outputs = model(x_input)
                 loss    = model_loss.loss(outputs, annotations)
-    
                 loss.backward()
-                optimizer.step()
-    
-                running_loss += loss.item()
 
-                if not args['debug']:
-                    # Add Learning Rate Element
-                    for param_group in optimizer.param_groups:
-                        writer.add_scalar(args['dataset']+'/'+args['model']+'/learning_rate', param_group['lr'], epoch*len(train_loader) + step)
-                
-                        # Add Loss Element
-                        writer.add_scalar(args['dataset']+'/'+args['model']+'/minibatch_loss', loss.item(), epoch*len(train_loader) + step)
+                running_loss += loss.item()
 
                 if np.isnan(running_loss):
                     import pdb; pdb.set_trace()
 
-                if ((epoch*len(train_loader) + step+1) % 100 == 0):
-                    print('Epoch: {}/{}, step: {}/{} | train loss: {:.4f}'.format(epoch, args['epoch'], step+1, len(train_loader), running_loss/float(step+1)))
+                # END IF
+                if not args['debug']:
+                    # Add Learning Rate Element
+                    for param_group in optimizer.param_groups:
+                        writer.add_scalar(args['dataset']+'/'+args['model']+'/learning_rate', param_group['lr'], epoch*len(train_loader) + step)
+
+                    # END FOR
+                
+                    # Add Loss Element
+                    writer.add_scalar(args['dataset']+'/'+args['model']+'/minibatch_loss', loss.item()/args['batch_size'], epoch*len(train_loader) + step)
+
+                    if ((epoch*len(train_loader) + step+1) % 100 == 0):
+                        print('Epoch: {}/{}, step: {}/{} | train loss: {:.4f}'.format(epoch, args['epoch'], step+1, len(train_loader), running_loss/float(step+1)/args['batch_size']))
+
+                    # END IF
 
                 # END IF
+
+                if (step+1) % args['pseudo_batch_loop'] == 0 and step > 0:
+                    # Apply large mini-batch normalization
+                    for param in model.parameters():
+                        param.grad *= 1./float(args['pseudo_batch_loop']*args['batch_size'])
+                    optimizer.step()
+
+
+                # END IF
+    
 
             # END FOR: Epoch
 
@@ -178,13 +193,14 @@ def train(**args):
    
             # END IF: Debug
 
-            scheduler.step()
+            scheduler.step(epoch=epoch)
+            print('Schedulers lr: %f', scheduler.get_lr()[0])
 
             ## START FOR: Validation Accuracy
             running_acc = []
-            running_acc = valid(train_loader, running_acc, model, device, acc_metric)
+            running_acc = valid(valid_loader, running_acc, model, device, acc_metric)
             if not args['debug']:
-                writer.add_scalar(args['dataset']+'/'+args['model']+'/validation_accuracy', 100.*running_acc[-1], epoch*len(train_loader) + step)
+                writer.add_scalar(args['dataset']+'/'+args['model']+'/validation_accuracy', 100.*running_acc[-1], epoch*len(valid_loader) + step)
             print('Accuracy of the network on the validation set: %f %%\n' % (100.*running_acc[-1]))
 
             # Save Best Validation Accuracy Model Separately

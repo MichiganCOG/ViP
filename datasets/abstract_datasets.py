@@ -109,7 +109,7 @@ class VideoDataset(Dataset):
         else:
             if self.random_offset:
                 if len(video) >= self.clip_length:
-                    indices = np.random.choice(np.arange(len(video) - self.clip_length), 1)
+                    indices = np.random.choice(np.arange(len(video) - self.clip_length + 1), 1)
                     indices = indices.astype('int32')
                     indices = np.arange(indices, indices + self.clip_length).astype('int32') 
 
@@ -120,7 +120,7 @@ class VideoDataset(Dataset):
                     indices = indices.astype('int32')
                     indices = np.tile(np.arange(0, len(video), 1, dtype='int32'), indices)
 
-                    index   = np.random.choice(np.arange(len(indices) - self.clip_length), 1)
+                    index   = np.random.choice(np.arange(len(indices) - self.clip_length + 1), 1)[0]
                     index   = index.astype('int32')
                     indices = indices[index:index + self.clip_length]
 

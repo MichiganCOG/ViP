@@ -43,15 +43,17 @@ def eval(**args):
     log_dir    = os.path.join(result_dir, 'logs')
     save_dir   = os.path.join(result_dir, 'checkpoints')
 
-    os.makedirs(result_dir, exist_ok=True)
-    os.makedirs(log_dir,    exist_ok=True) 
-    os.makedirs(save_dir,   exist_ok=True) 
+    if not args['debug']:
+        os.makedirs(result_dir, exist_ok=True)
+        os.makedirs(log_dir,    exist_ok=True) 
+        os.makedirs(save_dir,   exist_ok=True) 
 
-    with open(os.path.join(result_dir, 'config.yaml'),'w') as outfile:
-        yaml.dump(args, outfile, default_flow_style=False)
+        # Save copy of config file
+        with open(os.path.join(result_dir, 'config.yaml'),'w') as outfile:
+            yaml.dump(args, outfile, default_flow_style=False)
 
-    # Tensorboard Element
-    writer = SummaryWriter()
+        # Tensorboard Element
+        writer = SummaryWriter(log_dir)
 
     # Check if GPU is available (CUDA)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -62,7 +64,7 @@ def eval(**args):
     # Load Data
     loader = data_loader(**args, model_obj=model)
 
-    if args['load_type'] == 'valid':
+    if args['load_type'] == 'train_val':
         eval_loader = loader['valid']
 
     elif args['load_type'] == 'test':
@@ -98,11 +100,12 @@ def eval(**args):
             if step % 100 == 0:
                 print('Step: {}/{} | {} acc: {:.4f}'.format(step, len(eval_loader), args['load_type'], acc))
 
-    writer.add_scalar(args['dataset']+'/'+args['model']+'/'+args['load_type']+'_accuracy', acc)
     print('Accuracy of the network on the {} set: {:.3f} %\n'.format(args['load_type'], 100.*acc))
-    
-    # Close Tensorboard Element
-    writer.close()
+
+    if not args['debug']:
+        writer.add_scalar(args['dataset']+'/'+args['model']+'/'+args['load_type']+'_accuracy', 100.*acc)
+        # Close Tensorboard Element
+        writer.close()
 
 if __name__ == '__main__':
 
