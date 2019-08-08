@@ -8,19 +8,19 @@ from PIL import Image
 class VideoDataset(Dataset):
     __metaclass__ = ABCMeta
     def __init__(self, *args, **kwargs):
-    #def __init__(self, json_path, load_type, clip_length=16, clip_offset=0, clip_stride=1, num_clips=-1, resize_shape=[128, 128], crop_shape=[128, 128], crop_type='random', final_shape=[128,128], *args, **kwargs):
         """
         Args: 
-            json_path:    Path to the directory containing the dataset's JSON file (not including the file itself)
-            load_type:    String indicating whether to load training or validation data ('train' or 'val') 
-            clip_length:  Number of frames in each clip that will be input into the network
-            clip_offset:  Number of frames from beginning of video to start extracting clips 
-            clip_stride:  The temporal stride between clips
-            num_clips:    Number of clips to extract from each video (-1 uses the entire video)
-            resize_shape: The shape [h, w] of each frame after resizing
-            crop_shape:   The shape [h, w] of each frame after cropping
-            crop_type:    The method used to crop (either random or center)
-            final_shape:  Final shape [h, w] of each frame after all preprocessing, this is input to network
+            json_path:     Path to the directory containing the dataset's JSON file (not including the file itself)
+            load_type:     String indicating whether to load training or validation data ('train' or 'val') 
+            clip_length:   Number of frames in each clip that will be input into the network
+            clip_offset:   Number of frames from beginning of video to start extracting clips 
+            clip_stride:   The temporal stride between clips
+            num_clips:     Number of clips to extract from each video (-1 uses the entire video)
+            resize_shape:  The shape [h, w] of each frame after resizing
+            crop_shape:    The shape [h, w] of each frame after cropping
+            crop_type:     The method used to crop (either random or center)
+            final_shape:   Final shape [h, w] of each frame after all preprocessing, this is input to network
+            random_offset: Randomly select a clip_length sized clip from a video
         """
 
         # JSON loading arguments
@@ -32,6 +32,7 @@ class VideoDataset(Dataset):
         self.clip_offset    = kwargs['clip_offset']
         self.clip_stride    = kwargs['clip_stride']
         self.num_clips      = kwargs['num_clips']
+        self.random_offset  = kwargs['random_offset']
 
         # Frame-wise processing arguments
         self.resize_shape   = kwargs['resize_shape']
@@ -108,7 +109,7 @@ class VideoDataset(Dataset):
         else:
             if self.random_offset:
                 if len(video) >= self.clip_length:
-                    indices = np.random.choice(np.arange(len(video) - self.clip_length), 1)
+                    indices = np.random.choice(np.arange(len(video) - self.clip_length + 1), 1)
                     indices = indices.astype('int32')
                     indices = np.arange(indices, indices + self.clip_length).astype('int32') 
 
@@ -119,7 +120,7 @@ class VideoDataset(Dataset):
                     indices = indices.astype('int32')
                     indices = np.tile(np.arange(0, len(video), 1, dtype='int32'), indices)
 
-                    index   = np.random.choice(np.arange(len(indices) - self.clip_length), 1)
+                    index   = np.random.choice(np.arange(len(indices) - self.clip_length + 1), 1)[0]
                     index   = index.astype('int32')
                     indices = indices[index:index + self.clip_length]
 
