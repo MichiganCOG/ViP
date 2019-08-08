@@ -55,7 +55,7 @@ class Parse():
         self.defaults = dict(
             rerun            = 5,
             batch_size       = 1,
-            pseudo_batch_loop= 1
+            pseudo_batch_loop= 1,
             num_workers      = 1,
             acc_metric       = None,
             opt              = 'sgd',
