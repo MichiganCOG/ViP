@@ -15,8 +15,8 @@ subtract_mean:     ''                    # Subtract mean (R,G,B) from all frames
 # Experiment Setup 
 acc_metric:        Accuracy              # Accuracy metric 
 batch_size:        3                     # Numbers of videos in a mini-batch 
-pseudo_batch_loop: 5                     # Pseudo-batch size multiplier to mimic large minibatches 
 dataset:           HMDB51                # Name of dataset 
+debug:             0                     # If True, do not plot, save, or create data files 
 epoch:             30                    # Total number of epochs 
 exp:               exp                   # Experiment name
 gamma:             0.1                   # Multiplier with which to change learning rate
@@ -32,6 +32,7 @@ num_workers:       2                     # Number of CPU worker used to load dat
 opt:               sgd                   # Name of optimizer
 preprocess:        default               # String argument to select preprocessing type
 pretrained:        1                     # Load pretrained network 
+pseudo_batch_loop: 1                     # Pseudo-batch size multiplier to mimic large minibatches 
 rerun:             1                     # Number of trials to repeat an experiment
 save_dir:          './results'           # Path to results directory
 seed:              999                   # Seed for reproducibility 
