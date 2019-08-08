@@ -140,7 +140,7 @@ class ResizeClip(PreprocTransform):
                     if np.array_equal(bbox[frame_ind,class_ind],-1*np.ones(4)): #only annotated objects
                         continue
                     xmin, ymin, xmax, ymax = bbox[frame_ind, class_ind]
-                    proc_bbox = self.resize_bbox(xmin, ymin, xmax, ymax, frame.shape, (self.size_w, self.size_h))
+                    proc_bbox = self.resize_bbox(xmin, ymin, xmax, ymax, frame.shape, (self.size_h, self.size_w))
                     temp_bbox[class_ind,:] = proc_bbox
                 out_bbox.append(temp_bbox)
 
