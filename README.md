@@ -31,16 +31,17 @@ A platform for quick and easy development of deep learning networks for recognit
 ## Configured Datasets
 |   Dataset      |        Task(s)           |
 |:--------------:|:------------------------:|
-|[HMDB51](http://serre-lab.clps.brown.edu/resource/hmdb-a-large-human-motion-database/#Downloads)      |Activity Recognition      |
-|[ImageNetVID](http://bvisionweb1.cs.unc.edu/ilsvrc2015/download-videos-3j16.php)|Video Object Detection    |
-|[MSCOCO 2014](http://cocodataset.org/#download) |Object Detection, Keypoints|
-|[VOC2007](http://host.robots.ox.ac.uk/pascal/VOC/voc2007/)     |Object Detection, Classification|
+|[HMDB51](http://serre-lab.clps.brown.edu/resource/hmdb-a-large-human-motion-database/#Downloads)      | Activity Recognition   |
+|[UCF101](https://www.crcv.ucf.edu/data/UCF101.php)                                                    | Activity Recognition   |
+|[ImageNetVID](http://bvisionweb1.cs.unc.edu/ilsvrc2015/download-videos-3j16.php)                      | Video Object Detection |
+|[MSCOCO 2014](http://cocodataset.org/#download)                                                       | Object Detection, Keypoints|
+|[VOC2007](http://host.robots.ox.ac.uk/pascal/VOC/voc2007/)                                            | Object Detection, Classification|
 
 ## Models
-|                     Model                        |   Task(s)  |
-|:------------------------------------------------:|:-------:|
-|[C3D]()                                           | Activity Recognition|
-|[SSD300](https://github.com/amdegroot/ssd.pytorch)| Object Detection|
+|                     Model                        |        Task(s)       |
+|:------------------------------------------------:|:--------------------:|
+|[C3D](https://github.com/jfzhang95/pytorch-video-recognition/blob/master/network/C3D_model.py) | Activity Recognition |
+|[SSD300](https://github.com/amdegroot/ssd.pytorch)                                             | Object Detection     |
 
 ## Requirements
 

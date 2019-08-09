@@ -3,7 +3,7 @@ models/weights/*
 results/*
 *.swp
 *.pyc
-
+setup.sh
 runs/*
 
 *.pth
