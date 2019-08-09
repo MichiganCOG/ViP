@@ -158,6 +158,7 @@ def train(**args):
                     import pdb; pdb.set_trace()
 
                 # END IF
+
                 if not args['debug']:
                     # Add Learning Rate Element
                     for param_group in optimizer.param_groups:
@@ -168,10 +169,10 @@ def train(**args):
                     # Add Loss Element
                     writer.add_scalar(args['dataset']+'/'+args['model']+'/minibatch_loss', loss.item()/args['batch_size'], epoch*len(train_loader) + step)
 
-                    if ((epoch*len(train_loader) + step+1) % 100 == 0):
-                        print('Epoch: {}/{}, step: {}/{} | train loss: {:.4f}'.format(epoch, args['epoch'], step+1, len(train_loader), running_loss/float(step+1)/args['batch_size']))
+                # END IF
 
-                    # END IF
+                if ((epoch*len(train_loader) + step+1) % 100 == 0):
+                    print('Epoch: {}/{}, step: {}/{} | train loss: {:.4f}'.format(epoch, args['epoch'], step+1, len(train_loader), running_loss/float(step+1)/args['batch_size']))
 
                 # END IF
 
