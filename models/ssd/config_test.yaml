@@ -15,7 +15,6 @@ subtract_mean:     [123,117,104]                       # Subtract mean (R,G,B) f
 # Experiment Setup 
 acc_metric:        SSD_AP                              # Accuracy metric 
 batch_size:        1                                   # Numbers of videos in a mini-batch 
-pseudo_batch_loop: 1                                   # Pseudo-batch size multiplier to mimic large minibatches 
 dataset:           VOC2007                             # Name of dataset 
 epoch:             10                                  # Total number of epochs 
 exp:               evaluation                          # Experiment name

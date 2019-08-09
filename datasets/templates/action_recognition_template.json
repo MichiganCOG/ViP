@@ -2,7 +2,7 @@
     {
         "frames (list)": [
             {
-                "frame_size (int, int)": "(HEIGHT,WIDTH)",
+                "frame_size (int, int)": "(WIDTH,HEIGHT)",
                 "img_path (str)": "FRAME_PATH",
                 "actions (list)": [
                     {
