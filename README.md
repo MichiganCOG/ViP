@@ -13,9 +13,11 @@ A platform for quick and easy development of deep learning networks for recognit
 ### Object Detection
 |  Model Architecture  |      Dataset       |    ViP Accuracy (%)   | 
 |:--------------------:|:------------------:|:---------------------:|
-|        [SSD300](https://github.com/amdegroot/ssd.pytorch)        |  VOC2007  |    76.58      |
+|        SSD300        |  VOC2007  |    76.58      |
 ## Table of Contents
 
+* [Datasets](#configured-datasets)
+* [Models](#models)
 * [Requirements](#requirements)
 * [Installation](#installation)
 * [Quick Start](#quick-start)
@@ -25,6 +27,20 @@ A platform for quick and easy development of deep learning networks for recognit
   * [Add a Model](#add-a-model)
   * [Add a Dataset](#add-a-dataset)
 * [Version History](#version-history)
+
+## Configured Datasets
+|   Dataset      |        Task(s)           |
+|:--------------:|:------------------------:|
+|[HMDB51](http://serre-lab.clps.brown.edu/resource/hmdb-a-large-human-motion-database/#Downloads)      |Activity Recognition      |
+|[ImageNetVID](http://image-net.org/challenges/LSVRC/2017/) |Video Object Detection    |
+|[MSCOCO 2014](http://cocodataset.org/#download) |Object Detection, Keypoints|
+|[VOC2007](http://host.robots.ox.ac.uk/pascal/VOC/voc2007/)     |Object Detection, Classification|
+
+## Models
+|                     Model                        |   Task(s)  |
+|:------------------------------------------------:|:-------:|
+|[C3D]()                                           | Activity Recognition|
+|[SSD300](https://github.com/amdegroot/ssd.pytorch)| Object Detection|
 
 ## Requirements
 
@@ -106,7 +122,7 @@ To add a new dataset:
 - Implemented datasets: HMDB51, ImageNetVID, MSCOCO, VOC2007
 - Implemented recognition models: C3D
 - Implemented detection models: SSD
-- Implemented metrics: Recognition accuracy, IOU, mAP, Precision, Recall
+- Implemented metrics: Recognition accuracy, IOU, mAP, AP
 - Implemented losses: MSE, Cross entropy
 
 ### Version 0.1
