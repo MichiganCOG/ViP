@@ -10,7 +10,6 @@ runs/*
 *.pth.tar
 *.pkl
 *.npy
-config_*.yaml
 models/HGC3D
 *.json
 pbs/*
