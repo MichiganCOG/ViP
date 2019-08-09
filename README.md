@@ -32,7 +32,7 @@ A platform for quick and easy development of deep learning networks for recognit
 |   Dataset      |        Task(s)           |
 |:--------------:|:------------------------:|
 |[HMDB51](http://serre-lab.clps.brown.edu/resource/hmdb-a-large-human-motion-database/#Downloads)      |Activity Recognition      |
-|ImageNetVID [(Challenge)](http://image-net.org/challenges/LSVRC/2017/) [(Download)](http://bvisionweb1.cs.unc.edu/ilsvrc2015/download-videos-3j16.php)|Video Object Detection    |
+|[ImageNetVID](http://bvisionweb1.cs.unc.edu/ilsvrc2015/download-videos-3j16.php)|Video Object Detection    |
 |[MSCOCO 2014](http://cocodataset.org/#download) |Object Detection, Keypoints|
 |[VOC2007](http://host.robots.ox.ac.uk/pascal/VOC/voc2007/)     |Object Detection, Classification|
 
