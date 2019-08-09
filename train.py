@@ -149,6 +149,7 @@ def train(**args):
                 assert args['final_shape']==list(x_input.size()[-2:]), "Input to model does not match final_shape argument"
                 outputs = model(x_input)
                 loss    = model_loss.loss(outputs, annotations)
+                loss    = loss * args['batch_size']
                 loss.backward()
 
                 running_loss += loss.item()
@@ -165,7 +166,7 @@ def train(**args):
                     # END FOR
                 
                     # Add Loss Element
-                    writer.add_scalar(args['dataset']+'/'+args['model']+'/minibatch_loss', loss.item()/args['batch_size'], epoch*len(train_loader) + step)
+                    writer.add_scalar(args['dataset']+'/'+args['model']+'/minibatch_loss', loss.item(), epoch*len(train_loader) + step)
 
                     if ((epoch*len(train_loader) + step+1) % 100 == 0):
                         print('Epoch: {}/{}, step: {}/{} | train loss: {:.4f}'.format(epoch, args['epoch'], step+1, len(train_loader), running_loss/float(step+1)/args['batch_size']))
@@ -174,7 +175,7 @@ def train(**args):
 
                 # END IF
 
-                if (step+1) % args['pseudo_batch_loop'] == 0 and step > 0:
+                if (epoch * len(trainloader) + (step+1)) % args['pseudo_batch_loop'] == 0 and step > 0:
                     # Apply large mini-batch normalization
                     for param in model.parameters():
                         param.grad *= 1./float(args['pseudo_batch_loop']*args['batch_size'])
