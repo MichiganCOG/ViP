@@ -33,7 +33,11 @@ class Metrics(object):
             targets: ground truth or targets 
         """
 
-        return self.metric_object.get_accuracy(predictions, targets, **kwargs)
+        if self.metric_type == None:
+            return -1
+
+        else:
+            return self.metric_object.get_accuracy(predictions, targets, **kwargs)
 
 class Accuracy(object):
     """
