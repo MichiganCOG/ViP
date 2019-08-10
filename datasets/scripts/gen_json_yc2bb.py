@@ -16,12 +16,8 @@ for split, ann_file in zip(splits, ann_files):
 
 
     #YC2 split names, slightly different
-    if split == 'train':
-        split_name = 'training'
-    elif split == 'val':
-        split_name = 'validation'
-    else:
-        split_name = 'testing'
+    split_to_split = {'train':'training','val':'validation','test':'testing'}
+    split_name = split_to_split[split]
     
     with open(ann_file) as f:
         ann_json_data = json.load(f)
