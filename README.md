@@ -114,20 +114,3 @@ To add a new dataset:
 	* Complete `__init__` and `__getitem__` functions
 	* Example skeleton dataset can be found [here](https://github.com/MichiganCOG/ViP/blob/master/datasets/templates/dataset_template.py)
 
-## Version History
-
-### Version 1.0
-- Training and Evaluation files are completed
-- Data loading pipeline
-- Config and argument reader
-- Checkpoint saving and loading
-- Implemented datasets: HMDB51, ImageNetVID, MSCOCO, VOC2007
-- Implemented recognition models: C3D
-- Implemented detection models: SSD
-- Implemented metrics: Recognition accuracy, IOU, mAP, AP
-- Implemented losses: MSE, Cross entropy
-
-### Version 0.1
-- Basic training file for recognition is ready, next step is to work on data loader since that is the immediate function being loaded
-- Began inclusion of dataset loading classes into datasets folder
-
