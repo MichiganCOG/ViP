@@ -10,7 +10,7 @@ class Parse():
         
         parser = argparse.ArgumentParser()
 
-        parser.add_argument('--cfg_file', type=str, default='config.yaml', help='Configuration file with experiment parameters')
+        parser.add_argument('--cfg_file', type=str, default='config_default_example.yaml', help='Configuration file with experiment parameters')
 
         #Command-line arguments will override any config file arguments
         parser.add_argument('--rerun',             type=int, help='Number of trials to repeat an experiment')
