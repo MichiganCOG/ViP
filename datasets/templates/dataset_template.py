@@ -22,10 +22,10 @@ class CustomDataset(RecognitionDataset):
         self.load_type = kwargs['load_type']
 
         if self.load_type=='train':
-            self.transforms = PreprocessTrain(**kwargs)
+            self.transforms = kwargs['model_obj'].train_transforms
 
         else:
-            self.transforms = PreprocessEval(**kwargs)
+            self.transforms = kwargs['model_obj'].test_transforms
 
     def __getitem__(self, idx):
         vid_info = self.samples[idx]

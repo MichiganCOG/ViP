@@ -25,10 +25,16 @@ class ImageNetVID(DetectionDataset):
         # Maximum number of annotated object present in a single frame in entire dataset
         # Dictates the return size of annotations in __getitem__
         self.max_objects = 38 
-
-
-        self.transforms = self.model_object.get_transforms()
-
+        
+        #self.transforms = self.model_object.get_transforms()
+        
+        if self.load_type=='train':
+            self.transforms = kwargs['model_obj'].train_transforms
+        
+        else:
+            self.transforms = kwargs['model_obj'].test_transforms
+    
+    
     def __getitem__(self, idx):
         vid_info = self.samples[idx]
         

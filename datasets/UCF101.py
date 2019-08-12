@@ -30,10 +30,10 @@ class UCF101(RecognitionDataset):
         self.preprocess   = kwargs['preprocess']
         
         if self.load_type=='train':
-            self.transforms = PreprocessTrainC3D(**kwargs)
+            self.transforms = kwargs['model_obj'].train_transforms 
 
         else:
-            self.transforms = PreprocessEvalC3D(**kwargs)
+            self.transforms = kwargs['model_obj'].test_transforms
 
 
     def __getitem__(self, idx):
