@@ -65,9 +65,10 @@ cd ViP
 ```
 
 ## Quick Start
-Eval.py and train.py are the two programs that will test and train any implemented model.
-Each model has specific parameters specified within the [config.yaml](https://github.com/MichiganCOG/ViP/blob/master/models/ssd/config.yaml) files in its repsective folder.
-All parameters can also be modified using command line arguments.
+Run `train.py` and `eval.py` to train or test any implemented model. The parameters of every experiment is specified in its [config.yaml](https://github.com/MichiganCOG/ViP/blob/master/config_default_example.yaml) file. 
+
+Use the `--cfg_file` command line argument to point to a different config yaml file.
+Additionally, all config parameters can be overriden with a command line argument.
 
 ### Testing
 
