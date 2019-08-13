@@ -2,7 +2,6 @@
     {
         "frames (list)": [
             {
-                "frame_size (int, int)": "(WIDTH,HEIGHT)",
                 "img_path (str)": "FRAME_PATH",
                 "objs (list)": [
                     {
@@ -14,6 +13,7 @@
                 ]
             }
         ],
-        "base_path (str)": "BASE_VID_PATH"
+        "base_path (str)": "BASE_VID_PATH",
+        "frame_size (int, int)": "(WIDTH,HEIGHT)"
     }
 ]
