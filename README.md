@@ -2,6 +2,8 @@
 
 A platform for quick and easy development of deep learning networks for recognition and detection in videos. Includes popular models like C3D and SSD.
 
+Check out our [wiki!](https://github.com/MichiganCOG/ViP/wiki)
+
 ## Implemented Models and their performance
 
 ### Recognition
@@ -88,6 +90,9 @@ Ex: From the root directory of ViP, train the action recognition network C3D on 
 ```
 python train.py --cfg_file models/c3d/config_train.yaml
 ```
+
+Additional examples can be found on our [wiki.](https://github.com/MichiganCOG/ViP/wiki)
+
 ## Development
 
 New models and datasets can be added without needing to rewrite any training, evaluation, or data loading code.
@@ -103,6 +108,8 @@ To add a new model:
 
 Examples of previously implemented models can be found [here](https://github.com/MichiganCOG/ViP/tree/master/models).
 
+Additional information can be found on our [wiki.](https://github.com/MichiganCOG/ViP/wiki)
+
 ### Add a Dataset
 
 To add a new dataset:
@@ -114,6 +121,7 @@ To add a new dataset:
 	* Complete `__init__` and `__getitem__` functions
 	* Example skeleton dataset can be found [here](https://github.com/MichiganCOG/ViP/blob/master/datasets/templates/dataset_template.py)
 
+Additional information can be found on our [wiki.](https://github.com/MichiganCOG/ViP/wiki)
 
 ### FAQ
 
