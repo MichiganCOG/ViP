@@ -26,7 +26,7 @@ A platform for quick and easy development of deep learning networks for recognit
 * [Development](#development)
   * [Add a Model](#add-a-model)
   * [Add a Dataset](#add-a-dataset)
-* [Version History](#version-history)
+* [FAQ](#faq)
 
 ## Configured Datasets
 |   Dataset      |        Task(s)           |
@@ -114,3 +114,7 @@ To add a new dataset:
 	* Complete `__init__` and `__getitem__` functions
 	* Example skeleton dataset can be found [here](https://github.com/MichiganCOG/ViP/blob/master/datasets/templates/dataset_template.py)
 
+
+### FAQ
+
+A detailed FAQ can be found on our [wiki](https://github.com/MichiganCOG/ViP/wiki/FAQ).
