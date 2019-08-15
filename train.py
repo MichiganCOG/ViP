@@ -180,6 +180,10 @@ def train(**args):
                     # Apply large mini-batch normalization
                     for param in model.parameters():
                         param.grad *= 1./float(args['pseudo_batch_loop']*args['batch_size'])
+                    
+                    # Apply gradient clipping
+                    if ("grad_max_norm" in args) and float(args['grad_max_norm'] > 0):
+                        nn.utils.clip_grad_norm_(model.parameters(),float(args['grad_max_norm']))
                     optimizer.step()
 
 
