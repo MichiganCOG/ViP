@@ -20,6 +20,7 @@ debug:             0                     # If True, do not plot, save, or create
 epoch:             30                    # Total number of epochs 
 exp:               exp                   # Experiment name
 gamma:             0.1                   # Multiplier with which to change learning rate
+grad_max_norm:     0                     # Norm for gradient clipping
 json_path:         /z/dat/HMDB51/        # Path to the json file for the given dataset
 labels:            51                    # Number of total classes in the dataset
 load_type:         train                 # Environment selection, to include only training/training and validation/testing dataset
@@ -37,4 +38,3 @@ rerun:             1                     # Number of trials to repeat an experim
 save_dir:          './results'           # Path to results directory
 seed:              999                   # Seed for reproducibility 
 weight_decay:      0.0005                # Weight decay
-grad_max_norm:     0.1                   # Norm for gradient clipping
