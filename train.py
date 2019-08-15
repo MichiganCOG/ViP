@@ -179,7 +179,8 @@ def train(**args):
                 if (epoch * len(train_loader) + (step+1)) % args['pseudo_batch_loop'] == 0 and step > 0:
                     # Apply large mini-batch normalization
                     for param in model.parameters():
-                        param.grad *= 1./float(args['pseudo_batch_loop']*args['batch_size'])
+                        if param.requires_grad:
+                            param.grad *= 1./float(args['pseudo_batch_loop']*args['batch_size'])
                     
                     # Apply gradient clipping
                     if ("grad_max_norm" in args) and float(args['grad_max_norm'] > 0):
