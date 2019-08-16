@@ -123,6 +123,22 @@ class ResizeClip(PreprocTransform):
     
         return xmin_new, ymin_new, xmax_new, ymax_new 
 
+    def resize_pt_coords(self, x, y, img_shape, resize_shape):
+        # Get relative position for point coords within a frame, after it's resized
+
+        img_h = img_shape[0]
+        img_w = img_shape[1]
+    
+        res_h = resize_shape[0]
+        res_w = resize_shape[1]
+    
+        frac_h = res_h/float(img_h)
+        frac_w = res_w/float(img_w)
+
+        x_new = (x * frac_w).astype(int)
+        y_new = (y * frac_h).astype(int)
+
+        return x_new, y_new
 
     def __call__(self, clip, bbox=[]):
 
@@ -136,11 +152,16 @@ class ResizeClip(PreprocTransform):
             out_clip.append(proc_frame)
             if bbox!=[]:
                 temp_bbox = np.zeros(bbox[frame_ind].shape)-1 
-                for class_ind in range(len(bbox[frame_ind])):
-                    if np.array_equal(bbox[frame_ind,class_ind],-1*np.ones(4)): #only annotated objects
+                for class_ind, box in enumerate(bbox[frame_ind]):
+                    if np.array_equal(box,-1*np.ones(box.shape)): #only annotated objects
                         continue
-                    xmin, ymin, xmax, ymax = bbox[frame_ind, class_ind]
-                    proc_bbox = self.resize_bbox(xmin, ymin, xmax, ymax, frame.shape, (self.size_h, self.size_w))
+
+                    if box.shape[-1] == 2: #Operate on point coordinates
+                        proc_bbox = np.stack(self.resize_pt_coords(box[:,0], box[:,1], frame.shape, (self.size_h, self.size_w)),1)
+                    else: #Operate on bounding box
+                        xmin, ymin, xmax, ymax = box
+                        proc_bbox = self.resize_bbox(xmin, ymin, xmax, ymax, frame.shape, (self.size_h, self.size_w))
+
                     temp_bbox[class_ind,:] = proc_bbox
                 out_bbox.append(temp_bbox)
 
@@ -155,7 +176,7 @@ class ResizeClip(PreprocTransform):
 
 
 class CropClip(PreprocTransform):
-    def __init__(self, xmin, xmax, ymin, ymax, *args, **kwargs):
+    def __init__(self, xmin=None, xmax=None, ymin=None, ymax=None, *args, **kwargs):
         super(CropClip, self).__init__(*args, **kwargs)
         self.crop_xmin = xmin
         self.crop_xmax = xmax
@@ -165,12 +186,26 @@ class CropClip(PreprocTransform):
         self.crop_h, self.crop_w = kwargs['crop_shape']
 
 
-    def _update_bbox(self, xmin, xmax, ymin, ymax):
+    def _update_bbox(self, xmin, xmax, ymin, ymax, update_crop_shape=False):
+        '''
+            Args:
+                xmin (Float, shape []):
+                xmax (Float, shape []):
+                ymin (Float, shape []):
+                ymax (Float, shape []):
+                update_crop_shape (Boolean): Update expected crop shape along with bbox update call 
+        '''
         self.crop_xmin = xmin
         self.crop_xmax = xmax
         self.crop_ymin = ymin
         self.crop_ymax = ymax
 
+        if update_crop_shape:
+            self.crop_h = ymax - ymin
+            self.crop_w = xmax - xmin 
+
+    def update_crop_shape(self, crop_h, crop_w):
+        pass
 
     def crop_bbox(self, xmin, ymin, xmax, ymax, crop_xmin, crop_ymin, crop_xmax, crop_ymax):
         if (xmin >= crop_xmax) or (xmax <= crop_xmin) or (ymin >= crop_ymax) or (ymax <= crop_ymin):
@@ -198,8 +233,15 @@ class CropClip(PreprocTransform):
     
         return xmin_new-crop_xmin, ymin_new-crop_ymin, xmax_new-crop_xmin, ymax_new-crop_ymin
 
+    def crop_coords(self, x, y, crop_xmin, crop_ymin, crop_xmax, crop_ymax):
+        if np.any(x >= crop_xmax) or np.any(x <= crop_xmin) or np.any(y >= crop_ymax) or np.any(y <= crop_ymin):
+            return -1*np.ones(x.shape), -1*np.ones(y.shape)
 
-        
+        x_new = np.clip(x, crop_xmin, crop_xmax)
+        y_new = np.clip(x, crop_xmin, crop_xmax)
+
+        return x_new-crop_xmin, y_new-crop_xmin 
+  
     def __call__(self, clip, bbox=[]):
         out_clip = []
         out_bbox = []
@@ -213,11 +255,15 @@ class CropClip(PreprocTransform):
 
             if bbox!=[]:
                 temp_bbox = np.zeros(bbox[frame_ind].shape)-1 
-                for class_ind in range(len(bbox)):
-                    if np.array_equal(bbox[frame_ind,class_ind],-1*np.ones(4)): #only annotated objects
+                for class_ind, box in enumerate(bbox[frame_ind]):
+                    if np.array_equal(box,-1*np.ones(box.shape)): #only annotated objects
                         continue
-                    xmin, ymin, xmax, ymax = bbox[frame_ind, class_ind]
-                    proc_bbox = self.crop_bbox(xmin, ymin, xmax, ymax, self.crop_xmin, self.crop_ymin, self.crop_xmax, self.crop_ymax)
+
+                    if box.shape[-1] == 2: #Operate on point coordinates
+                        proc_bbox = np.stack(self.crop_coords(box[:,0], box[:,1], self.crop_xmin, self.crop_ymin, self.crop_xmax, self.crop_ymax), 1)
+                    else: #Operate on bounding box
+                        xmin, ymin, xmax, ymax = box
+                        proc_bbox = self.crop_bbox(xmin, ymin, xmax, ymax, self.crop_xmin, self.crop_ymin, self.crop_xmax, self.crop_ymax)
                     temp_bbox[class_ind,:] = proc_bbox
                 out_bbox.append(temp_bbox)
 
@@ -305,6 +351,9 @@ class RandomFlipClip(PreprocTransform):
         super(RandomFlipClip, self).__init__(*args, **kwargs)
         self.direction = direction
         self.p = p
+
+    def _update_p(self, p):
+        self.p = p
             
     def _random_flip(self):
         flip_prob = np.random.random()
@@ -314,17 +363,45 @@ class RandomFlipClip(PreprocTransform):
             return 1
 
     def _h_flip(self, bbox, frame_size):
+        width = frame_size[1]
         bbox_shape = bbox.shape
         output_bbox = np.zeros(bbox_shape)-1
-        for bbox_ind in range(bbox_shape[0]):
-            xmin, ymin, xmax, ymax = bbox[bbox_ind] 
-            width = frame_size[1]
-            xmax_new = width - xmin 
-            xmin_new = width - xmax
-            output_bbox[bbox_ind] = xmin_new, ymin, xmax_new, ymax
-        return output_bbox 
+        for bbox_ind, box in enumerate(bbox):
+            if np.array_equal(box,-1*np.ones(box.shape)): #only annotated objects
+                continue
+
+            if box.shape[-1] == 2: #Operate on point coordinates
+                x = box[:,0]
+                x_new = width - x
+
+                output_bbox[bbox_ind] = np.stack((x_new,box[:,1]),1)
+            else: #Operate on bounding box
+                xmin, ymin, xmax, ymax = box
+                xmax_new = width - xmin
+                xmin_new = width - xmax
+                output_bbox[bbox_ind] = xmin_new, ymin, xmax_new, ymax
+        return output_bbox
 
     def _v_flip(self, bbox, frame_size):
+        height = frame_size[0]
+        bbox_shape = bbox.shape
+        output_bbox = np.zeros(bbox_shape)-1
+        for bbox_ind, box in enumerate(bbox):
+            if np.array_equal(box,-1*np.ones(box.shape)): #only annotated objects
+                continue
+
+            if box.shape[-1] == 2: #Operate on point coordinates
+                y = box[:,1]
+                y_new = height - y
+
+                output_bbox[bbox_ind] = np.stack((box[:,0],y_new),1)
+            else: #Operate on bounding box
+                xmin, ymin, xmax, ymax = box
+                ymax_new = height - ymin
+                ymin_new = height - ymax
+                output_bbox[bbox_ind] = xmin, ymin_new, xmax, ymax_new
+        return output_bbox
+
         bbox_shape = bbox.shape
         output_bbox = np.zeros(bbox_shape)-1
         for bbox_ind in range(bbox_shape[0]):
