@@ -738,6 +738,14 @@ class TestPreproc(object):
         exp_bbox = np.array([[[0,0,1,2]]])
         assert (False not in np.isclose(bbox_out, exp_bbox))
 
+        coord_pts = np.array([[[[1,1], [7,5], [9,6]]]]).astype(float)
+        _, bbox_out = self.resize(inp, coord_pts)
+        exp_bbox = np.array([[[[0., 0.],
+                               [3., 3.],
+                               [4., 4.]]]])
+        assert (False not in np.isclose(bbox_out, exp_bbox))
+
+
     def crop_test(self):
         inp = np.array([[[.1,.2,.3],[.4,.5,.6],[.7,.8,.9]]]).astype(float)
         self.crop._update_bbox(1, 3, 1, 3)
