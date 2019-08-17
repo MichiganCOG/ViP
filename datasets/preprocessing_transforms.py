@@ -204,9 +204,6 @@ class CropClip(PreprocTransform):
             self.crop_h = ymax - ymin
             self.crop_w = xmax - xmin 
 
-    def update_crop_shape(self, crop_h, crop_w):
-        pass
-
     def crop_bbox(self, xmin, ymin, xmax, ymax, crop_xmin, crop_ymin, crop_xmax, crop_ymax):
         if (xmin >= crop_xmax) or (xmax <= crop_xmin) or (ymin >= crop_ymax) or (ymax <= crop_ymin):
             return -1, -1, -1, -1
@@ -238,9 +235,9 @@ class CropClip(PreprocTransform):
             return -1*np.ones(x.shape), -1*np.ones(y.shape)
 
         x_new = np.clip(x, crop_xmin, crop_xmax)
-        y_new = np.clip(x, crop_xmin, crop_xmax)
+        y_new = np.clip(y, crop_ymin, crop_ymax)
 
-        return x_new-crop_xmin, y_new-crop_xmin 
+        return x_new-crop_xmin, y_new-crop_ymin 
   
     def __call__(self, clip, bbox=[]):
         out_clip = []
@@ -547,6 +544,38 @@ class RandomRotateClip(PreprocTransform):
         return output_bboxes
 
 
+    def _rotate_coords(self, bboxes, frame_shape, angle):
+        angle = np.deg2rad(angle)
+        bboxes_shape = bboxes.shape
+        output_bboxes = np.zeros(bboxes_shape)-1
+        frame_h, frame_w = frame_shape[0], frame_shape[1] 
+        half_h = frame_h/2. 
+        half_w = frame_w/2. 
+
+        for bbox_ind in range(bboxes_shape[0]):
+            x, y = bboxes[bbox_ind].transpose()
+            '''
+            import pdb; pdb.set_trace()
+            x = np.array([1])
+            y = np.array([0])
+            half_w = 1
+            half_h = 1
+            '''
+
+            pts  = (x-half_w, y-half_h)
+
+            pts = self._cart2pol(pts)
+
+            pts = (pts[0], pts[1]-angle)
+
+            pts = self._pol2cart(pts)
+
+            pts  = (pts[0]+half_w, pts[1]+half_h)
+
+            output_bboxes[bbox_ind,:,0] = (np.clip(pts[0], 0, frame_w-1))
+            output_bboxes[bbox_ind,:,1] = (np.clip(pts[1], 0, frame_h-1))
+
+        return output_bboxes
 
     def __call__(self, clip, bbox=[]):
         angle = np.random.choice(self.angles)
@@ -559,7 +588,10 @@ class RandomRotateClip(PreprocTransform):
             bbox = np.array(bbox)
             output_bboxes = np.zeros(bbox.shape)-1
             for bbox_ind in range(bbox.shape[0]):
-                output_bboxes[bbox_ind] = self._rotate_bbox(bbox[bbox_ind], clip[0].shape, angle)
+                if bbox.shape[-1] == 2:
+                    output_bboxes[bbox_ind] = self._rotate_coords(bbox[bbox_ind], clip[0].shape, angle)
+                else:
+                    output_bboxes[bbox_ind] = self._rotate_bbox(bbox[bbox_ind], clip[0].shape, angle)
 
             return output_clip, output_bboxes 
 
