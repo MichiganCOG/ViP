@@ -554,13 +554,6 @@ class RandomRotateClip(PreprocTransform):
 
         for bbox_ind in range(bboxes_shape[0]):
             x, y = bboxes[bbox_ind].transpose()
-            '''
-            import pdb; pdb.set_trace()
-            x = np.array([1])
-            y = np.array([0])
-            half_w = 1
-            half_h = 1
-            '''
 
             pts  = (x-half_w, y-half_h)
 
