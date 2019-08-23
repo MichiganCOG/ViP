@@ -590,7 +590,84 @@ class RandomRotateClip(PreprocTransform):
 
         return output_clip
 
+class RandomTranslateClip(PreprocTransform):
+    """
+    Random horizontal and/or vertical shift on frames in a clip
+    Shift will be bounded by object bounding box (if given). Meaning, object will always be in view
 
+    Args:
+        - translate (Tuple)
+            - max_x (float): maximum absolute fraction for horizontal shift 
+            - max_y (float): maximum absolute fraction for vertical shift 
+    """
+    def __init__(self, translate, **kwargs):
+        super(RandomTranslateClip, self).__init__(**kwargs)
+
+        self.max_x, self.max_y = translate
+
+        assert(self.max_x >= 0.0 and self.max_y >= 0.0)
+        assert(self.max_x < 1.0  and self.max_y < 1.0) #Cannot shift pass image bounds
+
+    def _shift_frame(self, bbox, frame, tx, ty):
+        M       = np.array([[1, 0, tx],[0, 1, ty]], dtype=np.float) # 2 x 3 transformation matrix
+        out_frame = cv2.warpAffine(frame, M, (frame.shape[1], frame.shape[0]))
+
+        if bbox is not None:
+            if box.shape[-1] == 2: #Operate on point coordinates
+                bbox_h = np.concatenate((box, np.ones((box.shape[0],1))), axis=1).transpose() #homography coords
+                out_box = M @ bbox_h
+            else: #Operate on bounding box
+                bbox_h = np.reshape(bbox, (-1,2)) #x-y coords
+                bbox_h = np.concatenate((bbox_h, np.ones((bbox_h.shape[0],1))), axis=1).transpose() #homography coords
+
+                out_box = M @ bbox_h
+                out_box = np.reshape(out_box.transpose(), (-1,4))
+
+            return out_frame, out_box 
+        else:
+            return out_frame 
+
+    def __call__(self, clip, bbox=[]):
+        out_clip = []
+        clip = self._to_numpy(clip)
+
+        frac_x = np.random.rand()*(2*self.max_x)-self.max_x 
+        frac_y = np.random.rand()*(2*self.max_y)-self.max_y  
+
+        if bbox != []:
+            out_bbox = []
+            
+            for frame, box in zip(clip,bbox):
+                mask = box[:,0] != -1
+                img_h, img_w, _ = frame.shape 
+                tx = int(img_w * frac_x)
+                ty = int(img_h * frac_y) 
+
+                #Bound translation amount so all objects remain in scene
+                if box.shape[-1] == 2: #Operate on point coordinates
+                    tx = np.clip(tx, np.max(-1*box[mask,0]), np.min(img_w-box[mask,0]))
+                    ty = np.clip(ty, np.max(-1*box[mask,1]), np.min(img_h-box[mask,1]))
+                    out_frame, out_box = self._shift_frame(box, frame, tx, ty)
+                    out_box[~mask] = -1*np.ones(2)
+
+                else: #Operate on bounding box 
+                    #bbox is bounding box object
+                    tx = np.clip(tx, np.max(-1*box[mask,0]), np.min(img_w-box[mask,2]))
+                    ty = np.clip(ty, np.max(-1*box[mask,1]), np.min(img_h-box[mask,3]))
+                    out_frame, out_box = self._shift_frame(box, frame, tx, ty)
+                    out_box[~mask] = -1*np.ones(4)
+
+                out_clip.append(out_frame)
+                out_bbox.append(out_box)
+
+            return out_clip, out_bbox 
+        else:
+            for frame in clip:
+                img_h, img_w, _ = frame.shape
+                tx = int(img_w * frac_x)
+                ty = int(img_h * frac_y) 
+
+                out_clip.append(self._shift_frame(None, frame, tx, ty))
 
 class SubtractMeanClip(PreprocTransform):
     def __init__(self, **kwargs):
