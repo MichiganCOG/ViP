@@ -106,15 +106,16 @@ def train(**args):
         scheduler  = MultiStepLR(optimizer, milestones=args['milestones'], gamma=args['gamma'])
 
         if isinstance(args['pretrained'], str):
-            ckpt = load_checkpoint(args['pretrained'])
+            ckpt        = load_checkpoint(args['pretrained'])
             model.load_state_dict(ckpt)
-            start_epoch = load_checkpoint(args['pretrained'], key_name='epoch') + 1
-            optimizer.load_state_dict(load_checkpoint(args['pretrained'], key_name='optimizer'))
 
-            for quick_looper in range(start_epoch):
-                scheduler.step()
+            if args['resume']:
+                start_epoch = load_checkpoint(args['pretrained'], key_name='epoch') + 1
 
-            # END FOR
+                optimizer.load_state_dict(load_checkpoint(args['pretrained'], key_name='optimizer'))
+                scheduler.step(epoch=start_epoch)
+
+            # END IF 
 
         else:
             start_epoch = 0
@@ -139,6 +140,7 @@ def train(**args):
             for step, data in enumerate(train_loader):
                 if step% args['pseudo_batch_loop'] == 0:
                     loss = 0.0
+                    running_batch = 0
                     optimizer.zero_grad()
 
                 # END IF
@@ -149,10 +151,11 @@ def train(**args):
                 assert args['final_shape']==list(x_input.size()[-2:]), "Input to model does not match final_shape argument"
                 outputs = model(x_input)
                 loss    = model_loss.loss(outputs, annotations)
-                loss    = loss * args['batch_size']
+                loss    = loss * outputs.shape[0] 
                 loss.backward()
 
-                running_loss += loss.item()
+                running_loss  += loss.item()
+                running_batch += outputs.shape[0]
 
                 if np.isnan(running_loss):
                     import pdb; pdb.set_trace()
@@ -167,21 +170,24 @@ def train(**args):
                     # END FOR
                 
                     # Add Loss Element
-                    writer.add_scalar(args['dataset']+'/'+args['model']+'/minibatch_loss', loss.item()/args['batch_size'], epoch*len(train_loader) + step)
+                    writer.add_scalar(args['dataset']+'/'+args['model']+'/minibatch_loss', loss.item()/outputs.shape[0], epoch*len(train_loader) + step)
 
                 # END IF
 
                 if ((epoch*len(train_loader) + step+1) % 100 == 0):
-                    print('Epoch: {}/{}, step: {}/{} | train loss: {:.4f}'.format(epoch, args['epoch'], step+1, len(train_loader), running_loss/float(step+1)/args['batch_size']))
+                    print('Epoch: {}/{}, step: {}/{} | train loss: {:.4f}'.format(epoch, args['epoch'], step+1, len(train_loader), running_loss/float(step+1)/outputs.shape[0]))
 
                 # END IF
 
                 if (epoch * len(train_loader) + (step+1)) % args['pseudo_batch_loop'] == 0 and step > 0:
                     # Apply large mini-batch normalization
                     for param in model.parameters():
-                        param.grad *= 1./float(args['pseudo_batch_loop']*args['batch_size'])
-                    optimizer.step()
+                        param.grad *= 1./float(running_batch)
 
+                    # END FOR
+
+                    optimizer.step()
+                    running_batch = 0
 
                 # END IF
     
@@ -201,8 +207,10 @@ def train(**args):
             ## START FOR: Validation Accuracy
             running_acc = []
             running_acc = valid(valid_loader, running_acc, model, device, acc_metric)
+
             if not args['debug']:
-                writer.add_scalar(args['dataset']+'/'+args['model']+'/validation_accuracy', 100.*running_acc[-1], epoch*len(valid_loader) + step)
+                writer.add_scalar(args['dataset']+'/'+args['model']+'/validation_accuracy', 100.*running_acc[-1], epoch*len(train_loader) + step)
+
             print('Accuracy of the network on the validation set: %f %%\n' % (100.*running_acc[-1]))
 
             # Save Best Validation Accuracy Model Separately
@@ -246,10 +254,13 @@ if __name__ == "__main__":
 
     parse = Parse()
     args = parse.get_args()
+    import pdb; pdb.set_trace()
 
     # For reproducibility
     torch.backends.cudnn.deterministic = True
     torch.manual_seed(args['seed'])
-    #np.random.seed(args['seed']+1)
+
+    if not args['resume']:
+        np.random.seed(args['seed'])
 
     train(**args)
