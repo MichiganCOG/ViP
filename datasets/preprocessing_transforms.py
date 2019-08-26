@@ -613,14 +613,14 @@ class RandomTranslateClip(PreprocTransform):
         out_frame = cv2.warpAffine(frame, M, (frame.shape[1], frame.shape[0]))
 
         if bbox is not None:
-            if box.shape[-1] == 2: #Operate on point coordinates
-                bbox_h = np.concatenate((box, np.ones((box.shape[0],1))), axis=1).transpose() #homography coords
-                out_box = M @ bbox_h
-            else: #Operate on bounding box
-                bbox_h = np.reshape(bbox, (-1,2)) #x-y coords
-                bbox_h = np.concatenate((bbox_h, np.ones((bbox_h.shape[0],1))), axis=1).transpose() #homography coords
+            bbox_h = np.reshape(bbox, (-1,2)) #x-y coords
+            bbox_h = np.concatenate((bbox_h, np.ones((bbox_h.shape[0],1))), axis=1).transpose() #homography coords
 
-                out_box = M @ bbox_h
+            out_box = M @ bbox_h
+
+            if bbox.shape[-1] == 2: #Operate on point coordinates
+                out_box = np.reshape(out_box.transpose(), (bbox.shape[0], bbox.shape[1],2))
+            else: #Operate on bounding box
                 out_box = np.reshape(out_box.transpose(), (-1,4))
 
             return out_frame, out_box 
@@ -638,13 +638,13 @@ class RandomTranslateClip(PreprocTransform):
             out_bbox = []
             
             for frame, box in zip(clip,bbox):
-                mask = box[:,0] != -1
                 img_h, img_w, _ = frame.shape 
                 tx = int(img_w * frac_x)
                 ty = int(img_h * frac_y) 
 
                 #Bound translation amount so all objects remain in scene
                 if box.shape[-1] == 2: #Operate on point coordinates
+                    mask = box[:,:,0] != -1
                     tx = np.clip(tx, np.max(-1*box[mask,0]), np.min(img_w-box[mask,0]))
                     ty = np.clip(ty, np.max(-1*box[mask,1]), np.min(img_h-box[mask,1]))
                     out_frame, out_box = self._shift_frame(box, frame, tx, ty)
@@ -652,6 +652,7 @@ class RandomTranslateClip(PreprocTransform):
 
                 else: #Operate on bounding box 
                     #bbox is bounding box object
+                    mask = box[:,0] != -1
                     tx = np.clip(tx, np.max(-1*box[mask,0]), np.min(img_w-box[mask,2]))
                     ty = np.clip(ty, np.max(-1*box[mask,1]), np.min(img_h-box[mask,3]))
                     out_frame, out_box = self._shift_frame(box, frame, tx, ty)
