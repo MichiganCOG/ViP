@@ -739,7 +739,7 @@ class ApplyToPIL(PreprocTransform):
             clip = self._to_pil(clip)
         output_clip = []
         for frame in clip:
-            output_clip.append(self.transform(frame))
+            output_clip.append(np.array(self.transform(frame))) #Apply transform and convert back to Numpy
 
         if bbox!=[]:
             return output_clip, bbox
