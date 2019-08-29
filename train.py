@@ -115,6 +115,9 @@ def train(**args):
                 optimizer.load_state_dict(load_checkpoint(args['pretrained'], key_name='optimizer'))
                 scheduler.step(epoch=start_epoch)
 
+            else:
+                start_epoch = 0
+
             # END IF 
 
         else:
@@ -194,15 +197,15 @@ def train(**args):
 
             # END FOR: Epoch
 
+            scheduler.step(epoch=epoch)
+            print('Schedulers lr: %f', scheduler.get_lr()[0])
+
             if not args['debug']:
                 # Save Current Model
                 save_path = os.path.join(save_dir, args['dataset']+'_epoch'+str(epoch)+'.pkl')
                 save_checkpoint(epoch, step, model, optimizer, save_path)
    
             # END IF: Debug
-
-            scheduler.step(epoch=epoch)
-            print('Schedulers lr: %f', scheduler.get_lr()[0])
 
             ## START FOR: Validation Accuracy
             running_acc = []
@@ -254,7 +257,6 @@ if __name__ == "__main__":
 
     parse = Parse()
     args = parse.get_args()
-    import pdb; pdb.set_trace()
 
     # For reproducibility
     torch.backends.cudnn.deterministic = True
