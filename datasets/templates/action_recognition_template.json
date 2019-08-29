@@ -2,7 +2,6 @@
     {
         "frames (list)": [
             {
-                "frame_size (int, int)": "(WIDTH,HEIGHT)",
                 "img_path (str)": "FRAME_PATH",
                 "actions (list)": [
                     {
@@ -11,6 +10,7 @@
                 ]
             }
         ],
+        "frame_size (int, int)": "(WIDTH,HEIGHT)",
         "base_path (str)": "BASE_VID_PATH"
     }
 ]

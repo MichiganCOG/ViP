@@ -21,10 +21,10 @@ class MSCOCO(DetectionDataset):
 
 
         if self.load_type=='train':
-            self.transforms = PreprocessTrain(**kwargs)
+            self.transforms = kwargs['model_obj'].train_transforms 
 
         else:
-            self.transforms = PreprocessEval(**kwargs)
+            self.transforms = kwargs['model_obj'].test_transforms
 
 
     def __getitem__(self, idx):
@@ -90,86 +90,3 @@ class MSCOCO(DetectionDataset):
         ret_dict['data']         = vid_data 
 
         return ret_dict
-
-
-
-class PreprocessTrain(object):
-    """
-    Container for all transforms used to preprocess clips for training in this dataset.
-    """
-    def __init__(self, **kwargs):
-        crop_shape = kwargs['crop_shape']
-        crop_type = kwargs['crop_type']
-        resize_shape = kwargs['resize_shape']
-        self.transforms = []
-
-        if crop_type == 'Random':
-            self.transforms.append(pt.RandomCropClip(*crop_shape))
-        else:
-            self.transforms.append(pt.CenterCropClip(*crop_shape))
-
-        self.transforms.append(pt.ResizeClip(*resize_shape))
-        self.transforms.append(pt.RandomFlipClip(direction='h', p=1.0))
-        self.transforms.append(pt.RandomRotateClip())
-        self.transforms.append(pt.ToTensorClip())
-
-
-
-    def __call__(self, input_data, bbox_data):
-        """
-        Preprocess the clip and the bbox data accordingly
-        Args:
-            input_data: List of PIL images containing clip frames 
-            bbox_data:  Numpy array containing bbox coordinates per object per frame 
-
-        Return:
-            input_data: Pytorch tensor containing the processed clip data 
-            bbox_data:  Numpy tensor containing the augmented bbox coordinates
-        """
-        for transform in self.transforms:
-            input_data, bbox_data = transform(input_data, bbox_data)
-            
-        
-
-        return input_data, bbox_data
-
-
-class PreprocessEval(object):
-    """
-    Container for all transforms used to preprocess clips for evaluation in this dataset.
-    """
-    def __init__(self, **kwargs):
-        crop_shape = kwargs['crop_shape']
-        crop_type = kwargs['crop_type']
-        resize_shape = kwargs['resize_shape']
-        self.transforms = []
-
-        if crop_type == 'Random':
-            self.transforms.append(pt.RandomCropClip(*crop_shape))
-        else:
-            self.transforms.append(pt.CenterCropClip(*crop_shape))
-
-        self.transforms.append(pt.ResizeClip(*resize_shape))
-        self.transforms.append(pt.ToTensorClip())
-
-
-
-    def __call__(self, input_data, bbox_data):
-        """
-        Preprocess the clip and the bbox data accordingly
-        Args:
-            input_data: List of PIL images containing clip frames 
-            bbox_data:  Numpy array containing bbox coordinates per object per frame 
-
-        Return:
-            input_data: Pytorch tensor containing the processed clip data 
-            bbox_data:  Numpy tensor containing the augmented bbox coordinates
-        """
-        for transform in self.transforms:
-            input_data, bbox_data = transform(input_data, bbox_data)
-
-        return input_data, bbox_data
-
-
-
-
