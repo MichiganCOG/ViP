@@ -50,6 +50,7 @@ class Parse():
 
         parser.add_argument('--debug',   type=int, help='Run an experiment but do not save any data or create any folders')
         parser.add_argument('--seed',    type=int, help='Seed for reproducibility')
+        parser.add_argument('--resume',  type=int, help='Flag to resume training or switch to alternate objective after loading')
 
         # Default dict, anything not present is required to exist as an argument or in yaml file
         self.defaults = dict(
