@@ -28,10 +28,12 @@ class YC2BB(DetectionDataset):
 
         self.max_objects = 15 
         self.class_dict  = _get_class_labels(class_file)
+        '''
         if self.load_type=='train':
             self.transforms = kwargs['model_obj'].train_transforms
         else:
             self.transforms = kwargs['model_obj'].test_transforms
+        '''
 
         sentences_proc, segments_tuple = _get_segments_and_sentences(self.samples, self.load_type)
 
@@ -93,6 +95,10 @@ class YC2BB(DetectionDataset):
                split_lst, len(self.sample_lst), len(self.sample_lst)/len(sentences_proc)))
         '''
 
+    #Reverse-mapping between class index to canonical label name
+    def _get_class_labels_reverse(self):
+        return {v:k for k,v in self.class_dict.items()}
+
     def __getitem__(self, idx):
         vid_info = self.samples[idx]
         
@@ -103,10 +109,10 @@ class YC2BB(DetectionDataset):
         vid             = base_path.split('/')[-2]
         seg             = base_path.split('/')[-1]
 
-        bbox_data   = np.zeros((self.clip_length, self.max_objects, 5))-1 #[cls_label, xmin, ymin, xmax ymax]
+        bbox_data   = np.zeros((self.max_objects, num_frames_1fps, 5))-1 #[cls_label, xmin, ymin, xmax ymax]
         labels      = np.zeros(self.max_objects)-1
 
-        for frame_ind in range(self.clip_length):
+        for frame_ind in range(num_frames_1fps):
             frame      = vid_info['frames'][frame_ind]
             #frame_path = frame['img_path']
             num_objs    = len(frame['objs'])
@@ -118,22 +124,26 @@ class YC2BB(DetectionDataset):
                 trackid = obj['trackid']
 
                 if self.load_type == 'test' or self.load_type == 'train': #Annotations for test set not publicly available, train not annotated
-                    bbox_data[frame_ind, trackid] = -1*np.ones(5) 
+                    bbox_data[trackid, frame_ind] = -1*np.ones(5) 
                 else:
                     if obj['occ'] or obj['outside']:
-                        bbox_data[frame_ind, trackid] = -1*np.ones(5) 
+                        bbox_data[trackid, frame_ind] = -1*np.ones(5) 
                     else:   
                         obj_bbox  = obj['bbox'] # [xmin, ymin, xmax, ymax]
-                        bbox_data[frame_ind, trackid, :] = [label] + obj_bbox
+
+                        #re-order to [ymin, xmin, ymax, xmax], rpn proposals are this way I believe
+                        new_order = [1,0,3,2]
+                        obj_bbox  = [obj_bbox[i] for i in new_order]
+                        bbox_data[trackid, frame_ind, :] = [label] + obj_bbox
 
                 obj_label[obj_ind] = label
                 labels[trackid]    = label 
 
         #Only keep annotations for valid objects
-        bbox_data = bbox_data[:, :num_objs]
+        bbox_data = bbox_data[:num_objs, :]
         labels    = labels[:num_objs]
 
-        obj_label = torch.from_numpy(obj_label)
+        obj_label = torch.from_numpy(obj_label).long()
         num_frames = num_frames_1fps * 25 #video sampled at 25 fps
         
         '''
@@ -182,14 +192,15 @@ class YC2BB(DetectionDataset):
         vis_name = '_-_'.join((self.yc2_split, rec, vid, seg))
 
         ret_dict = dict()
-        ret_dict['data']     = (x_rpn, obj_label) 
+        ret_dict['data']     = [x_rpn, obj_label, self.load_type] 
 
         annot_dict = dict()
-        annot_dict['box']          = bbox_data 
-        annot_dict['box_label']    = labels
-        annot_dict['rpn']          = rpn
-        annot_dict['rpn_original'] = rpn_original 
-        annot_dict['vis_name']     = vis_name
+        annot_dict['box']               = bbox_data 
+        annot_dict['box_label']         = obj_label 
+        annot_dict['rpn']               = rpn
+        annot_dict['rpn_original']      = rpn_original 
+        annot_dict['vis_name']          = vis_name
+        annot_dict['class_labels_dict'] = self._get_class_labels_reverse()
         ret_dict['annots']         = annot_dict
 
         return ret_dict
@@ -231,3 +242,4 @@ def _get_class_labels(class_file):
                     class_dict[row[r]] = int(row[0])
 
     return class_dict
+

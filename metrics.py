@@ -21,6 +21,8 @@ class Metrics(object):
             self.metric_object = MAP(*args, **kwargs)
         elif self.metric_type == 'SSD_AP':
             self.metric_object = SSD_AP(*args, **kwargs)
+        elif self.metric_type == 'Box_Accuracy':
+            self.metric_object = Box_Accuracy(*args, **kwargs)
         else:
             self.metric_type = None
 
@@ -513,3 +515,123 @@ class SSD_AP(AveragePrecision):
 
         return self.get_AP(self.predictions, self.targets) 
 
+class Box_Accuracy():
+    """
+    Box accuracy computation
+
+    """
+    def __init__(self, *args, **kwargs):
+        from collections import defaultdict
+
+        self.thresh = kwargs['accu_thresh']
+        self.fps    = kwargs['fps']
+        self.test_mode = 1 if kwargs['load_type'] == 'test' else 0
+        self.IOU      = IOU()
+        self.ba_score = defaultdict(list) #box accuracy metric
+
+        self.ndata = kwargs['ndata']
+        self.count = 0
+
+    def get_accuracy(self, predictions, data):
+        attn_weights = predictions
+
+        N = attn_weights.shape[0] 
+
+        rpn_batch         = data['rpn_original']
+        box_batch         = data['box']
+        obj_batch         = data['box_label']
+        box_label_batch   = obj_batch 
+        vis_name          = data['vis_name']
+        class_labels_dict = data['class_labels_dict']
+
+        # fps is the frame rate of the attention map
+        # both rpn_batch and box_batch have fps=1
+        _, T_rp, num_proposals, _ = rpn_batch.size()
+        _, O, T_gt, _ = box_batch.size()
+        T_attn = attn_weights.size(2)
+
+        assert(T_rp == T_gt) # both sampled at 1fps
+        #print('# of frames in gt: {}, # of frames in resampled attn. map: {}'.format(T_gt, np.rint(T_attn/self.fps)))
+
+        hits, misses = [0 for o in range(O)], [0 for o in range(O)]
+
+        results = []
+        pos_counter = 0 
+        neg_counter = 0 
+        segment_dict = {} #segment dictionary - to output results to JSON file
+        all_objects = []
+
+        for o in range(O):
+            object_dict = {}
+            if box_label_batch[0, o] not in obj_batch[0, :]: 
+                print('object {} is not grounded!'.format(box_label_batch[0, o]))
+                continue # don't compute score if the object is not grounded
+            obj_ind_in_attn = (obj_batch[0, :] == box_label_batch[0, o]).nonzero().squeeze()
+            if obj_ind_in_attn.numel() > 1:
+                obj_ind_in_attn = obj_ind_in_attn[0]
+            else:
+                obj_ind_in_attn = obj_ind_in_attn.item()
+
+            new_attn_weights = attn_weights[0, obj_ind_in_attn]
+            _, max_attn_ind = torch.max(new_attn_weights, dim=1)
+
+            # uncomment this for the random baseline
+            # max_attn_ind = torch.floor(torch.rand(T_attn)*num_proposals).long()
+            label = class_labels_dict[box_label_batch[0,o].item()]
+            object_dict = {'label':label}
+        
+            boxes = []
+            for t in range(T_gt):
+                if box_batch[0,o,t,0] == -1: # object is outside/non-exist/occlusion
+                    boxes.append({'xtl':-1, 'ytl':-1, 'xbr':-1, 'ybr':-1, 'outside':1, 'occluded':1}) #object is either occluded or outside of frame 
+                    neg_counter += 1
+                    continue
+                pos_counter += 1
+                box_ind = max_attn_ind[int(min(np.rint(t*self.fps), T_attn-1))]
+                box_coord = rpn_batch[0, t, box_ind, :].view(4) # x_tl, y_tl, x_br, y_br
+                gt_box = box_batch[0,o,t][torch.Tensor([2,1,4,3]).type(box_batch.type()).long()].view(1,4) # inverse x and y
+
+                if self.IOU.get_accuracy(box_coord, gt_box.float())[0].item() > self.thresh:
+                    hits[o] += 1
+                else:
+                    misses[o] += 1
+
+                xtl = box_coord[0].item()
+                ytl = box_coord[1].item()
+                xbr = box_coord[2].item()
+                ybr = box_coord[3].item()
+                boxes.append({'xtl':xtl, 'ytl':ytl, 'xbr':xbr, 'ybr':ybr, 'outside':0, 'occluded':0}) 
+
+            object_dict['boxes'] = boxes
+            all_objects.append(object_dict)
+
+            results.append((box_label_batch[0, o].item(), hits[o], misses[o]))
+
+        segment_dict['objects'] = all_objects
+        #print('percentage of frames with box: {}'.format(pos_counter/(pos_counter+neg_counter)))
+        
+        for (i,h,m) in results:
+            self.ba_score[i].append((h,m))
+        
+
+        self.count += N
+        if self.count < self.ndata:
+            return -1
+        
+        if self.test_mode: #Annotations for the testing split are not publicly available
+            return -1
+
+        ba_final = []
+        for k, r in self.ba_score.items():
+            cur_hit = 0 
+            cur_miss = 0 
+            for v in r:
+                cur_hit += v[0]
+                cur_miss += v[1]
+
+            if cur_hit+cur_miss != 0:
+                #print('BA for {}(...): {:.4f}'.format(k, cur_hit/(cur_hit+cur_miss)))
+                ba_final.append(cur_hit/(cur_hit+cur_miss))
+
+        #print('The overall BA is: {:.4f}'.format(np.mean(ba_final))) 
+        return np.mean(ba_final)
