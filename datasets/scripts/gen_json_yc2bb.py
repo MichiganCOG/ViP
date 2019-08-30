@@ -52,6 +52,7 @@ for split, ann_file in zip(splits, ann_files):
                         box    = obj['boxes'][f]
                         
                         if len(box) == 0: #No annotations
+                            objs.append({'trackid':track_id, 'c':cls_name})
                             continue 
 
                         xmin = box['xtl']

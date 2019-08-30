@@ -103,33 +103,36 @@ class YC2BB(DetectionDataset):
         vid             = base_path.split('/')[-2]
         seg             = base_path.split('/')[-1]
 
-        bbox_data   = np.zeros((self.clip_length, num_frames_1fps, 5))-1 #[cls_label, xmin, ymin, xmax ymax]
-        labels      = np.zeros((self.clip_length, self.max_objects))-1
+        bbox_data   = np.zeros((self.clip_length, self.max_objects, 5))-1 #[cls_label, xmin, ymin, xmax ymax]
+        labels      = np.zeros(self.max_objects)-1
 
-        for frame_ind in range(num_frames_1fps):
+        for frame_ind in range(self.clip_length):
             frame      = vid_info['frames'][frame_ind]
             #frame_path = frame['img_path']
-            num_objs        = len(frame['objs'])
+            num_objs    = len(frame['objs'])
             obj_label   = np.zeros((num_objs))-1 #List all unique class ids in entire segment
             
             # Extract bbox and label data from video info
             for obj_ind, obj in enumerate(frame['objs']):
-                label = self.class_dict[obj['c']]
-                obj_label[obj_ind] = label
+                label   = self.class_dict[obj['c']]
+                trackid = obj['trackid']
 
                 if self.load_type == 'test' or self.load_type == 'train': #Annotations for test set not publicly available, train not annotated
-                    bbox_data[frame_ind, trackid] = [label, -1, -1, -1, -1] 
+                    bbox_data[frame_ind, trackid] = -1*np.ones(5) 
                 else:
-                    trackid   = obj['trackid']
-                    obj_bbox  = obj['bbox'] # [xmin, ymin, xmax, ymax]
-                    difficult = obj['difficult']
-                    
-                    bbox_data[frame_ind, trackid, :] = [label] + obj_bbox
-                    labels[frame_ind, trackid]       = label 
-                    diff_labels[frame_ind, trackid]  = difficult 
+                    if obj['occ'] or obj['outside']:
+                        bbox_data[frame_ind, trackid] = -1*np.ones(5) 
+                    else:   
+                        obj_bbox  = obj['bbox'] # [xmin, ymin, xmax, ymax]
+                        bbox_data[frame_ind, trackid, :] = [label] + obj_bbox
 
-            #input_data.append(cv2.imread(os.path.join(base_path, frame_path), cv2.IMREAD_COLOR)[:,:,(2,1,0)])
-        
+                obj_label[obj_ind] = label
+                labels[trackid]    = label 
+
+        #Only keep annotations for valid objects
+        bbox_data = bbox_data[:, :num_objs]
+        labels    = labels[:num_objs]
+
         obj_label = torch.from_numpy(obj_label)
         num_frames = num_frames_1fps * 25 #video sampled at 25 fps
         
