@@ -161,8 +161,8 @@ class AveragePrecision():
         """
         Compute Average Precision (AP)
         Args:
-            threshold  (scalar): iou threshold 
-            num_points (scalar): number of points to average for the interpolated AP calculation
+            threshold  (float): iou threshold 
+            num_points (int): number of points to average for the interpolated AP calculation
 
         Return:
             None 
@@ -188,10 +188,10 @@ class AveragePrecision():
         Args:
             tp   (Tensor, shape [N*D]): cumulative sum of true positive detections 
             fp   (Tensor, shape [N*D]): cumulative sum of false positive detections 
-            npos (Tensor, scalar): actual positives (from ground truth)
+            npos (Tensor, int): actual positives (from ground truth)
 
         Return:
-            ap (Tensor, scalar): average precision calculation
+            ap (Tensor, float): average precision calculation
         """
         
         #Values for precision-recall curve
@@ -220,7 +220,7 @@ class AveragePrecision():
             D_: ground truth detections 
 
         Return:
-            avg_ap (Tensor, scalar): mean ap across all classes 
+            avg_ap (Tensor, float): mean ap across all classes 
         """
 
         N,C,D,_ = predictions.shape
@@ -331,7 +331,7 @@ class MAP():
 
         Args:
             threshold  (Tensor, shape[10]): Calculate AP at each of these threshold values
-            num_points (scalar): number of points to average for the interpolated AP calculation
+            num_points (float): number of points to average for the interpolated AP calculation
         """
 
         self.threshold = threshold
@@ -413,7 +413,7 @@ class AverageRecall():
         Compute Average Recall (AR)
 
         Args:
-            threshold: (scalar)
+            threshold: (float)
             det: max number of detections per image (optional)
         """
         
@@ -459,11 +459,11 @@ class SSD_AP(AveragePrecision):
         """
         Compute Average Precision (AP)
         Args:
-            threshold    (scalar): iou threshold 
-            num_points   (scalar): number of points to average for the interpolated AP calculation
+            threshold    (float): iou threshold 
+            num_points   (int): number of points to average for the interpolated AP calculation
             final_shape  (list) : [height, width] of input given to CNN
             result_dir   (String): save detections to this location
-            ndata        (scalar): total number of datapoints in dataset 
+            ndata        (int): total number of datapoints in dataset 
 
         Return:
             None 
@@ -517,7 +517,14 @@ class SSD_AP(AveragePrecision):
 
 class Box_Accuracy():
     """
-    Box accuracy computation
+    Box accuracy computation for YC2-BB model.
+    Adapted from: https://github.com/MichiganCOG/Video-Grounding-from-Text/blob/master/tools/test_util.py 
+
+    Args:
+        accu_thres: (float)  iou threshold
+        fps:        (int)    frames per second video annotations were sampled at
+        load_type:  (String) data split, only validation has publicly available annotations
+        ndata       (int):   total number of datapoints in dataset 
 
     """
     def __init__(self, *args, **kwargs):
@@ -533,6 +540,20 @@ class Box_Accuracy():
         self.count = 0
 
     def get_accuracy(self, predictions, data):
+        """
+        Args:
+            predictions: (Tensor, shape [N,W,T,D]), attention weight output from model
+            data:      (dictionary)
+                - rpn_original      (Tensor, shape [N,T,D,4]) 
+                - box               (Tensor, shape [N,T,D,5]), [cls_label, ytl, xtl, ybr, xbr] (note order in coordinates is different) 
+                - box_label         (Tensor, shape [N,W]) 
+                - vis_name          (List, shape [N]), unique segment identifier  
+                - class_labels_dict (dict, length 67) class index to class label mapping 
+
+            W: unique word in segment (from YC2BB class dictionary)
+        Return:
+           Box accuracy score  
+        """
         attn_weights = predictions
 
         N = attn_weights.shape[0] 
