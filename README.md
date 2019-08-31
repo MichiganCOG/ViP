@@ -2,6 +2,8 @@
 
 A platform for quick and easy development of deep learning networks for recognition and detection in videos. Includes popular models like C3D and SSD.
 
+Check out our [wiki!](https://github.com/MichiganCOG/ViP/wiki)
+
 ## Implemented Models and their performance
 
 ### Recognition
@@ -26,21 +28,22 @@ A platform for quick and easy development of deep learning networks for recognit
 * [Development](#development)
   * [Add a Model](#add-a-model)
   * [Add a Dataset](#add-a-dataset)
-* [Version History](#version-history)
+* [FAQ](#faq)
 
 ## Configured Datasets
 |   Dataset      |        Task(s)           |
 |:--------------:|:------------------------:|
-|[HMDB51](http://serre-lab.clps.brown.edu/resource/hmdb-a-large-human-motion-database/#Downloads)      |Activity Recognition      |
-|[ImageNetVID](http://image-net.org/challenges/LSVRC/2017/) |Video Object Detection    |
-|[MSCOCO 2014](http://cocodataset.org/#download) |Object Detection, Keypoints|
-|[VOC2007](http://host.robots.ox.ac.uk/pascal/VOC/voc2007/)     |Object Detection, Classification|
+|[HMDB51](http://serre-lab.clps.brown.edu/resource/hmdb-a-large-human-motion-database/#Downloads)      | Activity Recognition   |
+|[UCF101](https://www.crcv.ucf.edu/data/UCF101.php)                                                    | Activity Recognition   |
+|[ImageNetVID](http://bvisionweb1.cs.unc.edu/ilsvrc2015/download-videos-3j16.php)                      | Video Object Detection |
+|[MSCOCO 2014](http://cocodataset.org/#download)                                                       | Object Detection, Keypoints|
+|[VOC2007](http://host.robots.ox.ac.uk/pascal/VOC/voc2007/)                                            | Object Detection, Classification|
 
 ## Models
-|                     Model                        |   Task(s)  |
-|:------------------------------------------------:|:-------:|
-|[C3D]()                                           | Activity Recognition|
-|[SSD300](https://github.com/amdegroot/ssd.pytorch)| Object Detection|
+|                     Model                        |        Task(s)       |
+|:------------------------------------------------:|:--------------------:|
+|[C3D](https://github.com/jfzhang95/pytorch-video-recognition/blob/master/network/C3D_model.py) | Activity Recognition |
+|[SSD300](https://github.com/amdegroot/ssd.pytorch)                                             | Object Detection     |
 
 ## Requirements
 
@@ -64,9 +67,10 @@ cd ViP
 ```
 
 ## Quick Start
-Eval.py and train.py are the two programs that will test and train any implemented model.
-Each model has specific parameters specified within the [config.yaml](https://github.com/MichiganCOG/ViP/blob/master/models/ssd/config.yaml) files in its repsective folder.
-All parameters can also be modified using command line arguments.
+Run `train.py` and `eval.py` to train or test any implemented model. The parameters of every experiment is specified in its [config.yaml](https://github.com/MichiganCOG/ViP/blob/master/config_default_example.yaml) file. 
+
+Use the `--cfg_file` command line argument to point to a different config yaml file.
+Additionally, all config parameters can be overriden with a command line argument.
 
 ### Testing
 
@@ -86,6 +90,9 @@ Ex: From the root directory of ViP, train the action recognition network C3D on 
 ```
 python train.py --cfg_file models/c3d/config_train.yaml
 ```
+
+Additional examples can be found on our [wiki.](https://github.com/MichiganCOG/ViP/wiki)
+
 ## Development
 
 New models and datasets can be added without needing to rewrite any training, evaluation, or data loading code.
@@ -101,6 +108,8 @@ To add a new model:
 
 Examples of previously implemented models can be found [here](https://github.com/MichiganCOG/ViP/tree/master/models).
 
+Additional information can be found on our [wiki.](https://github.com/MichiganCOG/ViP/wiki)
+
 ### Add a Dataset
 
 To add a new dataset:
@@ -112,20 +121,8 @@ To add a new dataset:
 	* Complete `__init__` and `__getitem__` functions
 	* Example skeleton dataset can be found [here](https://github.com/MichiganCOG/ViP/blob/master/datasets/templates/dataset_template.py)
 
-## Version History
+Additional information can be found on our [wiki.](https://github.com/MichiganCOG/ViP/wiki)
 
-### Version 1.0
-- Training and Evaluation files are completed
-- Data loading pipeline
-- Config and argument reader
-- Checkpoint saving and loading
-- Implemented datasets: HMDB51, ImageNetVID, MSCOCO, VOC2007
-- Implemented recognition models: C3D
-- Implemented detection models: SSD
-- Implemented metrics: Recognition accuracy, IOU, mAP, AP
-- Implemented losses: MSE, Cross entropy
+### FAQ
 
-### Version 0.1
-- Basic training file for recognition is ready, next step is to work on data loader since that is the immediate function being loaded
-- Began inclusion of dataset loading classes into datasets folder
-
+A detailed FAQ can be found on our [wiki](https://github.com/MichiganCOG/ViP/wiki/FAQ).

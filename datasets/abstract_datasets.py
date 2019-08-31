@@ -71,6 +71,7 @@ class VideoDataset(Dataset):
         if self.num_clips < 0:
             if len(video) >= self.clip_length:
                 final_video = [video[_idx] for _idx in np.linspace(0, len(video)-1, self.clip_length, dtype='int32')]
+                final_video = [final_video]
 
             else:
                 # Loop if insufficient elements
@@ -80,6 +81,7 @@ class VideoDataset(Dataset):
                 indices = indices[np.linspace(0, len(indices)-1, self.clip_length, dtype='int32')]
 
                 final_video = [video[_idx] for _idx in indices]
+                final_video = [final_video]
 
 
             # END IF
@@ -103,6 +105,7 @@ class VideoDataset(Dataset):
                 indices = indices[:self.clip_length]
 
                 final_video = [video[_idx] for _idx in indices]
+                final_video = [final_video]
 
             # END IF                               
     
@@ -114,6 +117,7 @@ class VideoDataset(Dataset):
                     indices = np.arange(indices, indices + self.clip_length).astype('int32') 
 
                     final_video = [video[_idx] for _idx in indices]
+                    final_video = [final_video]
 
                 else:
                     indices = np.ceil(self.clip_length/float(len(video)))
@@ -125,17 +129,19 @@ class VideoDataset(Dataset):
                     indices = indices[index:index + self.clip_length]
 
                     final_video = [video[_idx] for _idx in indices]
+                    final_video = [final_video]
 
                 # END IF
 
             else:
                 final_video = video[:self.clip_length]
+                final_video = [final_video]
 
             # END IF
 
         # END IF
 
-        return [final_video]
+        return final_video
 
 
         

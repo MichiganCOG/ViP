@@ -167,7 +167,7 @@ def train(**args):
                     # END FOR
                 
                     # Add Loss Element
-                    writer.add_scalar(args['dataset']+'/'+args['model']+'/minibatch_loss', loss.item(), epoch*len(train_loader) + step)
+                    writer.add_scalar(args['dataset']+'/'+args['model']+'/minibatch_loss', loss.item()/args['batch_size'], epoch*len(train_loader) + step)
 
                 # END IF
 
@@ -176,10 +176,14 @@ def train(**args):
 
                 # END IF
 
-                if (epoch * len(trainloader) + (step+1)) % args['pseudo_batch_loop'] == 0 and step > 0:
+                if (epoch * len(train_loader) + (step+1)) % args['pseudo_batch_loop'] == 0 and step > 0:
                     # Apply large mini-batch normalization
                     for param in model.parameters():
                         param.grad *= 1./float(args['pseudo_batch_loop']*args['batch_size'])
+                    
+                    # Apply gradient clipping
+                    if ("grad_max_norm" in args) and float(args['grad_max_norm'] > 0):
+                        nn.utils.clip_grad_norm_(model.parameters(),float(args['grad_max_norm']))
                     optimizer.step()
 
 

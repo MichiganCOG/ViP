@@ -3,14 +3,13 @@ models/weights/*
 results/*
 *.swp
 *.pyc
-
+setup.sh
 runs/*
 
 *.pth
 *.pth.tar
 *.pkl
 *.npy
-config_*.yaml
 models/HGC3D
 *.json
 pbs/*
