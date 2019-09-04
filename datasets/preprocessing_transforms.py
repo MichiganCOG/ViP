@@ -554,13 +554,6 @@ class RandomRotateClip(PreprocTransform):
 
         for bbox_ind in range(bboxes_shape[0]):
             x, y = bboxes[bbox_ind].transpose()
-            '''
-            import pdb; pdb.set_trace()
-            x = np.array([1])
-            y = np.array([0])
-            half_w = 1
-            half_h = 1
-            '''
 
             pts  = (x-half_w, y-half_h)
 
@@ -597,7 +590,87 @@ class RandomRotateClip(PreprocTransform):
 
         return output_clip
 
+class RandomTranslateClip(PreprocTransform):
+    """
+    Random horizontal and/or vertical shift on frames in a clip
+    Shift will be bounded by object bounding box (if given). Meaning, object will always be in view
+    Input numpy array must be of type np.uint8
 
+    Args:
+        - translate (Tuple)
+            - max_x (float): maximum absolute fraction for horizontal shift 
+            - max_y (float): maximum absolute fraction for vertical shift 
+    """
+    def __init__(self, translate, **kwargs):
+        super(RandomTranslateClip, self).__init__(**kwargs)
+
+        self.max_x, self.max_y = translate
+
+        assert(self.max_x >= 0.0 and self.max_y >= 0.0)
+        assert(self.max_x < 1.0  and self.max_y < 1.0) #Cannot shift past image bounds
+
+    def _shift_frame(self, bbox, frame, tx, ty):
+        M       = np.array([[1, 0, tx],[0, 1, ty]], dtype=np.float) # 2 x 3 transformation matrix
+        out_frame = cv2.warpAffine(frame, M, (frame.shape[1], frame.shape[0]))
+
+        if bbox is not None:
+            bbox_h = np.reshape(bbox, (-1,2)) #x-y coords
+            bbox_h = np.concatenate((bbox_h, np.ones((bbox_h.shape[0],1))), axis=1).transpose() #homography coords
+
+            out_box = M @ bbox_h
+
+            if bbox.shape[-1] == 2: #Operate on point coordinates
+                out_box = np.reshape(out_box.transpose(), (bbox.shape[0], bbox.shape[1],2))
+            else: #Operate on bounding box
+                out_box = np.reshape(out_box.transpose(), (-1,4))
+
+            return out_frame, out_box 
+        else:
+            return out_frame 
+
+    def __call__(self, clip, bbox=[]):
+        out_clip = []
+        clip = self._to_numpy(clip)
+
+        frac_x = np.random.rand()*(2*self.max_x)-self.max_x 
+        frac_y = np.random.rand()*(2*self.max_y)-self.max_y  
+
+        if bbox != []:
+            out_bbox = []
+            
+            for frame, box in zip(clip,bbox):
+                img_h, img_w = frame.shape[:2] 
+                tx = int(img_w * frac_x)
+                ty = int(img_h * frac_y) 
+
+                #Bound translation amount so all objects remain in scene
+                if box.shape[-1] == 2: #Operate on point coordinates
+                    mask = box[:,:,0] != -1
+                    tx = np.clip(tx, np.max(-1*box[mask,0]), np.min(img_w-box[mask,0]))
+                    ty = np.clip(ty, np.max(-1*box[mask,1]), np.min(img_h-box[mask,1]))
+                    out_frame, out_box = self._shift_frame(box, frame, tx, ty)
+                    out_box[~mask] = -1*np.ones(2)
+
+                else: #Operate on bounding box 
+                    #bbox is bounding box object
+                    mask = box[:,0] != -1
+                    tx = np.clip(tx, np.max(-1*box[mask,0]), np.min(img_w-box[mask,2]))
+                    ty = np.clip(ty, np.max(-1*box[mask,1]), np.min(img_h-box[mask,3]))
+                    out_frame, out_box = self._shift_frame(box, frame, tx, ty)
+                    out_box[~mask] = -1*np.ones(4)
+
+                out_clip.append(out_frame)
+                out_bbox.append(out_box)
+
+            return out_clip, out_bbox 
+        else:
+            for frame in clip:
+                img_h, img_w = frame.shape[:2] 
+                tx = int(img_w * frac_x)
+                ty = int(img_h * frac_y) 
+
+                out_clip.append(self._shift_frame(None, frame, tx, ty))
+            return out_clip
 
 class SubtractMeanClip(PreprocTransform):
     def __init__(self, **kwargs):
@@ -664,11 +737,31 @@ class ApplyToPIL(PreprocTransform):
         self.transform = kwargs['transform'](**self.class_kwargs)
 
     def __call__(self, clip, bbox=[]):
+        input_pil = True
+        output_clip = []
+
         if not isinstance(clip[0], Image.Image):
             clip = self._to_pil(clip)
-        output_clip = []
-        for frame in clip:
-            output_clip.append(self.transform(frame))
+            clip = [frame.convert('RGB') for frame in clip]
+            input_pil = False
+
+        if input_pil:
+            for frame in clip:
+                transformed_frame = self.transform(frame)
+                if isinstance(transformed_frame, tuple) or isinstance(transformed_frame, list):
+                    for tf in transformed_frame:
+                        output_clip.append(tf)
+                else:
+                    output_clip.append(self.transform(frame)) #Apply transform and convert back to Numpy
+
+        else:
+            for frame in clip:
+                transformed_frame = self.transform(frame)
+                if isinstance(transformed_frame, tuple) or isinstance(transformed_frame, list):
+                    for tf in transformed_frame:
+                        output_clip.append(np.array(tf))
+                else:
+                    output_clip.append(np.array(self.transform(frame))) #Apply transform and convert back to Numpy
 
         if bbox!=[]:
             return output_clip, bbox
@@ -749,6 +842,7 @@ class TestPreproc(object):
         self.rand_flip_h = RandomFlipClip(direction='h', p=1.0)
         self.rand_flip_v = RandomFlipClip(direction='v', p=1.0)
         self.rand_rot = RandomRotateClip(angles=[90])
+        self.rand_trans = RandomTranslateClip(translate=(0.5,0.5))
         self.sub_mean = SubtractMeanClip(clip_mean=np.zeros(1))
         self.applypil = ApplyToPIL(transform=torchvision.transforms.ColorJitter, class_kwargs=dict(brightness=1))
         self.applypil2 = ApplyToPIL(transform=torchvision.transforms.FiveCrop, class_kwargs=dict(size=(64,64)))
@@ -845,6 +939,14 @@ class TestPreproc(object):
         out_bbox = self.rand_rot([inp2], np.array([bbox]))[1][0].tolist()
         assert (False not in np.isclose(out, exp_out)) and (False not in np.isclose(exp_bbox, out_bbox))
 
+
+    def rand_trans_test(self):
+        x = np.arange(112*112).reshape(112,112).astype(np.uint8)
+        out = self.rand_trans([x])
+        out2 = self.rand_trans([x], bbox=[np.array([[32,32,96,96]])])
+
+        assert (out2[1][0].min() >= 0) and (out[0].shape==(112,112)) and (out2[0][0].shape==(112,112))
+
     def rand_rot_vis(self):
         import matplotlib.pyplot as plt
         self.rand_rot._update_angles([20])
@@ -871,11 +973,13 @@ class TestPreproc(object):
 
     def applypil_test(self):
         inp = np.arange(112*112).reshape(112,112)
+        np_inp = [inp, inp]
         inp = self.applypil._to_pil([inp, inp])
         inp = [inp[0].convert('RGB'), inp[1].convert('RGB')]
-        out1 = self.applypil(inp)
-        out = self.applypil2(out1)
-        assert (len(out)==2) and (len(out[0])==5) and (out[0][0].size==(64,64)) and (isinstance(out[0][0], Image.Image))
+        out = self.applypil(inp)
+        out2 = self.applypil2(out)
+        out3 = self.applypil(np_inp)
+        assert (len(out2)==2*5) and (out2[0].size==(64,64)) and (isinstance(out2[0], Image.Image)) and (isinstance(out3[0], np.ndarray))
 
     def applytensor_test(self):
         inp = np.arange(112*112*3).reshape(3,112,112).astype('float32')
@@ -925,6 +1029,7 @@ class TestPreproc(object):
         self.rand_crop_test()
         self.rand_flip_test()
         self.rand_rot_test()
+        self.rand_trans_test()
         self.applypil_test()
         self.applytensor_test()
         self.applycv_test()
