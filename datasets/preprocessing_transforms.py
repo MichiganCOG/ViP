@@ -673,14 +673,14 @@ class RandomTranslateClip(PreprocTransform):
 
             return out_clip 
 
-class RandomScaleClip(PreprocTransform):
+class RandomZoomClip(PreprocTransform):
     """
-    Random scaling on all frames in a clip. All frames receive same scaling
-    Shift will be bounded by object bounding box (if given). Meaning, object will always be in view
+    Random zoom on all frames in a clip. All frames receive same scaling
+    Scale will be bounded by object bounding box (if given). Meaning, object will always be in view
 
     Args:
         - scale (Tuple)
-            - min_scale (float): minimum scaling on frame  
+            - min_scale (float): minimum scaling on frame 
             - max_scale (float): maximum scaling on frame  
     """
     def __init__(self, scale, **kwargs):
@@ -688,10 +688,10 @@ class RandomScaleClip(PreprocTransform):
 
         self.min_scale, self.max_scale = scale
 
-        assert(self.min_scale <= self.max_scale)
+        assert(self.min_scale > 0 and self.min_scale <= self.max_scale)
 
-    def _scale_frame(self, bbox, frame, sx, sy):
-        M = np.array([[sx, 0, 1],[0, sy, 1]], dtype=np.float) # 2 x 3 transformation matrix
+    def _scale_frame(self, bbox, frame, sc):
+        M = cv2.getRotationMatrix2D((frame.shape[1]/2, frame.shape[0]/2), 0, sc) # 2 x 3 rotation matrix
         out_frame = cv2.warpAffine(frame, M, (frame.shape[1], frame.shape[0]))
 
         if bbox is not None:
@@ -714,42 +714,51 @@ class RandomScaleClip(PreprocTransform):
         clip = self._to_numpy(clip)
 
         sc = np.random.uniform(self.min_scale, self.max_scale) 
-        print('Randomly selected scale: {}'.format(sc))
 
         if bbox != []:
             out_bbox = []
             
             for frame, box in zip(clip,bbox):
-                img_h, img_w, _ = frame.shape 
-                sx = np.ceil(img_w * sc)
-                sy = np.ceil(img_h * sc)
+                img_h, img_w = frame.shape[:2]
+                cx, cy = (img_w/2, img_h/2)
 
                 #Bound scaling so all objects remain in scene
                 if box.shape[-1] == 2: #Operate on point coordinates
                     mask = box[:,:,0] != -1
-                    sx = min(img_w, np.max(sc*box[mask,0]))
-                    sy = min(img_h, np.max(sc*box[mask,1]))
 
-                    if sx == img_w or sy == img_h:
-                        sc = min(sx/np.max(box[mask,0]), sy/np.max(box[mask,1]))
-                    else:
-                        sc = min(sx/np.min(box[mask,0]), sy/np.min(box[mask,1]))
+                    max_x = min(img_w, np.max(cx + sc * (box[mask,0] - cx)))
+                    min_x = max(0, np.min(cx + sc * (box[mask,0] - cx)))
+                    sx = (max_x - cx) / np.max(box[mask,0] - cx)
+                    if min_x == 0:
+                        sx = min(sx, (min_x - cx) / np.min(box[mask,0] - cx))
 
-                    out_frame, out_box = self._scale_frame(box, frame, sc, sc)
+                    max_y = min(img_h, np.max(cy + sc * (box[mask,1] - cy)))
+                    min_y = max(0, np.min(cy + sc * (box[mask,1] - cy)))
+                    sy = (max_y - cy) / np.max(box[mask,1] - cy)
+                    if min_y == 0:
+                        sy = min(sy, (min_y - cy) / np.min(box[mask,1] - cy))
+            
+                    sc = min(sx, sy)
+                    out_frame, out_box = self._scale_frame(box, frame, sc)
                     out_box[~mask] = -1*np.ones(2)
 
                 else: #Operate on bounding box 
-                    #bbox is bounding box object
                     mask = box[:,0] != -1
-                    sx = min(img_w, np.max(sc*box[mask,2]))
-                    sy = min(img_h, np.max(sc*box[mask,3]))
-                    
-                    if sx == img_w or sy == img_h:
-                        sc = min(sx/np.max(box[mask,2]), sy/np.max(box[mask,3]))
-                    else:
-                        sc = min(sx/np.min(box[mask,2]), sy/np.min(box[mask,3]))
 
-                    out_frame, out_box = self._scale_frame(box, frame, sc, sc)
+                    max_x = min(img_w, np.max(cx + sc * (box[mask,2] - cx)))
+                    min_x = max(0, np.min(cx + sc * (box[mask,0] - cx)))
+                    sx = (max_x - cx) / np.max(box[mask,2] - cx)
+                    if min_x == 0:
+                        sx = min(sx, (min_x - cx) / np.min(box[mask,0] - cx))
+
+                    max_y = min(img_h, np.max(cy + sc * (box[mask,3] - cy)))
+                    min_y = max(0, np.min(cy + sc * (box[mask,1] - cy)))
+                    sy = (max_y - cy) / np.max(box[mask,3] - cy)
+                    if min_y == 0:
+                        sy = min(sy, (min_y - cy) / np.min(box[mask,1] - cy))
+            
+                    sc = min(sx, sy)
+                    out_frame, out_box = self._scale_frame(box, frame, sc)
                     out_box[~mask] = -1*np.ones(4)
 
                 out_clip.append(out_frame)
@@ -758,11 +767,11 @@ class RandomScaleClip(PreprocTransform):
             return out_clip, out_bbox 
         else:
             for frame in clip:
-                img_h, img_w, _ = frame.shape
+                img_h, img_w = frame.shape[:2]
                 sx = int(img_w * sc)
                 sy = int(img_h * sc) 
 
-                out_clip.append(self._scale_frame(None, frame, sc, sc))
+                out_clip.append(self._scale_frame(None, frame, sc))
             return out_clip 
 
 class SubtractMeanClip(PreprocTransform):
