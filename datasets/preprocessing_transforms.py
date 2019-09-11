@@ -684,7 +684,7 @@ class RandomZoomClip(PreprocTransform):
             - max_scale (float): maximum scaling on frame  
     """
     def __init__(self, scale, **kwargs):
-        super(RandomScaleClip, self).__init__(**kwargs)
+        super(RandomZoomClip, self).__init__(**kwargs)
 
         self.min_scale, self.max_scale = scale
 
