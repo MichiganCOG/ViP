@@ -99,7 +99,7 @@ def eval(**args):
             x_input     = data['data'].to(device)
             annotations = data['annots']
 
-            outputs = model(x_input, features=True)
+            outputs = model(x_input)
 
             if ret_data is None:
                 ret_data   = outputs.cpu().numpy()
@@ -112,7 +112,7 @@ def eval(**args):
             # END IF
 
 
-            #acc = acc_metric.get_accuracy(outputs, annotations)
+            acc = acc_metric.get_accuracy(outputs, annotations)
 
             if step % 100 == 0:
                 print('Step: {}/{} | {} acc: {:.4f}'.format(step, len(eval_loader), args['load_type'], acc))
@@ -124,7 +124,7 @@ def eval(**args):
         ret_dict['data']   = ret_data
         ret_dict['labels'] = ret_labels
         import scipy.io as sio
-        sio.savemat(args['load_type']+'_'+args['dataset']+'.mat', ret_dict)
+        sio.savemat(os.path.join(result_dir,args['load_type']+'_'+args['dataset']+'.mat'), ret_dict)
 
         writer.add_scalar(args['dataset']+'/'+args['model']+'/'+args['load_type']+'_accuracy', 100.*acc)
         # Close Tensorboard Element

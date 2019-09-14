@@ -77,7 +77,8 @@ class Parse():
             crop_type        = None,
             num_clips        = 1,
             debug            = 0,
-            seed             = 0)                       
+            seed             = 0,
+            resume           = 0)                       
 
 
 

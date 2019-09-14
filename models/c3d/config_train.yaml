@@ -36,3 +36,5 @@ rerun:             1                     # Number of trials to repeat an experim
 save_dir:          './results'           # Path to results directory
 seed:              999                   # Seed for reproducibility 
 weight_decay:      0.0005                # Weight decay
+
+model_features:    0                     # 1 - return model features (before prediction), 0 - return model prediction output
