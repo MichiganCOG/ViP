@@ -2,22 +2,25 @@ import json
 import os
 
 
-def save_json(load_type):
+year = '2014'
 
+def save_json(load_type):
+    
     # Define path to mscoco images data
     base_img_path = '/path/to/mscoco/images/'       ###### REPLACE with path to dataset
     base_annot_path = '/path/to/mscoco/annotations/'###### REPLACE with path to dataset
 
-    f = open(os.path.join(base_annot_path,'instances_'+load_type+'2014.json'),'r')
-    x = json.load(f)
-    f.close()
+    save_location = '/path/to/save/location' ######### REPLACE with save path
+
+    with open(os.path.join(base_annot_path,'instances_'+load_type+year+'.json'),'r') as f:
+        x = json.load(f)
     
     imgids = [[idx['id'], idx['file_name'], idx['width'], idx['height']] for idx in x['images']]
     
     dd = {}
     for idx in imgids:
         frame_dict = dict(objs=[], img_path=idx[1]) 
-        dd[idx[0]] = dict(frames=[frame_dict], base_path=os.path.join(base_img_path,load_type+'2014'), frame_size=[idx[2],idx[3]])
+        dd[idx[0]] = dict(frames=[frame_dict], base_path=os.path.join(base_img_path,load_type+year), frame_size=[idx[2],idx[3]])
     
     
     print('finished imgids')
@@ -36,10 +39,8 @@ def save_json(load_type):
         if count%1000==0:
             print(count)
     
-    writef = open('mscoco_'+load_type+'.json', 'w')
-    json.dump(dd.values(), writef)
-    writef.close()
-    
+    with open(os.path.join(save_location,load_type+'.json'), 'w') as f:
+        json.dump(list(dd.values()), f)
                 
  
 save_json('train')

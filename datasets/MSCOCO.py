@@ -1,6 +1,6 @@
 import torch
 from .abstract_datasets import DetectionDataset 
-from PIL import Image
+import cv2
 import os
 import numpy as np
 import datasets.preprocessing_transforms as pt
@@ -62,7 +62,7 @@ class MSCOCO(DetectionDataset):
                 iscrowds[frame_ind, trackid]     = iscrowd
 
 
-            input_data.append(Image.open(os.path.join(base_path, frame_path)))
+            input_data.append(cv2.imread(os.path.join(base_path, frame_path))[...,::-1])
 
         vid_data, bbox_data = self.transforms(input_data, bbox_data)
 
