@@ -678,6 +678,10 @@ class RandomZoomClip(PreprocTransform):
     Random zoom on all frames in a clip. All frames receive same scaling
     Scale will be bounded by object bounding box (if given). Meaning, object will always be in view
 
+    >1: Zoom in
+    <1: Zoom out
+    =1: Same size
+
     Args:
         - scale (Tuple)
             - min_scale (float): minimum scaling on frame 
@@ -945,6 +949,7 @@ class TestPreproc(object):
         self.rand_flip_v = RandomFlipClip(direction='v', p=1.0)
         self.rand_rot = RandomRotateClip(angles=[90])
         self.rand_trans = RandomTranslateClip(translate=(0.5,0.5))
+        self.rand_zoom  = RandomZoomClip(scale=(1.25,1.25)) 
         self.sub_mean = SubtractMeanClip(clip_mean=np.zeros(1))
         self.applypil = ApplyToPIL(transform=torchvision.transforms.ColorJitter, class_kwargs=dict(brightness=1))
         self.applypil2 = ApplyToPIL(transform=torchvision.transforms.FiveCrop, class_kwargs=dict(size=(64,64)))
@@ -1020,12 +1025,14 @@ class TestPreproc(object):
         x[:, 50] = 5000
         x[10, :] = 5000
         x[50, :] = 10000
-        plt.imshow(x); plt.show()
-        h = self.rand_flip_h([x])
-        plt.imshow(h[0]); plt.show()
-        v = self.rand_flip_v([x])
-        plt.imshow(v[0]); plt.show()
 
+        plt.subplot(1,3,1); plt.imshow(x); plt.title('Original image')
+        h = self.rand_flip_h([x])
+        plt.subplot(1,3,2); plt.imshow(h[0]); plt.title('Flip Horizontal')
+        v = self.rand_flip_v([x])
+        plt.subplot(1,3,3); plt.imshow(v[0]); plt.title('Flip Vertical')
+        
+        plt.show()
 
     def rand_rot_test(self):
         inp = np.array([[[.1,.2,.3],[.4,.5,.6],[.7,.8,.9]]]).astype(float)
@@ -1051,27 +1058,86 @@ class TestPreproc(object):
 
     def rand_rot_vis(self):
         import matplotlib.pyplot as plt
-        self.rand_rot._update_angles([20])
+        import matplotlib.patches as patches 
+        self.rand_rot._update_angles([45])
         x = np.arange(112*112).reshape(112,112)
-        #x = np.arange(6*6).reshape(6,6)
-        #bbox = [51,51,61,61]
+
         bbox = [30,40,50,100]
-        bbox = [30,40,50,110]
-        #bbox = [2,2,4,4]
-        plt1 = x[:]
-        plt1[bbox[1]:bbox[3], bbox[0]] = 0
-        plt1[bbox[1]:bbox[3], bbox[2]-1] = 0
-        plt1[bbox[1], bbox[0]:bbox[2]] = 0
-        plt1[bbox[3]-1, bbox[0]:bbox[2]] = 0
-        plt.imshow(plt1); plt.show()
+        pts = np.array([[30,40],[30,80]])
+        fig = plt.figure()
+        ax1 = fig.add_subplot(121)
+        x[bbox[1]:bbox[3], bbox[0]] = 0
+        x[bbox[1]:bbox[3], bbox[2]-1] = 0
+        x[bbox[1], bbox[0]:bbox[2]] = 0
+        x[bbox[3]-1, bbox[0]:bbox[2]] = 0
+        
+        ax1.imshow(x); ax1.set_title('Original image')
+        rect = patches.Rectangle((bbox[0],bbox[1]), bbox[2]-bbox[0],\
+                                  bbox[3]-bbox[1], linewidth=1, edgecolor='k', facecolor='none')
+        #ax1.add_patch(rect)
+        ax1.scatter(pts[:,0], pts[:,1], c='r')
+
         out2 = self.rand_rot([x], np.array([[bbox]]))
-        plt2 = out2[0][0]
-        bbox = out2[1][0][0].astype(int)
-        plt2[bbox[1]:bbox[3], bbox[0]] = 0
-        plt2[bbox[1]:bbox[3], bbox[2]] = 0
-        plt2[bbox[1], bbox[0]:bbox[2]] = 0
-        plt2[bbox[3], bbox[0]:bbox[2]] = 0
-        plt.imshow(plt2); plt.show()
+        x_rot = out2[0][0]
+        bbox_rot = out2[1][0,0]
+
+        out2 = self.rand_rot([x], np.array([[pts]]))
+        pts_rot  = out2[1][0,0]
+
+        ax2 = fig.add_subplot(122)
+        rect = patches.Rectangle((bbox_rot[0],bbox_rot[1]), bbox_rot[2]-bbox_rot[0],\
+                                  bbox_rot[3]-bbox_rot[1], linewidth=1, edgecolor='k', facecolor='none')
+        ax2.add_patch(rect)
+        ax2.imshow(x_rot); ax2.set_title('Rotation')
+        ax2.scatter(pts_rot[:,0],pts_rot[:,1], c='r')
+        plt.show()
+
+    def rand_zoom_test(self):
+        inp = np.array([[[.1,.2,.3],[.4,.5,.6],[.7,.8,.9]]]).astype(float)
+        exp_out = np.array([[0.225   , 0.303125, 0.384375],
+                            [0.459375, 0.5375  , 0.61875 ],
+                            [0.703125, 0.78125 , 0.8625  ]]).astype(float)
+        out = self.rand_zoom(inp)
+
+        inp2 = np.arange(6*6, dtype=np.uint8).reshape(6,6)
+        bbox = [[2,2,4,4]]
+        exp_bbox = [1.75,1.75,4.25,4.25]
+        _,out_bbox = self.rand_zoom([inp2], np.array([bbox]))
+
+        assert (False not in np.isclose(out, exp_out)) and (False not in np.isclose(exp_bbox, out_bbox))
+
+    def rand_zoom_vis(self):
+        import matplotlib.pyplot as plt
+        import matplotlib.patches as patches 
+        x = np.arange(112*112, dtype=np.uint8).reshape(112,112)
+
+        bbox = [30,40,50,100]
+        pts = np.array([[30,40],[30,80]])
+        fig = plt.figure()
+        ax1 = fig.add_subplot(121)
+
+        x[bbox[1]:bbox[3], bbox[0]] = 0
+        x[bbox[1]:bbox[3], bbox[2]-1] = 0
+        x[bbox[1], bbox[0]:bbox[2]] = 0
+        x[bbox[3]-1, bbox[0]:bbox[2]] = 0
+        ax1.imshow(x); ax1.set_title('Original image')
+        ax1.scatter(pts[:,0], pts[:,1], c='r')
+
+        out = self.rand_zoom([x], np.array([[pts]]))
+        pts_zoom = out[1][0][0]
+
+        out = self.rand_zoom([x], np.array([[bbox]]))
+        x_zoom = out[0][0]
+        bbox_zoom = out[1][0][0]
+
+        ax2 = fig.add_subplot(122)
+        rect = patches.Rectangle((bbox_zoom[0],bbox_zoom[1]), bbox_zoom[2]-bbox_zoom[0],\
+                                  bbox_zoom[3]-bbox_zoom[1], linewidth=1, edgecolor='k', facecolor='none')
+        ax2.add_patch(rect)
+        ax2.imshow(x_zoom); ax2.set_title('Zoomed image')
+        ax2.scatter(pts_zoom[:,0],pts_zoom[:,1], c='r')
+        
+        plt.show()
 
     def applypil_test(self):
         inp = np.arange(112*112).reshape(112,112)
@@ -1132,6 +1198,7 @@ class TestPreproc(object):
         self.rand_flip_test()
         self.rand_rot_test()
         self.rand_trans_test()
+        self.rand_zoom_test()
         self.applypil_test()
         self.applytensor_test()
         self.applycv_test()
@@ -1139,12 +1206,11 @@ class TestPreproc(object):
         self.to_pil_test()
         self.to_numpy_test()
         print("Tests passed")
-        #self.rand_flip_vis()
-        #self.rand_rot_vis()
+
+        self.rand_flip_vis()
+        self.rand_rot_vis()
+        self.rand_zoom_vis()
         
-
-
-
 if __name__=='__main__':
     test = TestPreproc()
     test.run_tests()
