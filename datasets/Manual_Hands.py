@@ -46,11 +46,13 @@ class Manual_Hands(DetectionDataset):
         vid_size  = vid_info['frame_size']
 
         input_data    = []
-        vid_data      = np.zeros((self.clip_length, self.final_shape[0], self.final_shape[1], 3))-1
-        bbox_data     = np.zeros((self.clip_length, self.max_objects, 4))-1
-        hand_pts_data = np.zeros((self.clip_length, self.max_objects, 21, 3))-1
-        labels        = np.zeros((self.clip_length, self.max_objects))-1
-        occlusions    = np.zeros((self.clip_length, self.max_objects, 22), dtype=np.int32)-1 #21 keypoints + background = 22 points
+
+        vid_length = len(vid_info['frames'])
+        vid_data      = np.zeros((vid_length, self.final_shape[0], self.final_shape[1], 3))-1
+        bbox_data     = np.zeros((vid_length, self.max_objects, 4))-1
+        hand_pts_data = np.zeros((vid_length, self.max_objects, 21, 3))-1
+        labels        = np.zeros((vid_length, self.max_objects))-1
+        occlusions    = np.zeros((vid_length, self.max_objects, 22), dtype=np.int32)-1 #21 keypoints + background = 22 points
 
         for frame_ind in range(len(vid_info['frames'])):
             frame          = vid_info['frames'][frame_ind]

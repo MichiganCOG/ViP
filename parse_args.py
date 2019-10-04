@@ -111,4 +111,12 @@ class Parse():
                 if k not in yaml_keys:
                     self.cfg_args[k] = self.defaults[k]
 
+
+        # Force clip_stride to be >= 1 when extracting clips from a video
+        # This represents the # of frames between successive clips 
+        if self.cfg_args['clip_stride'] < 1:
+            self.cfg_args['clip_stride'] = 1
+
+
+
         return self.cfg_args
