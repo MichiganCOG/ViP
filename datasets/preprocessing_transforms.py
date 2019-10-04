@@ -1059,7 +1059,8 @@ class TestPreproc(object):
     def rand_rot_vis(self):
         import matplotlib.pyplot as plt
         import matplotlib.patches as patches 
-        self.rand_rot._update_angles([45])
+        angle = 45
+        self.rand_rot._update_angles([angle])
         x = np.arange(112*112).reshape(112,112)
 
         bbox = [30,40,50,100]
@@ -1088,7 +1089,7 @@ class TestPreproc(object):
         rect = patches.Rectangle((bbox_rot[0],bbox_rot[1]), bbox_rot[2]-bbox_rot[0],\
                                   bbox_rot[3]-bbox_rot[1], linewidth=1, edgecolor='k', facecolor='none')
         ax2.add_patch(rect)
-        ax2.imshow(x_rot); ax2.set_title('Rotation')
+        ax2.imshow(x_rot); ax2.set_title('Rotation: {} degress'.format(angle))
         ax2.scatter(pts_rot[:,0],pts_rot[:,1], c='r')
         plt.show()
 
