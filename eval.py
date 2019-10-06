@@ -91,11 +91,15 @@ def eval(**args):
     with torch.no_grad():
         for step, data in enumerate(eval_loader):
             x_input     = data['data']
-            for i, item in enumerate(x_input):
-                if isinstance(item, torch.Tensor):
-                    x_input[i] = item.to(device)
             annotations = data['annots']
-            outputs = model(*x_input)
+
+            if isinstance(x_input, torch.Tensor):
+                outputs = model(x_input.to(device))
+            else:
+                for i, item in enumerate(x_input):
+                    if isinstance(item, torch.Tensor):
+                        x_input[i] = item.to(device)
+                outputs = model(*x_input)
 
             acc = acc_metric.get_accuracy(outputs, annotations)
 

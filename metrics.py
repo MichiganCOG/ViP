@@ -545,11 +545,14 @@ class Box_Accuracy():
             predictions: (Tensor, shape [N,W,T,D]), attention weight output from model
             data:      (dictionary)
                 - rpn_original      (Tensor, shape [N,T,D,4]) 
-                - box               (Tensor, shape [N,T,D,5]), [cls_label, ytl, xtl, ybr, xbr] (note order in coordinates is different) 
+                - box               (Tensor, shape [N,O,T,5]), [cls_label, ytl, xtl, ybr, xbr] (note order in coordinates is different) 
                 - box_label         (Tensor, shape [N,W]) 
                 - vis_name          (List, shape [N]), unique segment identifier  
                 - class_labels_dict (dict, length 67) class index to class label mapping 
 
+            T: number of frames
+            D: dimension of features
+            O: number of objects to ground 
             W: unique word in segment (from YC2BB class dictionary)
         Return:
            Box accuracy score  
