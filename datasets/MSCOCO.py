@@ -34,10 +34,11 @@ class MSCOCO(DetectionDataset):
         vid_size  = vid_info['frame_size']
 
         input_data = []
-        vid_data   = np.zeros((self.clip_length, self.final_shape[0], self.final_shape[1], 3))-1
-        bbox_data  = np.zeros((self.clip_length, self.max_objects, 4))-1
-        labels     = np.zeros((self.clip_length, self.max_objects))-1
-        iscrowds   = np.zeros((self.clip_length, self.max_objects))-1
+        vid_length = len(vid_info['frames'])
+        vid_data   = np.zeros((vid_length, self.final_shape[0], self.final_shape[1], 3))-1
+        bbox_data  = np.zeros((vid_length, self.max_objects, 4))-1
+        labels     = np.zeros((vid_length, self.max_objects))-1
+        iscrowds   = np.zeros((vid_length, self.max_objects))-1
 
 
 

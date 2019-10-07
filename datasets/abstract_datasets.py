@@ -40,6 +40,9 @@ class VideoDataset(Dataset):
         self.crop_type      = kwargs['crop_type'] 
         self.final_shape    = kwargs['final_shape']
 
+        #Experiment arguments
+        self.batch_size     = kwargs['batch_size']
+
         # Creates the self.samples list which will be indexed by each __getitem__ call
         self._getClips()
 
@@ -68,17 +71,22 @@ class VideoDataset(Dataset):
             self.clip_stride: Number of frames between clips when extracting them from videos 
             self.random_offset: Randomly select a clip_length sized clip from a video
         """
+        if self.clip_offset > 0:
+            if len(video)-self.clip_offset >= self.clip_length:
+                video = video[self.clip_offset:]
+
         if self.num_clips < 0:
             if len(video) >= self.clip_length:
+                # Uniformly sample one clip from the video
                 final_video = [video[_idx] for _idx in np.linspace(0, len(video)-1, self.clip_length, dtype='int32')]
                 final_video = [final_video]
 
             else:
                 # Loop if insufficient elements
-                indices = np.ceil(self.clip_length/float(len(video)))
+                indices = np.ceil(self.clip_length/float(len(video))) # Number of times to repeat the video to exceed one clip_length
                 indices = indices.astype('int32')
-                indices = np.tile(np.arange(0, len(video), 1, dtype='int32'), indices)
-                indices = indices[np.linspace(0, len(indices)-1, self.clip_length, dtype='int32')]
+                indices = np.tile(np.arange(0, len(video), 1, dtype='int32'), indices) # Repeat the video indices until it exceeds a clip_length
+                indices = indices[np.linspace(0, len(indices)-1, self.clip_length, dtype='int32')] # Uniformly sample clip_length frames from the looped video
 
                 final_video = [video[_idx] for _idx in indices]
                 final_video = [final_video]
@@ -87,8 +95,9 @@ class VideoDataset(Dataset):
             # END IF
 
         elif self.num_clips == 0:
+            # Divide entire video into the max number of clip_length segments
             if len(video) >= self.clip_length:
-                indices     = np.arange(start=0, stop=len(video), step=self.clip_length)
+                indices     = np.arange(start=0, stop=len(video)-self.clip_length+1, step=self.clip_stride)
                 final_video = []
 
                 for _idx in indices:
@@ -110,33 +119,47 @@ class VideoDataset(Dataset):
             # END IF                               
     
         else:
+            # num_clips > 0, select exactly num_clips from a video
+
+            if self.clip_length == -1:
+                # This is a special case where we will return the entire video
+
+                # Batch size must equal one or dataloader items may have varying lengths 
+                # and can't be stacked i.e. throws an error
+                assert(self.batch_size == 1) 
+                return [video]
+
+
+            required_length = (self.num_clips-1)*(self.clip_stride)+self.clip_length
+
+
             if self.random_offset:
-                if len(video) >= self.clip_length:
-                    indices = np.random.choice(np.arange(len(video) - self.clip_length + 1), 1)
-                    indices = indices.astype('int32')
-                    indices = np.arange(indices, indices + self.clip_length).astype('int32') 
+                if len(video) >= required_length:
+                    vid_start = np.random.choice(np.arange(len(video) - required_length + 1), 1)
+                    video = video[int(vid_start):]
 
-                    final_video = [video[_idx] for _idx in indices]
-                    final_video = [final_video]
+            if len(video) >= required_length:
+                # Get indices of sequential clips overlapped by a clip_stride number of frames
+                indices = np.arange(0, len(video), self.clip_stride)
 
-                else:
-                    indices = np.ceil(self.clip_length/float(len(video)))
-                    indices = indices.astype('int32')
-                    indices = np.tile(np.arange(0, len(video), 1, dtype='int32'), indices)
+                # Select only the first num clips
+                indices = indices.astype('int32')[:self.num_clips]
 
-                    index   = np.random.choice(np.arange(len(indices) - self.clip_length + 1), 1)[0]
-                    index   = index.astype('int32')
-                    indices = indices[index:index + self.clip_length]
-
-                    final_video = [video[_idx] for _idx in indices]
-                    final_video = [final_video]
-
-                # END IF
+                video = np.array(video)
+                final_video = [video[np.arange(_idx, _idx+self.clip_length).astype('int32')].tolist() for _idx in indices]
 
             else:
-                final_video = video[:self.clip_length]
-                final_video = [final_video]
+                # If the video is too small to get num_clips given the clip_length and clip_stride, loop it until you can
+                indices = np.ceil(required_length /float(len(video)))
+                indices = indices.astype('int32')
+                indices = np.tile(np.arange(0, len(video), 1, dtype='int32'), indices)
 
+                # Starting index of each clip
+                clip_starts = np.arange(0, len(indices), self.clip_stride).astype('int32')[:self.num_clips]
+
+                video = np.array(video)
+                final_video = [video[indices[_idx:_idx+self.clip_length]].tolist() for _idx in clip_starts]
+            
             # END IF
 
         # END IF
