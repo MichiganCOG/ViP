@@ -40,6 +40,9 @@ class VideoDataset(Dataset):
         self.crop_type      = kwargs['crop_type'] 
         self.final_shape    = kwargs['final_shape']
 
+        #Experiment arguments
+        self.batch_size     = kwargs['batch_size']
+
         # Creates the self.samples list which will be indexed by each __getitem__ call
         self._getClips()
 
@@ -120,7 +123,10 @@ class VideoDataset(Dataset):
 
             if self.clip_length == -1:
                 # This is a special case where we will return the entire video
-                # This setting can only be used when the batch size is set to 1
+
+                # Batch size must equal one or dataloader items may have varying lengths 
+                # and can't be stacked i.e. throws an error
+                assert(self.batch_size == 1) 
                 return [video]
 
 
