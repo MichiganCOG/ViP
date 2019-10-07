@@ -4,13 +4,12 @@ from PIL import Image
 import cv2
 import os
 import numpy as np
-import datasets.preprocessing_transforms as pt
 from torchvision import transforms
 
-class UCF101(RecognitionDataset):
+class KTH(RecognitionDataset):
     def __init__(self, *args, **kwargs):
         """
-        Initialize UCF101 class  
+        Initialize KTH class  
         Args:
             load_type    (String): Select training or testing set 
             resize_shape (Int):    [Int, Int] Array indicating desired height and width to resize input
@@ -21,7 +20,7 @@ class UCF101(RecognitionDataset):
         Return:
             None
         """
-        super(UCF101, self).__init__(*args, **kwargs)
+        super(KTH, self).__init__(*args, **kwargs)
 
         self.load_type    = kwargs['load_type']
         self.resize_shape = kwargs['resize_shape']
@@ -30,7 +29,7 @@ class UCF101(RecognitionDataset):
         self.preprocess   = kwargs['preprocess']
         
         if self.load_type=='train':
-            self.transforms = kwargs['model_obj'].train_transforms 
+            self.transforms = kwargs['model_obj'].train_transforms
 
         else:
             self.transforms = kwargs['model_obj'].test_transforms
@@ -41,6 +40,7 @@ class UCF101(RecognitionDataset):
         base_path = vid_info['base_path']
 
         input_data = []
+
         vid_length = len(vid_info['frames'])
         vid_data   = np.zeros((vid_length, self.final_shape[0], self.final_shape[1], 3))-1
         labels     = np.zeros((vid_length))-1
@@ -51,12 +51,9 @@ class UCF101(RecognitionDataset):
 
             for frame_labels in vid_info['frames'][frame_ind]['actions']:
                 labels[frame_ind] = frame_labels['action_class']
-            try:
-                # Load frame image data and preprocess image accordingly
-                input_data.append(cv2.imread(frame_path)[...,::-1]/1.)
 
-            except:
-                print(frame_path)
+            # Load frame image data and preprocess image accordingly
+            input_data.append(cv2.imread(frame_path)[...,::-1]/1.)
 
 
         # Preprocess data

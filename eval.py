@@ -67,6 +67,9 @@ def eval(**args):
     if args['load_type'] == 'train_val':
         eval_loader = loader['valid']
 
+    elif args['load_type'] == 'train':
+        eval_loader = loader['train']
+
     elif args['load_type'] == 'test':
         eval_loader  = loader['test'] 
 
@@ -88,6 +91,9 @@ def eval(**args):
     # Setup Model To Evaluate 
     model.eval()
 
+    ret_data   = None
+    ret_labels = None
+
     with torch.no_grad():
         for step, data in enumerate(eval_loader):
             x_input     = data['data']
@@ -101,6 +107,17 @@ def eval(**args):
                         x_input[i] = item.to(device)
                 outputs = model(*x_input)
 
+            if ret_data is None:
+                ret_data   = outputs.cpu().numpy()
+                ret_labels = annotations['labels'].cpu().numpy()[:, 0]
+
+            else:
+                ret_data   = np.vstack((ret_data, outputs.cpu().numpy()))
+                ret_labels = np.hstack((ret_labels, annotations['labels'].cpu().numpy()[:, 0]))
+
+            # END IF
+
+
             acc = acc_metric.get_accuracy(outputs, annotations)
 
             if step % 100 == 0:
@@ -109,6 +126,12 @@ def eval(**args):
     print('Accuracy of the network on the {} set: {:.3f} %\n'.format(args['load_type'], 100.*acc))
 
     if not args['debug']:
+        ret_dict = {}
+        ret_dict['data']   = ret_data
+        ret_dict['labels'] = ret_labels
+        import scipy.io as sio
+        sio.savemat(os.path.join(result_dir,args['load_type']+'_'+args['dataset']+'.mat'), ret_dict)
+
         writer.add_scalar(args['dataset']+'/'+args['model']+'/'+args['load_type']+'_accuracy', 100.*acc)
         # Close Tensorboard Element
         writer.close()

@@ -1,7 +1,7 @@
 # Preprocessing
 clip_length:       16                    # Number of frames within a clip 
 clip_offset:       0                     # Frame offset between beginning of video and clip (1st clip only) 
-clip_stride:       0                     # Frame offset between successive frames
+clip_stride:       1                     # Frame offset between successive frames
 crop_shape:        [112,112]             # (Height, Width) of frame  
 crop_type:         Random                # Type of cropping operation (Random, Central and None)  
 final_shape:       [112,112]             # (Height, Width) of input to be given to CNN
@@ -36,3 +36,5 @@ rerun:             1                     # Number of trials to repeat an experim
 save_dir:          './results'           # Path to results directory
 seed:              999                   # Seed for reproducibility 
 weight_decay:      0.0005                # Weight decay
+
+model_features:    0                     # 1 - return model features (before prediction), 0 - return model prediction output
