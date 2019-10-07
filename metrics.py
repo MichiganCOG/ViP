@@ -637,11 +637,6 @@ class Box_Accuracy():
         for (i,h,m) in results:
             self.ba_score[i].append((h,m))
         
-
-        self.count += N
-        if self.count < self.ndata:
-            return -1
-        
         if self.test_mode: #Annotations for the testing split are not publicly available
             return -1
 
@@ -657,5 +652,4 @@ class Box_Accuracy():
                 #print('BA for {}(...): {:.4f}'.format(k, cur_hit/(cur_hit+cur_miss)))
                 ba_final.append(cur_hit/(cur_hit+cur_miss))
 
-        #print('The overall BA is: {:.4f}'.format(np.mean(ba_final))) 
         return np.mean(ba_final)

@@ -107,14 +107,6 @@ def eval(**args):
                         x_input[i] = item.to(device)
                 outputs = model(*x_input)
 
-            if ret_data is None:
-                ret_data   = outputs.cpu().numpy()
-                ret_labels = annotations['labels'].cpu().numpy()[:, 0]
-
-            else:
-                ret_data   = np.vstack((ret_data, outputs.cpu().numpy()))
-                ret_labels = np.hstack((ret_labels, annotations['labels'].cpu().numpy()[:, 0]))
-
             # END IF
 
 
@@ -126,12 +118,6 @@ def eval(**args):
     print('Accuracy of the network on the {} set: {:.3f} %\n'.format(args['load_type'], 100.*acc))
 
     if not args['debug']:
-        ret_dict = {}
-        ret_dict['data']   = ret_data
-        ret_dict['labels'] = ret_labels
-        import scipy.io as sio
-        sio.savemat(os.path.join(result_dir,args['load_type']+'_'+args['dataset']+'.mat'), ret_dict)
-
         writer.add_scalar(args['dataset']+'/'+args['model']+'/'+args['load_type']+'_accuracy', 100.*acc)
         # Close Tensorboard Element
         writer.close()
