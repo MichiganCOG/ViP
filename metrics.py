@@ -1,5 +1,8 @@
-import torch
+import os
+import json 
 import numpy as np
+
+import torch
 
 class Metrics(object):
     def __init__(self, *args, **kwargs):
@@ -530,14 +533,26 @@ class Box_Accuracy():
     def __init__(self, *args, **kwargs):
         from collections import defaultdict
 
-        self.thresh = kwargs['accu_thresh']
-        self.fps    = kwargs['fps']
-        self.test_mode = 1 if kwargs['load_type'] == 'test' else 0
-        self.IOU      = IOU()
-        self.ba_score = defaultdict(list) #box accuracy metric
+        self.result_dir = os.path.join(kwargs['result_dir'], 'submission_yc2_bb.json')
+        self.thresh     = kwargs['accu_thresh']
+        self.fps        = kwargs['fps']
+        self.debug      = kwargs['debug']
+        self.test_mode  = 1 if kwargs['load_type'] == 'test' else 0
+        self.IOU        = IOU()
+        self.ba_score   = defaultdict(list) #box accuracy metric
+
+        if self.test_mode:
+            print('*'*62)
+            print('* [WARNING] Eval unavailable for the test set! *\
+                 \n* Results will be saved to: '+self.result_dir+' *\
+                 \n* Please submit your results to the eval server!  *')
+            print('*'*62)
 
         self.ndata = kwargs['ndata']
         self.count = 0
+        
+        self.json_data = {}
+        self.database  = {}
 
     def get_accuracy(self, predictions, data):
         """
@@ -560,6 +575,7 @@ class Box_Accuracy():
         attn_weights = predictions
 
         N = attn_weights.shape[0] 
+        self.count += N
 
         rpn_batch         = data['rpn_original']
         box_batch         = data['box']
@@ -636,8 +652,28 @@ class Box_Accuracy():
         
         for (i,h,m) in results:
             self.ba_score[i].append((h,m))
-        
-        if self.test_mode: #Annotations for the testing split are not publicly available
+
+        #Annotations for the testing split are not publicly available
+        if self.test_mode: 
+            split, rec, video_name, segment = vis_name[0].split('_-_')
+
+            if video_name not in self.database:
+                self.database[video_name] = {}
+                self.database[video_name]['recipe_type'] = rec
+            if 'segments' not in self.database[video_name]:
+                self.database[video_name]['segments'] = {}
+
+            self.database[video_name]['segments'][int(segment)] = segment_dict 
+
+            #Predictions will be saved to JSON file (if not in debug mode)
+            if self.count >= self.ndata and not self.debug:
+                self.json_data['database'] = self.database
+
+                with open(self.result_dir, 'w') as f:
+                    json.dump(self.json_data, f)
+
+                print('Saved submission file to: {}'.format(self.result_dir))
+
             return -1
 
         ba_final = []

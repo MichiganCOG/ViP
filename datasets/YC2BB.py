@@ -26,7 +26,7 @@ class YC2BB(DetectionDataset):
 
         self.load_type = kwargs['load_type']
 
-        self.max_objects = 15 
+        self.max_objects = 20 
         self.class_dict  = _get_class_labels(class_file)
         '''
         if self.load_type=='train':
@@ -124,10 +124,10 @@ class YC2BB(DetectionDataset):
                 trackid = obj['trackid']
 
                 if self.load_type == 'test' or self.load_type == 'train': #Annotations for test set not publicly available, train not annotated
-                    bbox_data[trackid, frame_ind] = -1*np.ones(5) 
+                    bbox_data[trackid, frame_ind] = [label, -1, -1, -1, -1] 
                 else:
                     if obj['occ'] or obj['outside']:
-                        bbox_data[trackid, frame_ind] = -1*np.ones(5) 
+                        bbox_data[trackid, frame_ind] = [label, -1, -1, -1, -1] 
                     else:   
                         obj_bbox  = obj['bbox'] # [xmin, ymin, xmax, ymax]
 
