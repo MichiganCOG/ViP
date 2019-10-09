@@ -187,7 +187,7 @@ def train(**args):
 
                 # END IF
 
-                if ((epoch*len(train_loader) + step+1) % 1 == 0):
+                if ((epoch*len(train_loader) + step+1) % 100 == 0):
                     print('Epoch: {}/{}, step: {}/{} | train loss: {:.4f}'.format(epoch, args['epoch'], step+1, len(train_loader), running_loss/float(step+1)/mini_batch_size))
 
                 # END IF
@@ -211,7 +211,7 @@ def train(**args):
     
 
             # END FOR: Epoch
-
+            
             scheduler.step(epoch=epoch)
             print('Schedulers lr: %f', scheduler.get_lr()[0])
 
@@ -257,11 +257,21 @@ def valid(valid_loader, running_acc, model, device, acc_metric):
     
     with torch.no_grad():
         for step, data in enumerate(valid_loader):
-            x_input     = data['data'].to(device)
+            x_input     = data['data']
             annotations = data['annots'] 
-            outputs     = model(x_input)
+
+            if isinstance(x_input, torch.Tensor):
+                outputs = model(x_input.to(device))
+            else:
+                for i, item in enumerate(x_input):
+                    if isinstance(item, torch.Tensor):
+                        x_input[i] = item.to(device)
+                outputs = model(*x_input)
         
             running_acc.append(acc_metric.get_accuracy(outputs, annotations))
+
+            if step % 100 == 0:
+                print('Step: {}/{} | validation acc: {:.4f}'.format(step, len(valid_loader), running_acc[-1]))
     
         # END FOR: Validation Accuracy
 

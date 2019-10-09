@@ -1,3 +1,5 @@
+#Code heavily adapted from: https://github.com/MichiganCOG/Video-Grounding-from-Text/blob/master/model/dvsa.py
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -9,8 +11,14 @@ import os
 from models.dvsa.dvsa_utils.transformer import Transformer
 
 class DVSA(nn.Module):
-
-#    def __init__(self, num_class, input_size=2048, enc_size=128, dropout=0.2, hidden_size=256, n_layers=1, n_heads=4, attn_drop=0.2, num_frm=5, has_loss_weighting=False):
+    """
+    Deep Visual-Semantic Alignments (DVSA). 
+    Implementation used as baseline in Weakly-Supervised Video Object Grounding...
+    Source: https://arxiv.org/pdf/1805.02834.pdf
+    
+    Original paper: Deep visual-semantic alignments for generating image descriptions
+    https://cs.stanford.edu/people/karpathy/cvpr2015.pdf
+    """
     def __init__(self, **kwargs):
         super().__init__()
         num_class          = kwargs['labels']
@@ -125,7 +133,7 @@ class DVSA(nn.Module):
         x_o = self.feat_enc(x_o.permute(0,2,3,1).contiguous()).permute(0,3,1,2).contiguous()
 
         N, C_out, T, num_proposals = x_o.size()
-        assert(N == 1) # two pos samples and one neg sample
+        assert(N == 1)
 
         # attention
         O = obj.size(1)
@@ -147,4 +155,3 @@ class DVSA(nn.Module):
         state_dict = torch.load('weights/yc2bb_full-model.pth', map_location=lambda storage, location: storage)
 
         self.load_state_dict(state_dict)
-

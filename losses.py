@@ -113,10 +113,12 @@ class M_XENTROPY(object):
 
         return torch.mean(torch.sum(-one_hot * self.logsoftmax(predictions), dim=1))
 
+#Code source: https://github.com/MichiganCOG/Video-Grounding-from-Text/blob/master/train.py
 class YC2BB_Attention_Loss(object):
     def __init__(self, *args, **kwargs):
        """
-       Frame-wise attention loss used in:
+       Frame-wise attention loss used in Weakly-Supervised Object Video Grounding... 
+       https://arxiv.org/pdf/1805.02834.pdf
        
        Weakly-supervised, no groundtruth labels are used.
        """
@@ -130,10 +132,11 @@ class YC2BB_Attention_Loss(object):
         """
         Args:
             predictions (List): 
-                - output (): 
-                - loss weighting():
-            data        (NoneType)
+                - output (Tensor, shape [2*T, 2]): Positive and negative attention weights for each sample
+                - loss_weigh (Tensor, shape [2*T, 1]): Loss weighting applied to each sampled frame
+            data        (None) 
 
+            T: number of sampled frames from video (default: 5)
         Return:
             Frame-wise weighting loss 
         """

@@ -11,8 +11,12 @@ import torchtext
 
 class YC2BB(DetectionDataset):
     '''
-    YouCook2-Bounding Boxes dataset. Used in weakly-supervised video object grounding task
+    YouCook2-Bounding Boxes dataset. Introduced in weakly-supervised video object grounding task
     Paper: https://arxiv.org/pdf/1805.02834.pdf
+
+    training: no bounding box annotations, only sentence describing sentence
+    validation: bounding box annotations and grounded words available
+    testing: bounding box annotations not publicly available, only grounded words
     '''
     def __init__(self, *args, **kwargs):
         super(YC2BB, self).__init__(*args, **kwargs)
@@ -97,6 +101,23 @@ class YC2BB(DetectionDataset):
     #Reverse-mapping between class index to canonical label name
     def _get_class_labels_reverse(self):
         return {v:k for k,v in self.class_dict.items()}
+    
+    #For the training set, extract positive and negative samples
+    def sample_rpn_regions(self, x_rpn, idx):
+        # randomly sample 5 frames from 5 uniform intervals
+        T = x_rpn.size(1)
+        itv = T*1./self.num_frm
+        ind = [min(T-1, int((i+np.random.rand())*itv)) for i in range(self.num_frm)]
+        x_rpn = x_rpn[:, ind, :]
+
+        obj_label = self.sample_obj_labels[idx]
+
+        #Generate example
+        obj_tensor = torch.tensor(obj_label, dtype=torch.long)
+        obj_tensor = torch.cat((obj_tensor, torch.LongTensor(self.max_objects - len(obj_label)).fill_(self.num_class))) #padding
+        sample     = [x_rpn, obj_tensor]
+
+        return sample 
 
     def __getitem__(self, idx):
         vid_info = self.samples[idx]
@@ -194,23 +215,13 @@ class YC2BB(DetectionDataset):
         annot_dict = dict()
 
         if self.load_type == 'train': #Training input data is generated differently
-            # randomly sample 5 frames from 5 uniform intervals
-            T = x_rpn.size(1)
-            itv = T*1./self.num_frm
-            ind = [min(T-1, int((i+np.random.rand())*itv)) for i in range(self.num_frm)]
-            x_rpn = x_rpn[:, ind, :]
+            #Generate postive example
+            pos_sample = self.sample_rpn_regions(x_rpn, idx)
 
-            obj_label = self.sample_obj_labels[idx]
-
-            #Generate positive example
-            obj_tensor = torch.tensor(obj_label, dtype=torch.long)
-            obj_tensor = torch.cat((obj_tensor, torch.LongTensor(self.max_objects - len(obj_label)).fill_(self.num_class))) #padding
-            pos_sample = [x_rpn, obj_tensor]
-
-            #Sample negative example 
+            #Sample negative index 
             total_s = len(self.samples)
             neg_index = np.random.randint(total_s)
-            #Shouldn't include any overlapping object
+            #Shouldn't include any overlapping object in description
             while len(set(obj_label).intersection(set(self.sample_obj_labels[neg_index]))) != 0:
                 neg_index = np.random.randint(total_s)
 
@@ -243,17 +254,8 @@ class YC2BB(DetectionDataset):
             x_rpn = x_rpn.permute(2,0,1).contiguous() # encoding size x number of frames x number of proposals
             x_rpn = x_rpn[:, :, :self.num_proposals]
 
-            # randomly sample 5 frames from 5 uniform intervals
-            T = x_rpn.size(1)
-            itv = T*1./self.num_frm
-            ind = [min(T-1, int((i+np.random.rand())*itv)) for i in range(self.num_frm)]
-            x_rpn = x_rpn[:, ind, :]
-
             #Generate negative example
-            neg_obj_label = self.sample_obj_labels[neg_index]
-            obj_tensor = torch.tensor(neg_obj_label, dtype=torch.long)
-            obj_tensor = torch.cat((obj_tensor, torch.LongTensor(self.max_objects - len(neg_obj_label)).fill_(self.num_class))) #padding
-            neg_sample = [x_rpn, obj_tensor]
+            neg_sample = self.sample_rpn_regions(x_rpn, neg_index)
 
             output = [torch.stack(i) for i in zip(pos_sample, neg_sample)]
             output.append(self.load_type)
