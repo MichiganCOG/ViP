@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.autograd import Variable
 import math
 import numpy as np
 from functools import partial
@@ -14,7 +13,7 @@ class DVSA(nn.Module):
 #    def __init__(self, num_class, input_size=2048, enc_size=128, dropout=0.2, hidden_size=256, n_layers=1, n_heads=4, attn_drop=0.2, num_frm=5, has_loss_weighting=False):
     def __init__(self, **kwargs):
         super().__init__()
-        num_class          = kwargs['num_class']
+        num_class          = kwargs['labels']
         input_size         = kwargs['input_size']
         enc_size           = kwargs['enc_size']
         dropout            = kwargs['dropout']
@@ -22,7 +21,7 @@ class DVSA(nn.Module):
         n_layers           = kwargs['n_layers']
         n_heads            = kwargs['n_heads']
         attn_drop          = kwargs['attn_drop']
-        num_frm            = kwargs['num_frm']
+        num_frm            = kwargs['yc2bb_num_frm']
         has_loss_weighting = kwargs['has_loss_weighting']
         
         # encode the region feature
@@ -61,6 +60,10 @@ class DVSA(nn.Module):
         is_evaluate = 1 if load_type[0] == 'test' or load_type[0] == 'val' else 0
         if is_evaluate:
             return self.output_attn(x_o, obj)
+
+        #only a single batch expected
+        x_o = x_o[0]  
+        obj = obj[0]
 
         x_o = self.feat_enc(x_o.permute(0,2,3,1).contiguous()).permute(0,3,1,2).contiguous()
 

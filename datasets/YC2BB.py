@@ -23,17 +23,13 @@ class YC2BB(DetectionDataset):
         num_proposals        = kwargs['yc2bb_num_proposals']
         rpn_proposal_root    = kwargs['yc2bb_rpn_proposal_root']
         roi_pooled_feat_root = kwargs['yc2bb_roi_pooled_feat_root']
+        self.num_frm         = kwargs['yc2bb_num_frm']
 
         self.load_type = kwargs['load_type']
 
         self.max_objects = 20 
+        self.num_class   = kwargs['labels']
         self.class_dict  = _get_class_labels(class_file)
-        '''
-        if self.load_type=='train':
-            self.transforms = kwargs['model_obj'].train_transforms
-        else:
-            self.transforms = kwargs['model_obj'].test_transforms
-        '''
 
         sentences_proc, segments_tuple = _get_segments_and_sentences(self.samples, self.load_type)
 
@@ -64,35 +60,38 @@ class YC2BB(DetectionDataset):
         self.num_proposals = num_proposals
         self.roi_pooled_feat_root = roi_pooled_feat_root
 
-        '''
-        with open(self.gt_box_file, 'r') as f:
-            self.data_all = json.load(f)
-
-	 # read gt bounding boxes O x T/25 x (id, ytl, xtl, ybr, xbr)
-        # coordinates are 0-indexed
-        for i, t in enumerate(segments_tuple):
-            vid = t[2]
-            seg = str(int(t[3]))
-
-            # if video has no annotations, continue
-            if not vid in self.data_all['database']:
-                continue
-
-            # check if ground truth bounding box exists for segment
-            if seg in self.data_all['database'][vid]['segments'].keys():
-                s = sentences_proc[i]
-                inc_flag = 0
+        #Extract all dictionary words from each input sentence
+        #Only for the training set b/c it's un-annotated
+        self.sample_obj_labels = []
+        idx_to_remove = []
+        if self.load_type == 'train':
+            total_seg = len(self.samples)
+            for idx, sample in enumerate(self.samples):
+                sentence = sample['frames'][0]['sentence'].split(' ')
                 obj_label = []
-                for w in s:
-                    if self.class_dict.get(w, -1) >= 0:
-                        obj_label.append(self.class_dict[w])
+                inc_flag = 0
+                for w in sentence:
+                    if self.class_dict.get(w,-1) >= 0:
+                        obj_label.append(self.class_dict[w]) 
                         inc_flag = 1
 
                 if inc_flag:
-                    self.sample_lst.append((t, obj_label))
+                    self.sample_obj_labels.append(obj_label)
+                else:
+                    idx_to_remove.append(idx)
 
-        print('# of segments for {}: {}, percentage in the raw data: {:.2f}'.format(
-               split_lst, len(self.sample_lst), len(self.sample_lst)/len(sentences_proc)))
+            #Remove segments without object from dictionay
+            self.samples[:] = [s for idx,s in enumerate(self.samples) if idx not in idx_to_remove]
+
+            assert(len(self.samples) == len(self.sample_obj_labels))
+
+            print('{}/{} valid segments in {} split'.format(len(self.samples), total_seg, self.load_type))
+
+        '''
+        if self.load_type=='train':
+            self.transforms = kwargs['model_obj'].train_transforms
+        else:
+            self.transforms = kwargs['model_obj'].test_transforms
         '''
 
     #Reverse-mapping between class index to canonical label name
@@ -192,15 +191,84 @@ class YC2BB(DetectionDataset):
         vis_name = '_-_'.join((self.yc2_split, rec, vid, seg))
 
         ret_dict = dict()
-        ret_dict['data']     = [x_rpn, obj_label, self.load_type] 
-
         annot_dict = dict()
-        annot_dict['box']               = bbox_data 
-        annot_dict['box_label']         = obj_label 
-        annot_dict['rpn']               = rpn
-        annot_dict['rpn_original']      = rpn_original 
-        annot_dict['vis_name']          = vis_name
-        annot_dict['class_labels_dict'] = self._get_class_labels_reverse()
+
+        if self.load_type == 'train': #Training input data is generated differently
+            # randomly sample 5 frames from 5 uniform intervals
+            T = x_rpn.size(1)
+            itv = T*1./self.num_frm
+            ind = [min(T-1, int((i+np.random.rand())*itv)) for i in range(self.num_frm)]
+            x_rpn = x_rpn[:, ind, :]
+
+            obj_label = self.sample_obj_labels[idx]
+
+            #Generate positive example
+            obj_tensor = torch.tensor(obj_label, dtype=torch.long)
+            obj_tensor = torch.cat((obj_tensor, torch.LongTensor(self.max_objects - len(obj_label)).fill_(self.num_class))) #padding
+            pos_sample = [x_rpn, obj_tensor]
+
+            #Sample negative example 
+            total_s = len(self.samples)
+            neg_index = np.random.randint(total_s)
+            #Shouldn't include any overlapping object
+            while len(set(obj_label).intersection(set(self.sample_obj_labels[neg_index]))) != 0:
+                neg_index = np.random.randint(total_s)
+
+            vid_info = self.samples[neg_index]
+            
+            base_path       = vid_info['base_path']
+            width, height   = vid_info['frame_size']
+            num_frames_1fps = len(vid_info['frames'])
+            rec             = base_path.split('/')[-3]
+            vid             = base_path.split('/')[-2]
+            seg             = base_path.split('/')[-1]
+
+            # rpn object propoals
+            rpn = []
+            x_rpn = []
+            frm=1
+
+            feat_name = vid+'_'+seg+'.pth'
+            img_name = vid+'_'+seg+'_'+str(frm).zfill(4)+'.jpg'
+            x_rpn = torch.load(os.path.join(self.roi_pooled_feat_root, self.yc2_split, feat_name))
+            while self.rpn_dict.get(img_name, -1) > -1:
+                ind = self.rpn_dict[img_name]
+                rpn.append(self.rpn_chunk[ind])
+                frm+=1
+                img_name = vid+'_'+seg+'_'+str(frm).zfill(4)+'.jpg'
+
+            rpn = torch.stack(rpn) # number of frames x number of proposals per frame x 4
+            rpn = rpn[:, :self.num_proposals, :]
+
+            x_rpn = x_rpn.permute(2,0,1).contiguous() # encoding size x number of frames x number of proposals
+            x_rpn = x_rpn[:, :, :self.num_proposals]
+
+            # randomly sample 5 frames from 5 uniform intervals
+            T = x_rpn.size(1)
+            itv = T*1./self.num_frm
+            ind = [min(T-1, int((i+np.random.rand())*itv)) for i in range(self.num_frm)]
+            x_rpn = x_rpn[:, ind, :]
+
+            #Generate negative example
+            neg_obj_label = self.sample_obj_labels[neg_index]
+            obj_tensor = torch.tensor(neg_obj_label, dtype=torch.long)
+            obj_tensor = torch.cat((obj_tensor, torch.LongTensor(self.max_objects - len(neg_obj_label)).fill_(self.num_class))) #padding
+            neg_sample = [x_rpn, obj_tensor]
+
+            output = [torch.stack(i) for i in zip(pos_sample, neg_sample)]
+            output.append(self.load_type)
+            ret_dict['data'] = output 
+
+        else: #Validation or Testing set
+            ret_dict['data']     = [x_rpn, obj_label, self.load_type] 
+
+            annot_dict['box']               = bbox_data 
+            annot_dict['box_label']         = obj_label 
+            annot_dict['rpn']               = rpn
+            annot_dict['rpn_original']      = rpn_original 
+            annot_dict['vis_name']          = vis_name
+            annot_dict['class_labels_dict'] = self._get_class_labels_reverse()
+
         ret_dict['annots']         = annot_dict
 
         return ret_dict
