@@ -11,4 +11,4 @@ torch==1.1.0
 torchvision==0.3.0
 
 torchtext==0.2.1
-spacy==2.1.8 #Install 'en' package with: python -m spacy download en
+spacy==2.1.8
