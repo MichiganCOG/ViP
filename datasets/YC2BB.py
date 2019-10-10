@@ -147,7 +147,7 @@ class YC2BB(DetectionDataset):
                     bbox_data[trackid, frame_ind] = [label, -1, -1, -1, -1] 
                 else:
                     if obj['occ'] or obj['outside']:
-                        bbox_data[trackid, frame_ind] = [label, -1, -1, -1, -1] 
+                        bbox_data[trackid, frame_ind] = [-1, -1, -1, -1, -1] 
                     else:   
                         obj_bbox  = obj['bbox'] # [xmin, ymin, xmax, ymax]
 
