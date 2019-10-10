@@ -21,8 +21,8 @@ Check out our [wiki!](https://github.com/MichiganCOG/ViP/wiki)
 |  Model Architecture  |      Dataset       |    ViP Accuracy (%)   | 
 |:--------------------:|:------------------:|:---------------------:|
 |        DVSA (+fw, obj)        |  YC2-BB (Validation)  |    30.09      |
-fw: framewise weighting
-obj: object interaction
+
+**fw**: framewise weighting, **obj**: object interaction
 ## Table of Contents
 
 * [Datasets](#configured-datasets)
