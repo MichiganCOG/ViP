@@ -52,6 +52,7 @@ class Parse():
 
         parser.add_argument('--debug',   type=int, help='Run an experiment but do not save any data or create any folders')
         parser.add_argument('--seed',    type=int, help='Seed for reproducibility')
+        parser.add_argument('--resume',  type=int, help='Flag to resume training or switch to alternate objective after loading')
 
         # Default dict, anything not present is required to exist as an argument or in yaml file
         self.defaults = dict(
@@ -79,7 +80,8 @@ class Parse():
             num_clips        = 1,
             debug            = 0,
             seed             = 0,
-            scale            = [1,1])                       
+            scale            = [1,1],
+            resume           = 0)                       
 
 
 
@@ -111,5 +113,13 @@ class Parse():
             else:
                 if k not in yaml_keys:
                     self.cfg_args[k] = self.defaults[k]
+
+
+        # Force clip_stride to be >= 1 when extracting clips from a video
+        # This represents the # of frames between successive clips 
+        if self.cfg_args['clip_stride'] < 1:
+            self.cfg_args['clip_stride'] = 1
+
+
 
         return self.cfg_args
