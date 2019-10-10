@@ -677,6 +677,7 @@ class RandomZoomClip(PreprocTransform):
     """
     Random zoom on all frames in a clip. All frames receive same scaling
     Scale will be bounded by object bounding box (if given). Meaning, object will always be in view
+    If zooming out, the borders will be filled with black.
 
     >1: Zoom in
     <1: Zoom out
