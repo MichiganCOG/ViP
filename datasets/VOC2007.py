@@ -1,6 +1,5 @@
 import torch
 from .abstract_datasets import DetectionDataset 
-from PIL import Image
 import cv2
 import os
 import numpy as np
@@ -53,10 +52,11 @@ class VOC2007(DetectionDataset):
         vid_size  = vid_info['frame_size']
 
         input_data  = []
-        vid_data    = np.zeros((self.clip_length, self.final_shape[0], self.final_shape[1], 3))-1
-        bbox_data   = np.zeros((self.clip_length, self.max_objects, 4))-1
-        labels      = np.zeros((self.clip_length, self.max_objects))-1
-        diff_labels = np.zeros((self.clip_length, self.max_objects)) #difficult object labels
+        vid_length = len(vid_info['frames'])
+        vid_data    = np.zeros((vid_length, self.final_shape[0], self.final_shape[1], 3))-1
+        bbox_data   = np.zeros((vid_length, self.max_objects, 4))-1
+        labels      = np.zeros((vid_length, self.max_objects))-1
+        diff_labels = np.zeros((vid_length, self.max_objects)) #difficult object labels
 
         for frame_ind in range(len(vid_info['frames'])):
             frame      = vid_info['frames'][frame_ind]

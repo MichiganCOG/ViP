@@ -1,15 +1,13 @@
 # Preprocessing
 clip_length:       16                    # Number of frames within a clip 
 clip_offset:       0                     # Frame offset between beginning of video and clip (1st clip only) 
-clip_stride:       0                     # Frame offset between successive frames
+clip_stride:       1                     # Frame offset between successive clips, must be >= 1 
 crop_shape:        [112,112]             # (Height, Width) of frame  
 crop_type:         Random                # Type of cropping operation (Random, Central and None)  
 final_shape:       [112,112]             # (Height, Width) of input to be given to CNN
 num_clips:         -1                    # Number clips to be generated from a video (<0: uniform sampling, 0: Divide entire video into clips, >0: Defines number of clips) 
 random_offset:     0                     # Boolean switch to generate a clip length sized clip from a video 
 resize_shape:      [128,171]             # (Height, Width) to resize original data 
-sample_duration:   16                    # Temporal size of video to be provided as input to the model 
-sample_size:       112                   # Height of frame to be provided as input to the model
 subtract_mean:     ''                    # Subtract mean (R,G,B) from all frames during preprocessing
 
 # Experiment Setup 

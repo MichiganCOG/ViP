@@ -47,6 +47,8 @@ class Parse():
         parser.add_argument('--crop_shape',   type=int, nargs=2,  help='(Height, Width) of frame') 
         parser.add_argument('--crop_type',    type=str, help='Type of cropping operation (Random, Center and None)')
         parser.add_argument('--num_clips',    type=int, help='Number clips to be generated from a video (<0: uniform sampling, 0: Divide entire video into clips, >0: Defines number of clips)')
+        parser.add_argument('--scale',        type=float, nargs=2, help='[min scale, max scale] amounts to randomly scale videos for augmentation purposes. scale >1 zooms in and scale <1 zooms out.  ')
+
 
         parser.add_argument('--debug',   type=int, help='Run an experiment but do not save any data or create any folders')
         parser.add_argument('--seed',    type=int, help='Seed for reproducibility')
@@ -77,7 +79,9 @@ class Parse():
             crop_type        = None,
             num_clips        = 1,
             debug            = 0,
-            seed             = 0)                       
+            seed             = 0,
+            scale            = [1,1],
+            resume           = 0)                       
 
 
 
@@ -109,5 +113,13 @@ class Parse():
             else:
                 if k not in yaml_keys:
                     self.cfg_args[k] = self.defaults[k]
+
+
+        # Force clip_stride to be >= 1 when extracting clips from a video
+        # This represents the # of frames between successive clips 
+        if self.cfg_args['clip_stride'] < 1:
+            self.cfg_args['clip_stride'] = 1
+
+
 
         return self.cfg_args

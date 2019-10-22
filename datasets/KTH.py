@@ -40,8 +40,10 @@ class KTH(RecognitionDataset):
         base_path = vid_info['base_path']
 
         input_data = []
-        vid_data   = np.zeros((self.clip_length, self.final_shape[0], self.final_shape[1], 3))-1
-        labels     = np.zeros((self.clip_length))-1
+
+        vid_length = len(vid_info['frames'])
+        vid_data   = np.zeros((vid_length, self.final_shape[0], self.final_shape[1], 3))-1
+        labels     = np.zeros((vid_length))-1
         input_data = []
     
         for frame_ind in range(len(vid_info['frames'])):

@@ -185,7 +185,6 @@ def train(**args):
                 if (epoch * len(train_loader) + (step+1)) % args['pseudo_batch_loop'] == 0 and step > 0:
                     # Apply large mini-batch normalization
                     for param in model.parameters():
-
                         if param.requires_grad:
                             param.grad *= 1./float(running_batch)
 

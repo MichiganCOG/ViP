@@ -55,7 +55,9 @@ class C3D(nn.Module):
         if isinstance(kwargs['pretrained'], int) and kwargs['pretrained']:
             self.__load_pretrained_weights()
 
-    def forward(self, x, labels=False, features=False):
+        self.features = kwargs['model_features']
+
+    def forward(self, x, labels=False):
         x = self.relu(self.conv1(x))
         x = self.pool1(x)
 
@@ -78,7 +80,7 @@ class C3D(nn.Module):
 
         x = self.relu(self.fc6(x))
 
-        if features:
+        if self.features:
             return x
 
         x = self.dropout(x)
