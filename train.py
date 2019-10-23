@@ -126,7 +126,6 @@ def train(**args):
         # END IF
             
         model_loss = Losses(device=device, **args)
-        acc_metric = Metrics(**args)
         best_val_acc = 0.0
 
     ############################################################################################################################################################################
@@ -214,7 +213,7 @@ def train(**args):
 
             ## START FOR: Validation Accuracy
             running_acc = []
-            running_acc = valid(valid_loader, running_acc, model, device, acc_metric)
+            running_acc = valid(valid_loader, running_acc, model, device)
 
             if not args['debug']:
                 writer.add_scalar(args['dataset']+'/'+args['model']+'/validation_accuracy', 100.*running_acc[-1], epoch*len(train_loader) + step)
@@ -242,9 +241,10 @@ def train(**args):
             # Close Tensorboard Element
             writer.close()
 
-def valid(valid_loader, running_acc, model, device, acc_metric):
+def valid(valid_loader, running_acc, model, device):
+    acc_metric = Metrics(**args)
     model.eval()
-    
+
     with torch.no_grad():
         for step, data in enumerate(valid_loader):
             x_input     = data['data'].to(device)
