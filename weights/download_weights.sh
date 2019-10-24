@@ -13,3 +13,8 @@ wget -O ./weights/c3d-pretrained.pth https://umich.box.com/shared/static/znmyt8u
 
 #C3D Mean
 wget -O ./weights/sport1m_train16_128_mean.npy https://umich.box.com/shared/static/ppbnldsa5rty615osdjh2yi8fqcx0a3b.npy 
+
+#TASED-Net
+wget -O ./weights/TASED_v2.pt https://umich.box.com/shared/static/zfc9didt0x7umyq2j5wljrru0xtmwawj.pt 
+
+

@@ -11,8 +11,8 @@ resize_shape:      [128,171]             # (Height, Width) to resize original da
 subtract_mean:     ''                    # Subtract mean (R,G,B) from all frames during preprocessing
 
 # Experiment Setup 
-acc_metric:        Accuracy              # Accuracy metric 
-batch_size:        15                     # Numbers of videos in a mini-batch 
+metric:            Accuracy              # Performance metric 
+batch_size:        15                    # Numbers of videos in a mini-batch 
 dataset:           HMDB51                # Name of dataset 
 debug:             0                     # If True, do not plot, save, or create data files 
 epoch:             30                    # Total number of epochs 

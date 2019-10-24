@@ -16,6 +16,13 @@ Check out our [wiki!](https://github.com/MichiganCOG/ViP/wiki)
 |  Model Architecture  |      Dataset       |    ViP Accuracy (%)   | 
 |:--------------------:|:------------------:|:---------------------:|
 |        SSD300        |  VOC2007  |    76.58      |
+
+### Video Saliency 
+|  Model Architecture  |      Dataset       |    ViP Performance (Metric)   | 
+|:--------------------:|:------------------:|:---------------------:|
+|        TASEDNET-v2        |  DHF1K  |     (CC)      |
+|        TASEDNET-v2        |  DHF1K  |     (NSS)      |
+
 ## Table of Contents
 
 * [Datasets](#configured-datasets)

@@ -78,7 +78,7 @@ def train(**args):
 
         if args['load_type'] == 'train':
             train_loader = loader['train']
-            valid_loader = loader['train'] # Run accuracy on train data if only `train` selected
+            valid_loader = loader['train'] # Run metric on train data if only `train` selected
 
         elif args['load_type'] == 'train_val':
             train_loader = loader['train']
@@ -126,8 +126,8 @@ def train(**args):
         # END IF
             
         model_loss = Losses(device=device, **args)
-        acc_metric = Metrics(**args)
-        best_val_acc = 0.0
+        metric = Metrics(**args)
+        best_val_res = 0.0
 
     ############################################################################################################################################################################
 
@@ -212,18 +212,18 @@ def train(**args):
    
             # END IF: Debug
 
-            ## START FOR: Validation Accuracy
-            running_acc = []
-            running_acc = valid(valid_loader, running_acc, model, device, acc_metric)
+            ## START FOR: Validation Metric results 
+            running_res = []
+            running_res = valid(valid_loader, running_res, model, device, metric)
 
             if not args['debug']:
-                writer.add_scalar(args['dataset']+'/'+args['model']+'/validation_accuracy', 100.*running_acc[-1], epoch*len(train_loader) + step)
+                writer.add_scalar(args['dataset']+'/'+args['model']+'/validation_metric', running_res[-1], epoch*len(train_loader) + step)
 
-            print('Accuracy of the network on the validation set: %f %%\n' % (100.*running_acc[-1]))
+            print('Performance of the network on the validation set: %f\n' % (running_res[-1]))
 
-            # Save Best Validation Accuracy Model Separately
-            if best_val_acc < running_acc[-1]:
-                best_val_acc = running_acc[-1]
+            # Save Best Validation Performance Model Separately
+            if best_val_res < running_res[-1]:
+                best_val_res = running_res[-1]
 
                 if not args['debug']:
                     # Save Current Model
@@ -242,7 +242,7 @@ def train(**args):
             # Close Tensorboard Element
             writer.close()
 
-def valid(valid_loader, running_acc, model, device, acc_metric):
+def valid(valid_loader, running_res, model, device, metric):
     model.eval()
     
     with torch.no_grad():
@@ -251,11 +251,11 @@ def valid(valid_loader, running_acc, model, device, acc_metric):
             annotations = data['annots'] 
             outputs     = model(x_input)
         
-            running_acc.append(acc_metric.get_accuracy(outputs, annotations))
+            running_res.append(metric.get_result(outputs, annotations))
     
-        # END FOR: Validation Accuracy
+        # END FOR: Validation Performance 
 
-    return running_acc
+    return running_res
 
 
 if __name__ == "__main__":

@@ -13,7 +13,7 @@ sample_size:       112                                 # Height of frame to be p
 subtract_mean:     [123,117,104]                       # Subtract mean (R,G,B) from all frames during preprocessing
 
 # Experiment Setup 
-acc_metric:        SSD_AP                              # Accuracy metric 
+metric:            SSD_AP                              # Performance metric 
 batch_size:        1                                   # Numbers of videos in a mini-batch 
 dataset:           VOC2007                             # Name of dataset 
 epoch:             10                                  # Total number of epochs 

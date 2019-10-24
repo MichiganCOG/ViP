@@ -23,7 +23,7 @@ class Parse():
         parser.add_argument('--labels',            type=int, help='Number of total classes in the dataset')
 
         parser.add_argument('--loss_type',    type=str,   help='Loss function')
-        parser.add_argument('--acc_metric',   type=str,   help='Accuracy metric')
+        parser.add_argument('--metric',   type=str,   help='Performance metric')
         parser.add_argument('--opt',          type=str,   help='Name of optimizer')
         parser.add_argument('--lr',           type=float, help='Learning rate')
         parser.add_argument('--momentum',     type=float, help='Momentum value in optimizer')
@@ -60,7 +60,7 @@ class Parse():
             batch_size       = 1,
             pseudo_batch_loop= 1,
             num_workers      = 1,
-            acc_metric       = None,
+            metric       = None,
             opt              = 'sgd',
             lr               = 0.001,
             momentum         = 0.9,
@@ -80,6 +80,8 @@ class Parse():
             num_clips        = 1,
             debug            = 0,
             seed             = 0,
+            labels           = None,
+            loss_type        = None,
             scale            = [1,1],
             resume           = 0)                       
 

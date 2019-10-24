@@ -1,17 +1,19 @@
 import torch
+import datasets.preprocessing_transforms as pt
+import sys
 import numpy as np
 
 class Metrics(object):
     def __init__(self, *args, **kwargs):
         """
-        Compute accuracy metrics from this Metrics class
+        Compute specified metrics from this Metrics class
         Args:
-            acc_metric (String): String used to indicate selected accuracy metric 
+            acc_metric (String): String used to indicate selected metric 
     
         Return:
             None
         """
-        self.metric_type = kwargs['acc_metric'] 
+        self.metric_type = kwargs['metric'] 
 
         if self.metric_type == 'Accuracy':
             self.metric_object = Accuracy(*args, **kwargs) 
@@ -21,12 +23,17 @@ class Metrics(object):
             self.metric_object = MAP(*args, **kwargs)
         elif self.metric_type == 'SSD_AP':
             self.metric_object = SSD_AP(*args, **kwargs)
+        elif self.metric_type == 'NSS':
+            self.metric_object = NSS(*args, **kwargs)
+        elif self.metric_type == 'CC':
+            self.metric_object = CC(*args, **kwargs)
+
         else:
             self.metric_type = None
 
-    def get_accuracy(self, predictions, targets, **kwargs):
+    def get_result(self, predictions, targets, **kwargs):
         """
-        Return accuracy from selected metric type
+        Return result from selected metric type
 
         Args:
             predictions: model predictions 
@@ -37,7 +44,7 @@ class Metrics(object):
             return -1
 
         else:
-            return self.metric_object.get_accuracy(predictions, targets, **kwargs)
+            return self.metric_object.get_result(predictions, targets, **kwargs)
 
 class Accuracy(object):
     """
@@ -48,7 +55,7 @@ class Accuracy(object):
         self.correct = 0.
         self.total   = 0. 
 
-    def get_accuracy(self, predictions, data):
+    def get_result(self, predictions, data):
         """
         Args:
             predictions (Tensor, shape [N,*])
@@ -135,7 +142,7 @@ class IOU():
         
         return overlap, ind
 
-    def get_accuracy(self, prediction, targets):
+    def get_result(self, prediction, targets):
         """
         Args:
             prediction (Tensor, shape [4]): prediction bounding box, coordinate format [x1, y1, x2, y2]
@@ -255,7 +262,7 @@ class AveragePrecision():
                 exists = torch.sum(gt_mask) > 0 #gt exists on this image
                 if not torch.equal(p, torch.Tensor([0,0,0,0])):
                     if exists:
-                        score, ind = self.IOU.get_accuracy(p,trgts[gt_mask])
+                        score, ind = self.IOU.get_result(p,trgts[gt_mask])
                     else:
                         score = 0.0
 
@@ -281,7 +288,7 @@ class AveragePrecision():
         avg_ap = torch.mean(torch.Tensor(ap))
         return avg_ap
 
-    def get_accuracy(self, detections, data):
+    def get_result(self, detections, data):
         """
         Args:
             detections (Tensor, shape [N,C,D,5]): predicted detections, each item [confidence, x1, y1, x2, y2]
@@ -365,7 +372,7 @@ class MAP():
 
         return torch.mean(AP_scores)
 
-    def get_accuracy(self, detections, data):
+    def get_result(self, detections, data):
         """
         Args:
             detections (Tensor, shape [N,C,D,5]): predicted detections, each item [confidence, x1, y1, x2, y2]
@@ -426,7 +433,7 @@ class AverageRecall():
             targets: shape [N,C,4]
             targets_mask: binary mask, shape [N,C]
         """
-        iou_values = self.IOU.get_accuracy(predictions, targets) #[N,C] 
+        iou_values = self.IOU.get_result(predictions, targets) #[N,C] 
 
         TP = torch.sum((iou_values * targets_mask) >= self.threshold).float()
         FN = torch.sum((iou_values * targets_mask) < self.threshold).float()
@@ -436,7 +443,8 @@ class AverageRecall():
         else:
             return TP/(TP+FN)
     
-    def get_accuracy(self, predictions, targets):
+    def get_result(self, predictions, targets):
+        # Accuracy
 
         if len(targets.shape) > 2:
             n,c,_ = targets.shape 
@@ -468,7 +476,7 @@ class SSD_AP(AveragePrecision):
         """
         super(SSD_AP, self).__init__(threshold=threshold, num_points=num_points, *args, **kwargs)
 
-    def get_accuracy(self, detections, data):
+    def get_result(self, detections, data):
         """
         Args:
             detections (Tensor, shape [N,C,D,5]): predicted detections, each item [confidence, x1, y1, x2, y2]
@@ -513,3 +521,116 @@ class SSD_AP(AveragePrecision):
 
         return self.get_AP(self.predictions, self.targets) 
 
+class NSS(object):
+    """
+    Given ground truth binary gaze fixation maps, calculate how many standard deviations above the mean the predicted saliency map is at only those fixaton points.
+    """
+    def __init__(self, *args, **kwargs):
+        """
+        Compute Normalized Scanpath Saliency (NSS)
+        Args:
+            None
+
+        Return:
+            None 
+        """
+        self.total_nss = 0
+        self.total_samples = 0
+
+    def get_result(self, predictions, data):
+        """
+        Compute Normalized Scanpath Saliency (NSS)
+        We have ground truth maps for the entire clip but the output of TASED_v2 is a 
+        single frame so we select only the last ground truth map for the clip 
+
+        Args:
+            predictions (Tensor, shape [N,C,H,W]): predicted saliency map for the clip. All frames condensed down to one T=1. 
+            data:      (dictionary)
+                - bin (Tensor, shape [N,C,T,H,W]):, gt binary map of fixation points
+
+            (N=batch, C=channels, T=frames, H=height, W=width)
+
+        Return:
+            NSS for a given clip 
+        """
+        gt = data['map'][:,:,-1,:,:]
+        ts = gt.shape
+
+        # Reshape predictions to match the size of the ground truth maps, can change from one video to another
+        s_map = torch.tensor(pt.ResizeClip(resize_shape=[ts[2],ts[3]])(predictions[:,0,:,:].detach().cpu())).unsqueeze(1).float()
+
+
+        # gt is a binary map of gaze locations
+        #gt = data['bin'][:,:,8,:,:]
+        #gt = data['bin'][:,:,-1,:,:]
+        gt = torch.Tensor(np.where(gt > 0.005, 1, 0))
+        #s_map = predictions.cpu()
+        eps = sys.float_info.epsilon
+        shape = s_map.shape
+        s_map_mean = s_map.mean(dim=(1,2,3)).view(shape[0], 1, 1, 1)
+        s_map_std = s_map.std(dim=(1,2,3)).view(shape[0], 1, 1, 1)+eps
+        gt_sum = gt.sum(dim=(1,2,3))+eps
+        s_map_norm = (s_map - s_map_mean)/s_map_std
+        output = (s_map_norm*gt).sum(dim=(1,2,3))/gt_sum
+        self.total_nss += float(output.sum())
+        self.total_samples += int(gt.shape[0])
+        return self.total_nss/self.total_samples
+
+class CC(object):
+    """
+    Compute the linear correlation coefficient given a binary map of the blurred gaze fixation points per frame and the model predictions per frame
+    """
+    def __init__(self,*args, **kwargs):
+        """
+        Compute Linear Correlation Coefficient (CC)
+        Args:
+            None
+
+        Return:
+            None 
+        """
+
+        self.total_cc = 0
+        self.total_samples = 0
+
+    def get_result(self, predictions, data):
+        """
+        Compute Linear Correlation Coefficient (CC)
+        We have ground truth maps for the entire clip but the output of TASED_v2 is a 
+        single frame so we select only the last ground truth map for the clip 
+
+        Args:
+            predictions (Tensor, shape [N,C,H,W]): predicted saliency map for the clip. All frames condensed down to one T=1. 
+            data:      (dictionary)
+                - map (Tensor, shape [N,C,T,H,W]):, gt map of fixation points blurred and between 0 and 1
+
+            (N=batch, C=channels, T=frames, H=height, W=width)
+
+        Return:
+            CC for a given clip 
+        """
+
+        gt = data['map'][:,:,-1,:,:]
+        ts = gt.shape
+
+        # Reshape predictions to match the size of the ground truth maps, can change from one video to another
+        s_map = torch.tensor(pt.ResizeClip(resize_shape=[ts[2],ts[3]])(predictions[:,0,:,:].detach().cpu())).unsqueeze(1).float()
+        
+        eps = sys.float_info.epsilon
+        shape = s_map.shape
+        s_map_mean = s_map.mean(dim=(1,2,3)).view(shape[0], 1, 1, 1)
+        s_map_std = s_map.std(dim=(1,2,3)).view(shape[0], 1, 1, 1)+eps
+        s_map_norm = (s_map - s_map_mean)/s_map_std
+
+        gtshape = gt.shape
+        gt_mean =  gt.mean(dim=(1,2,3)).view(gtshape[0], 1, 1, 1)
+        gt_std  =  gt.std(dim=(1,2,3)).view(gtshape[0], 1, 1, 1)+eps
+        gt_norm = (gt - gt_mean)/gt_std
+
+        a = s_map_norm
+        b= gt_norm
+        output = (a*b).sum(dim=(1,2,3)) / (torch.sqrt((a*a).sum(dim=(1,2,3)) * (b*b).sum(dim=(1,2,3)))+eps)
+        self.total_cc += float(output.sum())
+        self.total_samples += int(gt.shape[0])
+
+        return self.total_cc/self.total_samples

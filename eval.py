@@ -85,14 +85,11 @@ def eval(**args):
     # Training Setup
     params     = [p for p in model.parameters() if p.requires_grad]
 
-    acc_metric = Metrics(**args, result_dir=result_dir, ndata=len(eval_loader.dataset))
-    acc = 0.0
+    metric = Metrics(**args, result_dir=result_dir, ndata=len(eval_loader.dataset))
+    result = 0.0
 
     # Setup Model To Evaluate 
     model.eval()
-
-    ret_data   = None
-    ret_labels = None
 
     with torch.no_grad():
         for step, data in enumerate(eval_loader):
@@ -101,32 +98,15 @@ def eval(**args):
 
             outputs = model(x_input)
 
-            if ret_data is None:
-                ret_data   = outputs.cpu().numpy()
-                ret_labels = annotations['labels'].cpu().numpy()[:, 0]
-
-            else:
-                ret_data   = np.vstack((ret_data, outputs.cpu().numpy()))
-                ret_labels = np.hstack((ret_labels, annotations['labels'].cpu().numpy()[:, 0]))
-
-            # END IF
-
-
-            acc = acc_metric.get_accuracy(outputs, annotations)
+            result = metric.get_result(outputs, annotations)
 
             if step % 100 == 0:
-                print('Step: {}/{} | {} acc: {:.4f}'.format(step, len(eval_loader), args['load_type'], acc))
+                print('Step: {}/{} | {} performance: {:.4f}'.format(step, len(eval_loader), args['load_type'], result))
 
-    print('Accuracy of the network on the {} set: {:.3f} %\n'.format(args['load_type'], 100.*acc))
+    print('Performance of the network on the {} set: {:.3f}\n'.format(args['load_type'], result))
 
     if not args['debug']:
-        ret_dict = {}
-        ret_dict['data']   = ret_data
-        ret_dict['labels'] = ret_labels
-        import scipy.io as sio
-        sio.savemat(os.path.join(result_dir,args['load_type']+'_'+args['dataset']+'.mat'), ret_dict)
-
-        writer.add_scalar(args['dataset']+'/'+args['model']+'/'+args['load_type']+'_accuracy', 100.*acc)
+        writer.add_scalar(args['dataset']+'/'+args['model']+'/'+args['load_type']+'_performance', result)
         # Close Tensorboard Element
         writer.close()
 

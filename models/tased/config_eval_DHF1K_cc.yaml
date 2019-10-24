@@ -1,0 +1,21 @@
+metric:        CC                                 # Performance Metric
+clip_length:       32                             # Number of frames within a clip
+clip_offset:       0                              # Frame offset between beginning of video and clip (1st clip only)
+clip_stride:       1                              # Frame offset between successive frames
+crop_shape:        [224, 384]                     # (Height, Width) of frame
+crop_type:         Center                         # Type of cropping operation (Random, Center and None)
+dataset:           DHF1K                          # Name of dataset
+exp:               cc                             # Experiment name
+final_shape:       [224, 384]                     # (Height, Width) of input to be given to CNN
+json_path:         /z/home/erichof/datasets/DHF1K # Path to the json file for the given dataset
+labels:            1                              # Number of total classes in the dataset
+load_type:         train_val                      # Environment selection, to include only training/training and validation/testing dataset
+model:             TASED_v2                       # Name of model to be loaded
+num_clips:         0                              # Number clips to be generated from a video (<0: uniform sampling, 0: Divide entire video into clips, >0: Defines number of clips)
+num_workers:       6                              # Number of processing units used to load data
+pretrained:        1                              # continue training from this checkpoint (String containing path or 0)
+random_offset:     0                              # Randomly select a clip_length sized clip from a video (0 or 1)
+resize_shape:      [224,384]                      # (Height, Width) to resize original data
+save_dir:          './results'                    # Path to results directory
+seed:              999                            # Seed for reproducibility
+subtract_mean:     ''                             # Subtract mean (R,G,B) from all frames during preprocessing

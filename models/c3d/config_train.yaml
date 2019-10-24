@@ -13,7 +13,7 @@ sample_size:       112                   # Height of frame to be provided as inp
 subtract_mean:     ''                    # Subtract mean (R,G,B) from all frames during preprocessing
 
 # Experiment Setup 
-acc_metric:        Accuracy              # Accuracy metric 
+metric:            Accuracy              # Performance metric 
 batch_size:        3                     # Numbers of videos in a mini-batch 
 pseudo_batch_loop: 5                     # Pseudo-batch size multiplier to mimic large minibatches 
 dataset:           HMDB51                # Name of dataset 
