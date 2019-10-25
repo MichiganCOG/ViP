@@ -93,11 +93,21 @@ def eval(**args):
 
     with torch.no_grad():
         for step, data in enumerate(eval_loader):
-            x_input     = data['data'].to(device)
+            x_input     = data['data']
             annotations = data['annots']
 
-            outputs = model(x_input)
-            acc     = acc_metric.get_accuracy(outputs, annotations)
+            if isinstance(x_input, torch.Tensor):
+                outputs = model(x_input.to(device))
+            else:
+                for i, item in enumerate(x_input):
+                    if isinstance(item, torch.Tensor):
+                        x_input[i] = item.to(device)
+                outputs = model(*x_input)
+
+            # END IF
+
+
+            acc = acc_metric.get_accuracy(outputs, annotations)
 
             if step % 100 == 0:
                 print('Step: {}/{} | {} acc: {:.4f}'.format(step, len(eval_loader), args['load_type'], acc))

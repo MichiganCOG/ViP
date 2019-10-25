@@ -17,6 +17,13 @@ Check out our [wiki!](https://github.com/MichiganCOG/ViP/wiki)
 |  Model Architecture  |      Dataset       |    ViP Accuracy (%)   | 
 |:--------------------:|:------------------:|:---------------------:|
 |        SSD300        |  VOC2007  |    76.58      |
+
+### Video Object Grounding
+|  Model Architecture  |      Dataset       |    ViP Accuracy (%)   | 
+|:--------------------:|:------------------:|:---------------------:|
+|        DVSA (+fw, obj)        |  YC2-BB (Validation)  |    30.09      |
+
+**fw**: framewise weighting, **obj**: object interaction
 ## Table of Contents
 
 * [Datasets](#configured-datasets)
@@ -39,6 +46,7 @@ Check out our [wiki!](https://github.com/MichiganCOG/ViP/wiki)
 |[ImageNetVID](http://bvisionweb1.cs.unc.edu/ilsvrc2015/download-videos-3j16.php)                      | Video Object Detection |
 |[MSCOCO 2014](http://cocodataset.org/#download)                                                       | Object Detection, Keypoints|
 |[VOC2007](http://host.robots.ox.ac.uk/pascal/VOC/voc2007/)                                            | Object Detection, Classification|
+|[YC2-BB](http://youcook2.eecs.umich.edu/download)| Video Object Grounding|
 |[DHF1K](https://github.com/wenguanwang/DHF1K)							       | Video Saliency Prediction|
 
 ## Models
@@ -47,6 +55,7 @@ Check out our [wiki!](https://github.com/MichiganCOG/ViP/wiki)
 |[C3D](https://github.com/jfzhang95/pytorch-video-recognition/blob/master/network/C3D_model.py) | Activity Recognition |
 |[I3D](https://github.com/piergiaj/pytorch-i3d) | Activity Recognition |
 |[SSD300](https://github.com/amdegroot/ssd.pytorch)                                             | Object Detection     |
+|[DVSA (+fw, obj)](https://github.com/MichiganCOG/Video-Grounding-from-Text)| Video Object Grounding|
 
 ## Requirements
 

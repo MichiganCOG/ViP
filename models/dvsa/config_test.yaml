@@ -1,0 +1,68 @@
+# Preprocessing
+clip_length:       -1                    # Number of frames within a clip 
+clip_offset:       0                     # Frame offset between beginning of video and clip (1st clip only) 
+clip_stride:       1                     # Frame offset between successive frames
+crop_shape:        [112,112]             # (Height, Width) of frame  
+crop_type:         Random                # Type of cropping operation (Random, Central and None)  
+final_shape:       [112,112]             # (Height, Width) of input to be given to CNN
+num_clips:         1                    # Number clips to be generated from a video (<0: uniform sampling, 0: Divide entire video into clips, >0: Defines number of clips) 
+random_offset:     0                     # Boolean switch to generate a clip length sized clip from a video 
+resize_shape:      [128,171]             # (Height, Width) to resize original data 
+sample_duration:   16                    # Temporal size of video to be provided as input to the model 
+sample_size:       112                   # Height of frame to be provided as input to the model
+subtract_mean:     ''                    # Subtract mean (R,G,B) from all frames during preprocessing
+
+# Experiment Setup 
+acc_metric:        Box_Accuracy          # Accuracy metric 
+batch_size:        1                     # Numbers of videos in a mini-batch 
+dataset:           YC2BB                 # Name of dataset 
+debug:             1                     # If True, do not plot, save, or create data files 
+epoch:             30                    # Total number of epochs 
+exp:               exp                   # Experiment name
+gamma:             0.5                   # Multiplier with which to change learning rate
+grad_max_norm:     1                     # Norm for gradient clipping
+json_path:         /path/to/yc2bb         # Path to the json file for the given dataset
+labels:            67                    # Number of total classes in the dataset
+load_type:         test                  # Environment selection, to include only training/training and validation/testing dataset
+loss_type:         YC2BB_Attention_Loss  # Loss function
+lr:                0.05                  # Learning rate
+milestones:        [10, 20]              # Epoch values to change learning rate     
+model:             DVSA                  # Name of model to be loaded  
+momentum:          0.9                   # Momentum value in optimizer
+num_workers:       2                     # Number of CPU worker used to load data
+opt:               sgd                   # Name of optimizer
+preprocess:        default               # String argument to select preprocessing type
+pretrained:        1                     # Load pretrained network 
+pseudo_batch_loop: 1                     # Pseudo-batch size multiplier to mimic large minibatches 
+rerun:             1                     # Number of trials to repeat an experiment
+save_dir:          './results'           # Path to results directory
+seed:              999                   # Seed for reproducibility 
+weight_decay:      0.0005                # Weight decay
+
+# Dataset specific config
+yc2bb_class_file:               '/path/to/yc2bb/data/class_file.csv' #https://github.com/MichiganCOG/Video-Grounding-from-Text/blob/master/data/class_file.csv 
+yc2bb_num_frm:                  5
+yc2bb_num_proposals:            20
+yc2bb_roi_pooled_feat_root:     '/path/to/yc2bb/data/yc2/roi_pooled_feat' #roi_pooled feat download links below
+#train: http://youcook2.eecs.umich.edu/static/dat/yc2_bb/roi_pooled_feat_train.tar.gz (113 GB)
+#val: http://youcook2.eecs.umich.edu/static/dat/yc2_bb/roi_pooled_feat_val.tar.gz (38 GB)
+#test: http://youcook2.eecs.umich.edu/static/dat/yc2_bb/roi_pooled_feat_test.tar.gz (17 GB)
+yc2bb_rpn_proposal_root:        '/path/to/yc2bb/data/yc2/roi_box' #http://youcook2.eecs.umich.edu/static/dat/yc2_bb/all-box-100.tar.gz
+
+# Model specific config
+attn_drop:              0.2
+dropout:                0.2
+enc_size:               128
+has_loss_weighting:     1
+hidden_size:            256
+input_size:             2048
+loss_factor:            0.9
+n_heads:                4
+n_layers:               1
+#num_class:              67 #NOTE:redundant with labels
+obj_interact:           1
+ranking_margin:         0.1
+
+# Box accuracy config 
+accu_thresh:            0.5 
+fps:                    1
