@@ -13,3 +13,4 @@ runs/*
 models/HGC3D
 *.json
 pbs/*
+*.pt
