@@ -39,6 +39,7 @@ Check out our [wiki!](https://github.com/MichiganCOG/ViP/wiki)
 |[ImageNetVID](http://bvisionweb1.cs.unc.edu/ilsvrc2015/download-videos-3j16.php)                      | Video Object Detection |
 |[MSCOCO 2014](http://cocodataset.org/#download)                                                       | Object Detection, Keypoints|
 |[VOC2007](http://host.robots.ox.ac.uk/pascal/VOC/voc2007/)                                            | Object Detection, Classification|
+|[DHF1K](https://github.com/wenguanwang/DHF1K)							       | Video Saliency Prediction|
 
 ## Models
 |                     Model                        |        Task(s)       |
