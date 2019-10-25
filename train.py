@@ -125,8 +125,7 @@ def train(**args):
 
         # END IF
             
-        model_loss = Losses(device=device, **args)
-        acc_metric = Metrics(**args)
+        model_loss   = Losses(device=device, **args)
         best_val_acc = 0.0
 
     ############################################################################################################################################################################
@@ -148,17 +147,27 @@ def train(**args):
 
                 # END IF
 
-                x_input       = data['data'].to(device) 
-                annotations   = data['annots'] 
+                x_input       = data['data'] 
+                annotations   = data['annots']
 
-                assert args['final_shape']==list(x_input.size()[-2:]), "Input to model does not match final_shape argument"
-                outputs = model(x_input)
+                if isinstance(x_input, torch.Tensor):
+                    mini_batch_size = x_input.shape[0]
+                    outputs = model(x_input.to(device))
+
+                    assert args['final_shape']==list(x_input.size()[-2:]), "Input to model does not match final_shape argument"
+                else: #Model takes several inputs in forward function 
+                    mini_batch_size = x_input[0].shape[0] #Assuming the first element contains the true data input 
+                    for i, item in enumerate(x_input):
+                        if isinstance(item, torch.Tensor):
+                            x_input[i] = item.to(device)
+                    outputs = model(*x_input)
+
                 loss    = model_loss.loss(outputs, annotations)
-                loss    = loss * outputs.shape[0] 
+                loss    = loss * mini_batch_size 
                 loss.backward()
 
                 running_loss  += loss.item()
-                running_batch += outputs.shape[0]
+                running_batch += mini_batch_size
 
                 if np.isnan(running_loss):
                     import pdb; pdb.set_trace()
@@ -173,12 +182,12 @@ def train(**args):
                     # END FOR
                 
                     # Add Loss Element
-                    writer.add_scalar(args['dataset']+'/'+args['model']+'/minibatch_loss', loss.item()/outputs.shape[0], epoch*len(train_loader) + step)
+                    writer.add_scalar(args['dataset']+'/'+args['model']+'/minibatch_loss', loss.item()/mini_batch_size, epoch*len(train_loader) + step)
 
                 # END IF
 
                 if ((epoch*len(train_loader) + step+1) % 100 == 0):
-                    print('Epoch: {}/{}, step: {}/{} | train loss: {:.4f}'.format(epoch, args['epoch'], step+1, len(train_loader), running_loss/float(step+1)/outputs.shape[0]))
+                    print('Epoch: {}/{}, step: {}/{} | train loss: {:.4f}'.format(epoch, args['epoch'], step+1, len(train_loader), running_loss/float(step+1)/mini_batch_size))
 
                 # END IF
 
@@ -201,7 +210,7 @@ def train(**args):
     
 
             # END FOR: Epoch
-
+            
             scheduler.step(epoch=epoch)
             print('Schedulers lr: %f', scheduler.get_lr()[0])
 
@@ -214,7 +223,7 @@ def train(**args):
 
             ## START FOR: Validation Accuracy
             running_acc = []
-            running_acc = valid(valid_loader, running_acc, model, device, acc_metric)
+            running_acc = valid(valid_loader, running_acc, model, device)
 
             if not args['debug']:
                 writer.add_scalar(args['dataset']+'/'+args['model']+'/validation_accuracy', 100.*running_acc[-1], epoch*len(train_loader) + step)
@@ -242,16 +251,27 @@ def train(**args):
             # Close Tensorboard Element
             writer.close()
 
-def valid(valid_loader, running_acc, model, device, acc_metric):
+def valid(valid_loader, running_acc, model, device):
+    acc_metric = Metrics(**args)
     model.eval()
-    
+
     with torch.no_grad():
         for step, data in enumerate(valid_loader):
-            x_input     = data['data'].to(device)
+            x_input     = data['data']
             annotations = data['annots'] 
-            outputs     = model(x_input)
+
+            if isinstance(x_input, torch.Tensor):
+                outputs = model(x_input.to(device))
+            else:
+                for i, item in enumerate(x_input):
+                    if isinstance(item, torch.Tensor):
+                        x_input[i] = item.to(device)
+                outputs = model(*x_input)
         
             running_acc.append(acc_metric.get_accuracy(outputs, annotations))
+
+            if step % 100 == 0:
+                print('Step: {}/{} | validation acc: {:.4f}'.format(step, len(valid_loader), running_acc[-1]))
     
         # END FOR: Validation Accuracy
 
