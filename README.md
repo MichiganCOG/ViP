@@ -1,4 +1,4 @@
-# Video Platform for Recognition and Detection in Pytorch
+# [Video Platform for Recognition and Detection in Pytorch](https://arxiv.org/abs/1910.02793)
 
 A platform for quick and easy development of deep learning networks for recognition and detection in videos. Includes popular models like C3D and SSD.
 
@@ -24,6 +24,24 @@ Check out our [wiki!](https://github.com/MichiganCOG/ViP/wiki)
 |        DVSA (+fw, obj)        |  YC2-BB (Validation)  |    30.09      |
 
 **fw**: framewise weighting, **obj**: object interaction
+
+
+## Citation
+
+Please cite ViP when releasing any work that used this platform: https://arxiv.org/abs/1910.02793
+
+```
+@article{ganesh2019vip,
+  title={ViP: Video Platform for PyTorch},
+  author={Ganesh, Madan Ravi and Hofesmann, Eric and Louis, Nathan and Corso, Jason},
+  journal={arXiv preprint arXiv:1910.02793},
+  year={2019}
+}
+
+```
+
+
+
 ## Table of Contents
 
 * [Datasets](#configured-datasets)
