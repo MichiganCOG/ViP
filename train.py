@@ -106,23 +106,26 @@ def train(**args):
         scheduler  = MultiStepLR(optimizer, milestones=args['milestones'], gamma=args['gamma'])
 
         if isinstance(args['pretrained'], str):
-            ckpt = load_checkpoint(args['pretrained'])
+            ckpt        = load_checkpoint(args['pretrained'])
             model.load_state_dict(ckpt)
-            start_epoch = load_checkpoint(args['pretrained'], key_name='epoch') + 1
-            optimizer.load_state_dict(load_checkpoint(args['pretrained'], key_name='optimizer'))
 
-            for quick_looper in range(start_epoch):
-                scheduler.step()
+            if args['resume']:
+                start_epoch = load_checkpoint(args['pretrained'], key_name='epoch') + 1
 
-            # END FOR
+                optimizer.load_state_dict(load_checkpoint(args['pretrained'], key_name='optimizer'))
+                scheduler.step(epoch=start_epoch)
+
+            else:
+                start_epoch = 0
+
+            # END IF 
 
         else:
             start_epoch = 0
 
         # END IF
             
-        model_loss = Losses(device=device, **args)
-        acc_metric = Metrics(**args)
+        model_loss   = Losses(device=device, **args)
         best_val_acc = 0.0
 
     ############################################################################################################################################################################
@@ -139,20 +142,32 @@ def train(**args):
             for step, data in enumerate(train_loader):
                 if step% args['pseudo_batch_loop'] == 0:
                     loss = 0.0
+                    running_batch = 0
                     optimizer.zero_grad()
 
                 # END IF
 
-                x_input       = data['data'].to(device) 
-                annotations   = data['annots'] 
+                x_input       = data['data'] 
+                annotations   = data['annots']
 
-                assert args['final_shape']==list(x_input.size()[-2:]), "Input to model does not match final_shape argument"
-                outputs = model(x_input)
+                if isinstance(x_input, torch.Tensor):
+                    mini_batch_size = x_input.shape[0]
+                    outputs = model(x_input.to(device))
+
+                    assert args['final_shape']==list(x_input.size()[-2:]), "Input to model does not match final_shape argument"
+                else: #Model takes several inputs in forward function 
+                    mini_batch_size = x_input[0].shape[0] #Assuming the first element contains the true data input 
+                    for i, item in enumerate(x_input):
+                        if isinstance(item, torch.Tensor):
+                            x_input[i] = item.to(device)
+                    outputs = model(*x_input)
+
                 loss    = model_loss.loss(outputs, annotations)
-                loss    = loss * args['batch_size']
+                loss    = loss * mini_batch_size 
                 loss.backward()
 
-                running_loss += loss.item()
+                running_loss  += loss.item()
+                running_batch += mini_batch_size
 
                 if np.isnan(running_loss):
                     import pdb; pdb.set_trace()
@@ -167,26 +182,37 @@ def train(**args):
                     # END FOR
                 
                     # Add Loss Element
-                    writer.add_scalar(args['dataset']+'/'+args['model']+'/minibatch_loss', loss.item()/args['batch_size'], epoch*len(train_loader) + step)
+                    writer.add_scalar(args['dataset']+'/'+args['model']+'/minibatch_loss', loss.item()/mini_batch_size, epoch*len(train_loader) + step)
 
                 # END IF
 
                 if ((epoch*len(train_loader) + step+1) % 100 == 0):
-                    print('Epoch: {}/{}, step: {}/{} | train loss: {:.4f}'.format(epoch, args['epoch'], step+1, len(train_loader), running_loss/float(step+1)/args['batch_size']))
+                    print('Epoch: {}/{}, step: {}/{} | train loss: {:.4f}'.format(epoch, args['epoch'], step+1, len(train_loader), running_loss/float(step+1)/mini_batch_size))
 
                 # END IF
 
                 if (epoch * len(train_loader) + (step+1)) % args['pseudo_batch_loop'] == 0 and step > 0:
                     # Apply large mini-batch normalization
                     for param in model.parameters():
-                        param.grad *= 1./float(args['pseudo_batch_loop']*args['batch_size'])
-                    optimizer.step()
+                        if param.requires_grad:
+                            param.grad *= 1./float(running_batch)
 
+                    # END FOR
+                    
+                    # Apply gradient clipping
+                    if ("grad_max_norm" in args) and float(args['grad_max_norm'] > 0):
+                        nn.utils.clip_grad_norm_(model.parameters(),float(args['grad_max_norm']))
+
+                    optimizer.step()
+                    running_batch = 0
 
                 # END IF
     
 
             # END FOR: Epoch
+            
+            scheduler.step(epoch=epoch)
+            print('Schedulers lr: %f', scheduler.get_lr()[0])
 
             if not args['debug']:
                 # Save Current Model
@@ -195,14 +221,13 @@ def train(**args):
    
             # END IF: Debug
 
-            scheduler.step(epoch=epoch)
-            print('Schedulers lr: %f', scheduler.get_lr()[0])
-
             ## START FOR: Validation Accuracy
             running_acc = []
-            running_acc = valid(valid_loader, running_acc, model, device, acc_metric)
+            running_acc = valid(valid_loader, running_acc, model, device)
+
             if not args['debug']:
-                writer.add_scalar(args['dataset']+'/'+args['model']+'/validation_accuracy', 100.*running_acc[-1], epoch*len(valid_loader) + step)
+                writer.add_scalar(args['dataset']+'/'+args['model']+'/validation_accuracy', 100.*running_acc[-1], epoch*len(train_loader) + step)
+
             print('Accuracy of the network on the validation set: %f %%\n' % (100.*running_acc[-1]))
 
             # Save Best Validation Accuracy Model Separately
@@ -226,16 +251,27 @@ def train(**args):
             # Close Tensorboard Element
             writer.close()
 
-def valid(valid_loader, running_acc, model, device, acc_metric):
+def valid(valid_loader, running_acc, model, device):
+    acc_metric = Metrics(**args)
     model.eval()
-    
+
     with torch.no_grad():
         for step, data in enumerate(valid_loader):
-            x_input     = data['data'].to(device)
+            x_input     = data['data']
             annotations = data['annots'] 
-            outputs     = model(x_input)
+
+            if isinstance(x_input, torch.Tensor):
+                outputs = model(x_input.to(device))
+            else:
+                for i, item in enumerate(x_input):
+                    if isinstance(item, torch.Tensor):
+                        x_input[i] = item.to(device)
+                outputs = model(*x_input)
         
             running_acc.append(acc_metric.get_accuracy(outputs, annotations))
+
+            if step % 100 == 0:
+                print('Step: {}/{} | validation acc: {:.4f}'.format(step, len(valid_loader), running_acc[-1]))
     
         # END FOR: Validation Accuracy
 
@@ -250,6 +286,8 @@ if __name__ == "__main__":
     # For reproducibility
     torch.backends.cudnn.deterministic = True
     torch.manual_seed(args['seed'])
-    #np.random.seed(args['seed']+1)
+
+    if not args['resume']:
+        np.random.seed(args['seed'])
 
     train(**args)

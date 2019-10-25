@@ -1,4 +1,4 @@
-# Video Platform for Recognition and Detection in Pytorch
+# [Video Platform for Recognition and Detection in Pytorch](https://arxiv.org/abs/1910.02793)
 
 A platform for quick and easy development of deep learning networks for recognition and detection in videos. Includes popular models like C3D and SSD.
 
@@ -9,6 +9,7 @@ Check out our [wiki!](https://github.com/MichiganCOG/ViP/wiki)
 ### Recognition
 |  Model Architecture  |      Dataset       |    ViP Accuracy (%)   |  
 |:--------------------:|:------------------:|:---------------------:|
+|        I3D           |  HMDB51 (Split 1)  |    72.75              |
 |        C3D           |  HMDB51 (Split 1)  |    50.14 ± 0.777      |
 |        C3D           |  UCF101 (Split 1)  |    80.40 ± 0.399      |
 
@@ -16,6 +17,31 @@ Check out our [wiki!](https://github.com/MichiganCOG/ViP/wiki)
 |  Model Architecture  |      Dataset       |    ViP Accuracy (%)   | 
 |:--------------------:|:------------------:|:---------------------:|
 |        SSD300        |  VOC2007  |    76.58      |
+
+### Video Object Grounding
+|  Model Architecture  |      Dataset       |    ViP Accuracy (%)   | 
+|:--------------------:|:------------------:|:---------------------:|
+|        DVSA (+fw, obj)        |  YC2-BB (Validation)  |    30.09      |
+
+**fw**: framewise weighting, **obj**: object interaction
+
+
+## Citation
+
+Please cite ViP when releasing any work that used this platform: https://arxiv.org/abs/1910.02793
+
+```
+@article{ganesh2019vip,
+  title={ViP: Video Platform for PyTorch},
+  author={Ganesh, Madan Ravi and Hofesmann, Eric and Louis, Nathan and Corso, Jason},
+  journal={arXiv preprint arXiv:1910.02793},
+  year={2019}
+}
+
+```
+
+
+
 ## Table of Contents
 
 * [Datasets](#configured-datasets)
@@ -38,12 +64,16 @@ Check out our [wiki!](https://github.com/MichiganCOG/ViP/wiki)
 |[ImageNetVID](http://bvisionweb1.cs.unc.edu/ilsvrc2015/download-videos-3j16.php)                      | Video Object Detection |
 |[MSCOCO 2014](http://cocodataset.org/#download)                                                       | Object Detection, Keypoints|
 |[VOC2007](http://host.robots.ox.ac.uk/pascal/VOC/voc2007/)                                            | Object Detection, Classification|
+|[YC2-BB](http://youcook2.eecs.umich.edu/download)| Video Object Grounding|
+|[DHF1K](https://github.com/wenguanwang/DHF1K)							       | Video Saliency Prediction|
 
 ## Models
 |                     Model                        |        Task(s)       |
 |:------------------------------------------------:|:--------------------:|
 |[C3D](https://github.com/jfzhang95/pytorch-video-recognition/blob/master/network/C3D_model.py) | Activity Recognition |
+|[I3D](https://github.com/piergiaj/pytorch-i3d) | Activity Recognition |
 |[SSD300](https://github.com/amdegroot/ssd.pytorch)                                             | Object Detection     |
+|[DVSA (+fw, obj)](https://github.com/MichiganCOG/Video-Grounding-from-Text)| Video Object Grounding|
 
 ## Requirements
 

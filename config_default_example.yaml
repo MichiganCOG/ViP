@@ -1,25 +1,24 @@
 # Preprocessing
 clip_length:       16                    # Number of frames within a clip 
 clip_offset:       0                     # Frame offset between beginning of video and clip (1st clip only) 
-clip_stride:       0                     # Frame offset between successive frames
+clip_stride:       1                     # Frame offset between successive clips, must be >= 1 
 crop_shape:        [112,112]             # (Height, Width) of frame  
 crop_type:         Random                # Type of cropping operation (Random, Central and None)  
 final_shape:       [112,112]             # (Height, Width) of input to be given to CNN
 num_clips:         -1                    # Number clips to be generated from a video (<0: uniform sampling, 0: Divide entire video into clips, >0: Defines number of clips) 
 random_offset:     0                     # Boolean switch to generate a clip length sized clip from a video 
 resize_shape:      [128,171]             # (Height, Width) to resize original data 
-sample_duration:   16                    # Temporal size of video to be provided as input to the model 
-sample_size:       112                   # Height of frame to be provided as input to the model
 subtract_mean:     ''                    # Subtract mean (R,G,B) from all frames during preprocessing
 
 # Experiment Setup 
 acc_metric:        Accuracy              # Accuracy metric 
-batch_size:        3                     # Numbers of videos in a mini-batch 
+batch_size:        15                     # Numbers of videos in a mini-batch 
 dataset:           HMDB51                # Name of dataset 
 debug:             0                     # If True, do not plot, save, or create data files 
 epoch:             30                    # Total number of epochs 
 exp:               exp                   # Experiment name
 gamma:             0.1                   # Multiplier with which to change learning rate
+grad_max_norm:     0                     # Norm for gradient clipping
 json_path:         /z/dat/HMDB51/        # Path to the json file for the given dataset
 labels:            51                    # Number of total classes in the dataset
 load_type:         train                 # Environment selection, to include only training/training and validation/testing dataset
@@ -37,3 +36,4 @@ rerun:             1                     # Number of trials to repeat an experim
 save_dir:          './results'           # Path to results directory
 seed:              999                   # Seed for reproducibility 
 weight_decay:      0.0005                # Weight decay
+resume:            0                     # Flag to resume training or switch to alternate objective after loading
