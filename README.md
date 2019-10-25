@@ -9,6 +9,7 @@ Check out our [wiki!](https://github.com/MichiganCOG/ViP/wiki)
 ### Recognition
 |  Model Architecture  |      Dataset       |    ViP Accuracy (%)   |  
 |:--------------------:|:------------------:|:---------------------:|
+|        I3D           |  HMDB51 (Split 1)  |    72.75              |
 |        C3D           |  HMDB51 (Split 1)  |    50.14 ± 0.777      |
 |        C3D           |  UCF101 (Split 1)  |    80.40 ± 0.399      |
 
@@ -46,11 +47,13 @@ Check out our [wiki!](https://github.com/MichiganCOG/ViP/wiki)
 |[MSCOCO 2014](http://cocodataset.org/#download)                                                       | Object Detection, Keypoints|
 |[VOC2007](http://host.robots.ox.ac.uk/pascal/VOC/voc2007/)                                            | Object Detection, Classification|
 |[YC2-BB](http://youcook2.eecs.umich.edu/download)| Video Object Grounding|
+|[DHF1K](https://github.com/wenguanwang/DHF1K)							       | Video Saliency Prediction|
 
 ## Models
 |                     Model                        |        Task(s)       |
 |:------------------------------------------------:|:--------------------:|
 |[C3D](https://github.com/jfzhang95/pytorch-video-recognition/blob/master/network/C3D_model.py) | Activity Recognition |
+|[I3D](https://github.com/piergiaj/pytorch-i3d) | Activity Recognition |
 |[SSD300](https://github.com/amdegroot/ssd.pytorch)                                             | Object Detection     |
 |[DVSA (+fw, obj)](https://github.com/MichiganCOG/Video-Grounding-from-Text)| Video Object Grounding|
 

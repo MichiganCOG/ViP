@@ -91,9 +91,6 @@ def eval(**args):
     # Setup Model To Evaluate 
     model.eval()
 
-    ret_data   = None
-    ret_labels = None
-
     with torch.no_grad():
         for step, data in enumerate(eval_loader):
             x_input     = data['data']
