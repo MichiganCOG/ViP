@@ -1,0 +1,37 @@
+# Preprocessing
+clip_length:       64                    # Number of frames within a clip 
+clip_offset:       0                     # Frame offset between beginning of video and clip (1st clip only) 
+clip_stride:       1                     # Frame offset between successive frames
+crop_shape:        [224,224]             # (Height, Width) of frame  
+crop_type:         Center                # Type of cropping operation (Random, Central and None)  
+final_shape:       [224,224]             # (Height, Width) of input to be given to CNN
+num_clips:         -1                    # Number clips to be generated from a video (<0: uniform sampling, 0: Divide entire video into clips, >0: Defines number of clips) 
+random_offset:     0                     # Boolean switch to generate a clip length sized clip from a video 
+resize_shape:      [230,250]             # (Height, Width) to resize original data 
+subtract_mean:     [123,117,104]                       # Subtract mean (R,G,B) from all frames during preprocessing
+
+# Experiment Setup 
+acc_metric:        Accuracy              # Accuracy metric 
+batch_size:        5                     # Numbers of videos in a mini-batch 
+pseudo_batch_loop: 10                     # Pseudo-batch size multiplier to mimic large minibatches 
+dataset:           HMDB51                # Name of dataset 
+epoch:             30                    # Total number of epochs 
+exp:               I3D            # Experiment name
+gamma:             0.1                   # Multiplier with which to change learning rate
+json_path:         /z/dat/HMDB51/        # Path to the json file for the given dataset
+labels:            51                    # Number of total classes in the dataset
+load_type:         train                 # Environment selection, to include only training/training and validation/testing dataset
+loss_type:         M_XENTROPY            # Loss function
+lr:                0.01                # Learning rate
+milestones:        [10, 20]              # Epoch values to change learning rate     
+model:             I3D                   # Name of model to be loaded  
+momentum:          0.9                   # Momentum value in optimizer
+num_workers:       5                     # Number of CPU worker used to load data
+opt:               sgd                   # Name of optimizer
+preprocess:        default               # String argument to select preprocessing type
+pretrained:        1                     # Load pretrained network 
+rerun:             1                     # Number of trials to repeat an experiment
+save_dir:          './results'           # Path to results directory
+seed:              999                   # Seed for reproducibility 
+weight_decay:      0.0005                # Weight decay
+grad_max_norm:     100

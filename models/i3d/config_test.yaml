@@ -1,0 +1,27 @@
+# Preprocessing
+clip_length:       64                    # Number of frames within a clip 
+clip_offset:       0                     # Frame offset between beginning of video and clip (1st clip only) 
+clip_stride:       0                     # Frame offset between successive frames
+crop_shape:        [224,224]             # (Height, Width) of frame  
+crop_type:         Center                # Type of cropping operation (Random, Central and None)  
+final_shape:       [224,224]             # (Height, Width) of input to be given to CNN
+num_clips:         -1                    # Number clips to be generated from a video (<0: uniform sampling, 0: Divide entire video into clips, >0: Defines number of clips) 
+random_offset:     0                     # Boolean switch to generate a clip length sized clip from a video 
+resize_shape:      [230,250]             # (Height, Width) to resize original data 
+subtract_mean:     [123,117,104]                       # Subtract mean (R,G,B) from all frames during preprocessing
+
+# Experiment Setup 
+acc_metric:        Accuracy              # Accuracy metric 
+batch_size:        1                     # Numbers of videos in a mini-batch 
+dataset:           HMDB51                # Name of dataset 
+exp:               I3D            # Experiment name
+json_path:         /z/dat/HMDB51/        # Path to the json file for the given dataset
+labels:            51                    # Number of total classes in the dataset
+load_type:         train_val                 # Environment selection, to include only training/training and validation/testing dataset
+model:             I3D                   # Name of model to be loaded  
+num_workers:       5                     # Number of CPU worker used to load data
+preprocess:        default               # String argument to select preprocessing type
+pretrained:        'weights/i3d_rgb_imagenet_then_HMDB51_30epochs.pkl'                     # Load pretrained network 
+save_dir:          './results'           # Path to results directory
+seed:              999                   # Seed for reproducibility 
+loss_type:         M_XENTROPY            # Loss function

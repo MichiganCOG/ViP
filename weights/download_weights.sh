@@ -13,3 +13,9 @@ wget -O ./weights/c3d-pretrained.pth https://umich.box.com/shared/static/znmyt8u
 
 #C3D Mean
 wget -O ./weights/sport1m_train16_128_mean.npy https://umich.box.com/shared/static/ppbnldsa5rty615osdjh2yi8fqcx0a3b.npy 
+
+#I3D pretrained on ImageNet and then Kinetics by original authors
+wget -O ./weights/i3d_rgb_imagenet.pt https://umich.box.com/shared/static/5m6dwwepzdcw3kjhx7s0peb59lbcde0s.pt
+
+#I3D pretrained on ImageNet, Kinetics, then on HMDB51 in ViP
+wget -O ./weights/i3d_rgb_imagenet_then_HMDB51_30epochs.pkl https://umich.box.com/shared/static/x8x83sw4htidxsxgtus9nt00f383mmm7.pkl
