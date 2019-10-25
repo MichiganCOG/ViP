@@ -93,13 +93,21 @@ if __name__=='__main__':
     class debug_model():
         def __init__(self):
             self.train_transforms = tts()
-    json_path = '/path/to/json'
+
+
+    json_path = '/path/to/DHF1K' #### Change this when testing ####
+
+
     dataset = DHF1K(model_obj=debug_model(), json_path=json_path, load_type='train', clip_length=16, clip_offset=0, clip_stride=1, num_clips=0, random_offset=0, resize_shape=0, crop_shape=0, crop_type='Center', final_shape=0, batch_size=1)
     train_loader = torch.utils.data.DataLoader(dataset=dataset, batch_size=1, shuffle=False)
 
 
     import matplotlib.pyplot as plt
     for x in enumerate(train_loader):
-        plt.imshow(x[1]['data'][0,:,0].permute(1,2,0).numpy())
-        #plt.show()
+        dat = x[1]['data'][0,:,0].permute(1,2,0).numpy()
+        bin = x[1]['annots']['bin'][0,:,0].permute(1,2,0).numpy().repeat(3,axis=2)
+        map = x[1]['annots']['map'][0,:,0].permute(1,2,0).numpy().repeat(3, axis=2)
+        img = np.concatenate([dat,bin,map], axis=0)
+        plt.imshow(img)
+        plt.show()
         import pdb; pdb.set_trace()
