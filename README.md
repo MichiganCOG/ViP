@@ -42,6 +42,7 @@ Please cite ViP when releasing any work that used this platform: https://arxiv.o
 
 
 
+
 ## Table of Contents
 
 * [Datasets](#configured-datasets)
@@ -156,3 +157,10 @@ Additional information can be found on our [wiki.](https://github.com/MichiganCO
 ### FAQ
 
 A detailed FAQ can be found on our [wiki](https://github.com/MichiganCOG/ViP/wiki/FAQ).
+
+## Acknowledgements
+* C3D - https://github.com/jfzhang95/pytorch-video-recognition/
+* I3D - https://github.com/piergiaj/pytorch-i3d
+* SSD - https://github.com/amdegroot/ssd.pytorch
+* DVSA (+fw, obj) - https://github.com/MichiganCOG/Video-Grounding-from-Text
+
