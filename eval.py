@@ -90,7 +90,6 @@ def eval(**args):
 
     if isinstance(args['pretrained'], str):
         ckpt = load_checkpoint(args['pretrained'])
-        model_obj.load_state_dict(ckpt)
 
         ckpt_keys = list(ckpt.keys())
         if ckpt_keys[0].startswith('module.'): #if checkpoint weights are from DataParallel object
