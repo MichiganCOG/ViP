@@ -68,7 +68,7 @@ def train(**args):
             writer = SummaryWriter(log_dir)
 
         # Check if GPU is available (CUDA)
-        num_gpus = torch.cuda.device_count() if args['num_gpus'] == -1 else args['num_gpus']
+        num_gpus = args['num_gpus']
         device = torch.device("cuda:0" if num_gpus > 0 and torch.cuda.is_available() else "cpu")
         print('Using {}'.format(device.type)) 
 
