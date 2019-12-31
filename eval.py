@@ -56,13 +56,23 @@ def eval(**args):
         writer = SummaryWriter(log_dir)
 
     # Check if GPU is available (CUDA)
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    num_gpus = torch.cuda.device_count() if args['num_gpus'] == -1 else args['num_gpus']
+    device = torch.device("cuda:0" if num_gpus > 0 and torch.cuda.is_available() else "cpu")
+    print('Using {}'.format(device.type))
 
     # Load Network
     model = create_model_object(**args).to(device)
+    model_obj = model 
+
+    if device.type == 'cuda' and num_gpus > 1:
+        device_ids = list(range(num_gpus)) #number of GPUs specified
+        model = nn.DataParallel(model, device_ids=device_ids)
+        model_obj = model.module #Model from DataParallel object has to be accessed through module
+
+        print('GPUs Device IDs: {}'.format(device_ids))
 
     # Load Data
-    loader = data_loader(**args, model_obj=model)
+    loader = data_loader(**args, model_obj=model_obj)
 
     if args['load_type'] == 'train_val':
         eval_loader = loader['valid']
@@ -80,7 +90,14 @@ def eval(**args):
 
     if isinstance(args['pretrained'], str):
         ckpt = load_checkpoint(args['pretrained'])
-        model.load_state_dict(ckpt)
+        model_obj.load_state_dict(ckpt)
+
+        ckpt_keys = list(ckpt.keys())
+        if ckpt_keys[0].startswith('module.'): #if checkpoint weights are from DataParallel object
+            for key in ckpt_keys:
+                ckpt[key[7:]] = ckpt.pop(key)
+
+        model_obj.load_state_dict(ckpt)
 
     # Training Setup
     params     = [p for p in model.parameters() if p.requires_grad]
