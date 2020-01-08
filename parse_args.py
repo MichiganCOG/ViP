@@ -123,9 +123,9 @@ class Parse():
         if self.cfg_args['clip_stride'] < 1:
             self.cfg_args['clip_stride'] = 1
 
-        #Set number of GPUs. Assertion error later if num requested > num available
-        #Important to know if task not running on 4 gpus if 4 were requested.
-        num_gpus = torch.cuda.device_count() if self.cfg_args['num_gpus'] == -1 else self.cfg_args['num_gpus']
+        #Use all available GPUs if num_gpus = -1
+        #Else select the minimum between available GPUS and requested GPUs
+        num_gpus = torch.cuda.device_count() if self.cfg_args['num_gpus'] == -1 else min(torch.cuda.device_count(), self.cfg_args['num_gpus'])
         self.cfg_args['num_gpus'] = num_gpus 
 
         return self.cfg_args
