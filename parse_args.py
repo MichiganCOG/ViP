@@ -1,5 +1,6 @@
 import argparse
 import yaml
+import torch
 
 class Parse():
 
@@ -15,8 +16,9 @@ class Parse():
         #Command-line arguments will override any config file arguments
         parser.add_argument('--rerun',             type=int, help='Number of trials to repeat an experiment')
         parser.add_argument('--dataset',           type=str, help='Name of dataset')
-        parser.add_argument('--batch_size',        type=int, help='Numbers of videos in a mini-batch')
+        parser.add_argument('--batch_size',        type=int, help='Numbers of videos in a mini-batch (per GPU)')
         parser.add_argument('--pseudo_batch_loop', type=int, help='Number of loops for mini-batch')
+        parser.add_argument('--num_gpus',          type=int, help='Number of GPUs to use, default: -1 (all available GPUs). 0 (use CPU), >1 (number of GPUs to use)')
         parser.add_argument('--num_workers',       type=int, help='Number of subprocesses for dataloading')
         parser.add_argument('--load_type',         type=str, help='Environment selection, to include only training/training and validation/testing dataset (train, train_val, test)')
         parser.add_argument('--model',             type=str, help='Name of model to be loaded')
@@ -56,32 +58,33 @@ class Parse():
 
         # Default dict, anything not present is required to exist as an argument or in yaml file
         self.defaults = dict(
-            rerun            = 5,
-            batch_size       = 1,
-            pseudo_batch_loop= 1,
-            num_workers      = 1,
-            acc_metric       = None,
-            opt              = 'sgd',
-            lr               = 0.001,
-            momentum         = 0.9,
-            weight_decay     = 0.0005,
-            milestones       = [5],
-            gamma            = 0.1,
-            epoch            = 10,
-            save_dir         = './results',
-            exp              = 'exp',
-            preprocess       = 'default',
-            pretrained       = 0,
-            subtract_mean    = '',
-            clip_offset      = 0,
-            random_offset    = 0,
-            clip_stride      = 0,
-            crop_type        = None,
-            num_clips        = 1,
-            debug            = 0,
-            seed             = 0,
-            scale            = [1,1],
-            resume           = 0)                       
+            rerun                = 5,
+            batch_size           = 1,
+            pseudo_batch_loop    = 1,
+            num_gpus             = -1,
+            num_workers          = 1,
+            acc_metric           = None,
+            opt                  = 'sgd',
+            lr                   = 0.001,
+            momentum             = 0.9,
+            weight_decay         = 0.0005,
+            milestones           = [5],
+            gamma                = 0.1,
+            epoch                = 10,
+            save_dir             = './results',
+            exp                  = 'exp',
+            preprocess           = 'default',
+            pretrained           = 0,
+            subtract_mean        = '',
+            clip_offset          = 0,
+            random_offset        = 0,
+            clip_stride          = 0,
+            crop_type            = None,
+            num_clips            = 1,
+            debug                = 0,
+            seed                 = 0,
+            scale                = [1,1],
+            resume               = 0)                       
 
 
 
@@ -120,6 +123,9 @@ class Parse():
         if self.cfg_args['clip_stride'] < 1:
             self.cfg_args['clip_stride'] = 1
 
-
+        #Use all available GPUs if num_gpus = -1
+        #Else select the minimum between available GPUS and requested GPUs
+        num_gpus = torch.cuda.device_count() if self.cfg_args['num_gpus'] == -1 else min(torch.cuda.device_count(), self.cfg_args['num_gpus'])
+        self.cfg_args['num_gpus'] = num_gpus 
 
         return self.cfg_args

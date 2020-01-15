@@ -34,4 +34,8 @@ def load_checkpoint(name, key_name='state_dict'):
         Selected element from loaded checkpoint pickle file
     """
     checkpoint = torch.load(name)
+
+    if key_name not in checkpoint:
+        return checkpoint
+
     return checkpoint[key_name]
