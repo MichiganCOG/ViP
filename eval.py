@@ -17,6 +17,8 @@ from datasets                           import data_loader
 from metrics                            import Metrics
 from checkpoint                         import load_checkpoint
 
+import pprint
+
 def eval(**args):
     """
     Evaluate selected model 
@@ -33,9 +35,8 @@ def eval(**args):
         None
     """
 
-    print("\n############################################################################\n")
-    print("Experimental Setup: ", args)
-    print("\n############################################################################\n")
+    print("Experimental Setup: ")
+    pprint.PrettyPrinter(indent=4).pprint(args)
 
     d          = datetime.datetime.today()
     date       = d.strftime('%Y%m%d-%H%M%S')
