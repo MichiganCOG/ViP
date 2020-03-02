@@ -18,6 +18,8 @@ from losses                             import Losses
 from metrics                            import Metrics
 from checkpoint                         import save_checkpoint, load_checkpoint
 
+import pprint
+
 def train(**args):
     """
     Evaluate selected model 
@@ -41,9 +43,8 @@ def train(**args):
         None
     """
 
-    print("\n############################################################################\n")
-    print("Experimental Setup: ", args)
-    print("\n############################################################################\n")
+    print("Experimental Setup: ")
+    pprint.PrettyPrinter(indent=4).pprint(args)
 
     for total_iteration in range(args['rerun']):
 
