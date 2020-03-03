@@ -17,7 +17,7 @@ def create_dataset_object(**kwargs):
     dataset_name = kwargs['dataset']
 
     dataset_files = glob.glob('datasets/*.py')
-    ignore_files = ['__init__.py', 'loading_function.py', 'abstract_datasets.py', 'preprocessing_transforms.py']
+    ignore_files = ['__init__.py', 'loading_function.py', 'abstract_datasets.py']
 
     for df in dataset_files:
         if df in ignore_files:
