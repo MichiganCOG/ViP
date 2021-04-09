@@ -80,8 +80,8 @@ def eval(**args):
     # END IF
 
     if isinstance(args['pretrained'], str):
-        ckpt = load_checkpoint(args['pretrained'])
-        model.load_state_dict(ckpt)
+        ckpt = load_checkpoint(args['pretrained'], ignore_keys=args.get('ignore_ckpt_keys',[]))
+        model.load_state_dict(ckpt, strict=False)
 
     # Training Setup
     params     = [p for p in model.parameters() if p.requires_grad]

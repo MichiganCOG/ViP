@@ -67,6 +67,8 @@ class HMDB51(RecognitionDataset):
 
         annot_dict           = dict()
         annot_dict['labels'] = labels
+        annot_dict['base_path'] = base_path
+        annot_dict['vid_id']    = base_path.split('/')[-1]
 
         ret_dict['annots']   = annot_dict
 
