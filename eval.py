@@ -19,6 +19,8 @@ from checkpoint                         import load_checkpoint
 
 import pprint
 
+import wandb
+
 def eval(**args):
     """
     Evaluate selected model 
@@ -45,6 +47,15 @@ def eval(**args):
     save_dir   = os.path.join(result_dir, 'checkpoints')
 
     if not args['debug']:
+        wandb.init(project=args['dataset'], name=args['exp'], config=args)
+
+        #Replace result dir with wandb unique id, much easier to find checkpoints
+        run_id = wandb.run.id 
+        if run_id: 
+            result_dir = os.path.join(args['save_dir'], args['model'], '_'.join((args['dataset'], run_id)))
+            log_dir    = os.path.join(result_dir, 'logs')
+            save_dir   = os.path.join(result_dir, 'checkpoints')
+
         os.makedirs(result_dir, exist_ok=True)
         os.makedirs(log_dir,    exist_ok=True) 
         os.makedirs(save_dir,   exist_ok=True) 
@@ -57,13 +68,23 @@ def eval(**args):
         writer = SummaryWriter(log_dir)
 
     # Check if GPU is available (CUDA)
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    num_gpus = args['num_gpus']
+    device = torch.device("cuda:0" if num_gpus > 0 and torch.cuda.is_available() else "cpu")
+    print('Using {}'.format(device.type))
 
     # Load Network
     model = create_model_object(**args).to(device)
+    model_obj = model 
+
+    if device.type == 'cuda' and num_gpus > 1:
+        device_ids = list(range(num_gpus)) #number of GPUs specified
+        model = nn.DataParallel(model, device_ids=device_ids)
+        model_obj = model.module #Model from DataParallel object has to be accessed through module
+
+        print('GPUs Device IDs: {}'.format(device_ids))
 
     # Load Data
-    loader = data_loader(**args, model_obj=model)
+    loader = data_loader(**args, model_obj=model_obj)
 
     if args['load_type'] == 'train_val':
         eval_loader = loader['valid']
@@ -116,6 +137,7 @@ def eval(**args):
     print('Accuracy of the network on the {} set: {:.3f} %\n'.format(args['load_type'], 100.*acc))
 
     if not args['debug']:
+        wandb.log({'val_accuracy':100.*acc})
         writer.add_scalar(args['dataset']+'/'+args['model']+'/'+args['load_type']+'_accuracy', 100.*acc)
         # Close Tensorboard Element
         writer.close()

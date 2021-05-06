@@ -37,7 +37,7 @@ def load_checkpoint(name, key_name='state_dict', remove_names=['module'], ignore
     checkpoint = torch.load(name)
 
     if key_name in checkpoint:
-        return filter_weightst(checkpoint[key_name], remove_names, ignore_keys)
+        return filter_weights(checkpoint[key_name], remove_names, ignore_keys)
     else:
         return filter_weights(checkpoint, remove_names, ignore_keys)
 
