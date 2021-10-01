@@ -4,7 +4,7 @@ from PIL import Image
 import cv2
 import os
 import numpy as np
-import datasets.preprocessing_transforms as pt
+import tools.preprocessing_transforms as pt
 from torchvision import transforms
 
 class UCF101(RecognitionDataset):
@@ -71,6 +71,8 @@ class UCF101(RecognitionDataset):
 
         annot_dict           = dict()
         annot_dict['labels'] = labels
+        annot_dict['base_path'] = base_path
+        annot_dict['vid_id']    = base_path.split('/')[-1]
 
         ret_dict['annots']   = annot_dict
 

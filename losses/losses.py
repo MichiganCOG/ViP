@@ -1,3 +1,7 @@
+import sys
+import glob
+import importlib
+
 import numpy as np
 from scipy import ndimage
 import os
@@ -20,21 +24,28 @@ class Losses(object):
             Loss object 
         """
 
-        self.loss_type   = kwargs['loss_type']
+        loss_type   = kwargs['loss_type']
         self.loss_object = None
         
-        if self.loss_type == 'MSE':
-            self.loss_object = MSE(*args, **kwargs)
+        loss_files = glob.glob('losses/*.py')
+        ignore_files = ['losses.py']
 
-        elif self.loss_type == 'M_XENTROPY':
-            self.loss_object = M_XENTROPY(*args, **kwargs)
+        for lf in loss_files:
+            if lf in ignore_files:
+                continue
 
-        elif self.loss_type == 'YC2BB_Attention_Loss':
-            self.loss_object = YC2BB_Attention_Loss(*args, **kwargs)
+            module_name = lf[:-3].replace('/','.')
+            module = importlib.import_module(module_name)
+            module_lower = list(map(lambda module_x: module_x.lower(), dir(module)))
 
-        else:
-            print('Invalid loss type selected. Quitting!')
-            exit(1)
+            if loss_type.lower() in module_lower:
+                loss_index = module_lower.index(loss_type.lower())
+                loss_function = getattr(module, dir(module)[loss_index])(**kwargs)
+
+                self.loss_object = loss_function
+
+        if self.loss_object is None:
+            sys.exit('Loss function not found. Ensure .py file containing loss function is in losses/, with a matching class name')
 
     def loss(self, predictions, data, **kwargs):
         """

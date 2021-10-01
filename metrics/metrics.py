@@ -1,3 +1,7 @@
+import sys
+import glob
+import importlib
+
 import os
 import json 
 import numpy as np
@@ -14,20 +18,25 @@ class Metrics(object):
         Return:
             None
         """
-        self.metric_type = kwargs['acc_metric'] 
+        metric_type = kwargs['acc_metric'] 
+        self.metric_object = None
 
-        if self.metric_type == 'Accuracy':
-            self.metric_object = Accuracy(*args, **kwargs) 
-        elif self.metric_type == 'AveragePrecision':
-            self.metric_object = AveragePrecision(*args, **kwargs)
-        elif self.metric_type == 'mAP':
-            self.metric_object = MAP(*args, **kwargs)
-        elif self.metric_type == 'SSD_AP':
-            self.metric_object = SSD_AP(*args, **kwargs)
-        elif self.metric_type == 'Box_Accuracy':
-            self.metric_object = Box_Accuracy(*args, **kwargs)
-        else:
-            self.metric_type = None
+        metric_files = glob.glob('metrics/*.py')
+        ignore_files = ['metrics.py']
+
+        for mf in metric_files:
+            if mf in ignore_files:
+                continue
+
+            module_name = mf[:-3].replace('/','.')
+            module = importlib.import_module(module_name)
+            module_lower = list(map(lambda module_x: module_x.lower(), dir(module)))
+
+            if metric_type.lower() in module_lower:
+                metric_index = module_lower.index(metric_type.lower())
+                metric_function = getattr(module, dir(module)[metric_index])(**kwargs)
+
+                self.metric_object = metric_function 
 
     def get_accuracy(self, predictions, targets, **kwargs):
         """
@@ -38,7 +47,7 @@ class Metrics(object):
             targets: ground truth or targets 
         """
 
-        if self.metric_type == None:
+        if self.metric_object == None:
             return -1
 
         else:

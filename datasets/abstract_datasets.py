@@ -226,7 +226,13 @@ class RecognitionDataset(VideoDataset):
             # Each clip is a list of dictionaries per frame containing information
             # Example info: object bbox annotations, object classes, frame img path
             for clip in clips:    
-                self.samples.append(dict(frames=clip, base_path=video_info['base_path']))
+                sample_dict = {}
+                for k in video_info.keys():
+                    if k == 'frames':
+                        sample_dict[k] = clip
+                    else:
+                        sample_dict[k] = video_info[k]
+                self.samples.append(sample_dict)
 
 
 
@@ -289,6 +295,12 @@ class DetectionDataset(VideoDataset):
             # Each clip is a list of dictionaries per frame containing information
             # Example info: object bbox annotations, object classes, frame img path
             for clip in clips:    
-                self.samples.append(dict(frames=clip, base_path=video_info['base_path'], frame_size=video_info['frame_size']))
+                sample_dict = {}
+                for k in video_info.keys():
+                    if k == 'frames':
+                        sample_dict[k] = clip
+                    else:
+                        sample_dict[k] = video_info[k]
+                self.samples.append(sample_dict)
 
 

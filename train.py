@@ -11,12 +11,16 @@ import torch.optim       as optim
 from torch.optim.lr_scheduler           import MultiStepLR
 from tensorboardX                       import SummaryWriter
 
-from parse_args                         import Parse
+from tools.parse_args                         import Parse
 from models.models_import               import create_model_object
 from datasets.loading_function          import data_loader 
-from losses                             import Losses
-from metrics                            import Metrics
-from checkpoint                         import save_checkpoint, load_checkpoint
+from losses.losses                      import Losses
+from metrics.metrics                    import Metrics
+from tools.checkpoint                         import save_checkpoint, load_checkpoint
+
+import pprint
+
+import wandb
 
 def train(**args):
     """
@@ -41,9 +45,8 @@ def train(**args):
         None
     """
 
-    print("\n############################################################################\n")
-    print("Experimental Setup: ", args)
-    print("\n############################################################################\n")
+    print("Experimental Setup: ")
+    pprint.PrettyPrinter(indent=4).pprint(args)
 
     for total_iteration in range(args['rerun']):
 
@@ -55,6 +58,15 @@ def train(**args):
         save_dir   = os.path.join(result_dir,       'checkpoints')
 
         if not args['debug']:
+            wandb.init(project=args['dataset'], name=args['exp'], config=args)
+
+            #Replace result dir with wandb unique id, much easier to find checkpoints
+            run_id = wandb.run.id 
+            if run_id: 
+                result_dir = os.path.join(args['save_dir'], args['model'], '_'.join((args['dataset'], run_id)))
+                log_dir    = os.path.join(result_dir, 'logs')
+                save_dir   = os.path.join(result_dir, 'checkpoints')
+
             os.makedirs(result_dir, exist_ok=True)
             os.makedirs(log_dir,    exist_ok=True) 
             os.makedirs(save_dir,   exist_ok=True) 
@@ -68,13 +80,23 @@ def train(**args):
             writer = SummaryWriter(log_dir)
 
         # Check if GPU is available (CUDA)
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    
+        num_gpus = args['num_gpus']
+        device = torch.device("cuda:0" if num_gpus > 0 and torch.cuda.is_available() else "cpu")
+        print('Using {}'.format(device.type)) 
+
         # Load Network
         model = create_model_object(**args).to(device)
+        model_obj = model 
 
+        if device.type == 'cuda' and num_gpus > 1:
+            device_ids = list(range(num_gpus)) #number of GPUs specified
+            model = nn.DataParallel(model, device_ids=device_ids)
+            model_obj = model.module #Model from DataParallel object has to be accessed through module
+
+            print('GPUs Device IDs: {}'.format(device_ids))
+    
         # Load Data
-        loader = data_loader(model_obj=model, **args)
+        loader = data_loader(model_obj=model_obj, **args)
 
         if args['load_type'] == 'train':
             train_loader = loader['train']
@@ -106,14 +128,23 @@ def train(**args):
         scheduler  = MultiStepLR(optimizer, milestones=args['milestones'], gamma=args['gamma'])
 
         if isinstance(args['pretrained'], str):
-            ckpt        = load_checkpoint(args['pretrained'])
-            model.load_state_dict(ckpt)
+            ckpt        = load_checkpoint(args['pretrained'], ignore_keys=args.get('ignore_ckpt_keys',[]))
+
+            ckpt_keys = list(ckpt.keys())
+            if ckpt_keys[0].startswith('module.'): #if checkpoint weights are from DataParallel object
+                for key in ckpt_keys:
+                    ckpt[key[7:]] = ckpt.pop(key)
+
+            model_obj.load_state_dict(ckpt)
 
             if args['resume']:
                 start_epoch = load_checkpoint(args['pretrained'], key_name='epoch') + 1
 
                 optimizer.load_state_dict(load_checkpoint(args['pretrained'], key_name='optimizer'))
-                scheduler.step(epoch=start_epoch)
+                #scheduler.step(epoch=start_epoch)
+
+                for _ in range(start_epoch):
+                    scheduler.step()
 
             else:
                 start_epoch = 0
@@ -177,6 +208,7 @@ def train(**args):
                 if not args['debug']:
                     # Add Learning Rate Element
                     for param_group in optimizer.param_groups:
+                        wandb.log({'lr':param_group['lr'],'train loss':loss.item()/mini_batch_size})
                         writer.add_scalar(args['dataset']+'/'+args['model']+'/learning_rate', param_group['lr'], epoch*len(train_loader) + step)
 
                     # END FOR
@@ -211,13 +243,15 @@ def train(**args):
 
             # END FOR: Epoch
             
-            scheduler.step(epoch=epoch)
+            scheduler.step()
             print('Schedulers lr: %f', scheduler.get_lr()[0])
 
+            '''
             if not args['debug']:
                 # Save Current Model
                 save_path = os.path.join(save_dir, args['dataset']+'_epoch'+str(epoch)+'.pkl')
                 save_checkpoint(epoch, step, model, optimizer, save_path)
+            '''
    
             # END IF: Debug
 
@@ -226,6 +260,7 @@ def train(**args):
             running_acc = valid(valid_loader, running_acc, model, device)
 
             if not args['debug']:
+                wandb.log({'epoch':epoch, 'val_accurracy':100*running_acc[-1]})
                 writer.add_scalar(args['dataset']+'/'+args['model']+'/validation_accuracy', 100.*running_acc[-1], epoch*len(train_loader) + step)
 
             print('Accuracy of the network on the validation set: %f %%\n' % (100.*running_acc[-1]))
@@ -235,6 +270,9 @@ def train(**args):
                 best_val_acc = running_acc[-1]
 
                 if not args['debug']:
+                    #Log best validation accuracy
+                    wandb.run.summary['best_accuracy'] = best_val_acc
+
                     # Save Current Model
                     save_path = os.path.join(save_dir, args['dataset']+'_best_model.pkl')
                     save_checkpoint(epoch, step, model, optimizer, save_path)

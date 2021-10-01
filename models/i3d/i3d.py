@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-import datasets.preprocessing_transforms as pt 
+import tools.preprocessing_transforms as pt 
 
 import numpy as np
 

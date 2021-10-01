@@ -1,5 +1,7 @@
-import torch
 import numpy as np
+
+import torch
+import torch.nn as nn
 
 class M_XENTROPY(object):
     def __init__(self, *args, **kwargs):

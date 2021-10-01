@@ -5,7 +5,7 @@ import cv2
 import os
 import numpy as np
 import json
-import datasets.preprocessing_transforms as pt
+import tools.preprocessing_transforms as pt
 
 class ImageNetVID(DetectionDataset):
     def __init__(self, *args, **kwargs):

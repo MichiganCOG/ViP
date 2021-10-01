@@ -2,7 +2,7 @@ import torch
 import numpy                             as np
 import torch.nn                          as nn
 import torch.nn.functional               as F
-import datasets.preprocessing_transforms as pt
+import tools.preprocessing_transforms as pt
 
 class C3D(nn.Module):
     """

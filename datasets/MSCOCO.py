@@ -3,7 +3,7 @@ from .abstract_datasets import DetectionDataset
 import cv2
 import os
 import numpy as np
-import datasets.preprocessing_transforms as pt
+import tools.preprocessing_transforms as pt
 
 class MSCOCO(DetectionDataset):
     def __init__(self, *args, **kwargs):
