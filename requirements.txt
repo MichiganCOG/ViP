@@ -1,5 +1,5 @@
 numpy==1.17.0
-opencv-python==4.1.0.25
+opencv-python==4.2.0.32
 pillow>=6.2.0
 protobuf==3.9.0
 PyYAML==5.1.1
